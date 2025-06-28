@@ -40,39 +40,68 @@
 
         <div class="flex">
             <!-- Sidebar -->
-            <aside class="w-64 bg-white shadow-sm h-screen sticky top-0">
-                <nav class="mt-8">
-                    <div class="px-4">
-                        <ul class="space-y-2" id="navigation">
+            <aside class="h-screen sticky top-0 overflow-y-auto">
+                <nav>
+                    <div class="nav-group">
+                        <h3 class="nav-group-title">Principal</h3>
+                        <ul class="space-y-1">
                             <li><a href="#" data-tab="dashboard" class="nav-link active">
-                                <i class="bi bi-speedometer2 mr-3"></i>Dashboard
+                                <i class="bi bi-grid-1x2-fill"></i>
+                                <span>Dashboard</span>
                             </a></li>
+                        </ul>
+                    </div>
+
+                    <div class="nav-group">
+                        <h3 class="nav-group-title">Gestión de Personal</h3>
+                        <ul class="space-y-1">
                             <li><a href="#" data-tab="personas" class="nav-link">
-                                <i class="bi bi-people mr-3"></i>Personas
+                                <i class="bi bi-people-fill"></i>
+                                <span>Personas</span>
                             </a></li>
                             <li><a href="#" data-tab="roles" class="nav-link">
-                                <i class="bi bi-person-badge mr-3"></i>Roles
+                                <i class="bi bi-person-badge-fill"></i>
+                                <span>Roles</span>
                             </a></li>
                             <li><a href="#" data-tab="valorHora" class="nav-link">
-                                <i class="bi bi-clock mr-3"></i>Valor Hora
+                                <i class="bi bi-clock-fill"></i>
+                                <span>Valor Hora</span>
                             </a></li>
                             <li><a href="#" data-tab="registroHoras" class="nav-link">
-                                <i class="bi bi-calendar-check mr-3"></i>Registro Horas
+                                <i class="bi bi-calendar2-check-fill"></i>
+                                <span>Registro Horas</span>
                             </a></li>
+                        </ul>
+                    </div>
+
+                    <div class="nav-group">
+                        <h3 class="nav-group-title">Operaciones</h3>
+                        <ul class="space-y-1">
                             <li><a href="#" data-tab="campanas" class="nav-link">
-                                <i class="bi bi-megaphone mr-3"></i>Campañas
+                                <i class="bi bi-megaphone-fill"></i>
+                                <span>Campañas</span>
                             </a></li>
                             <li><a href="#" data-tab="transacciones" class="nav-link">
-                                <i class="bi bi-cash-stack mr-3"></i>Transacciones
+                                <i class="bi bi-wallet2"></i>
+                                <span>Transacciones</span>
                             </a></li>
                             <li><a href="#" data-tab="categorias" class="nav-link">
-                                <i class="bi bi-tags mr-3"></i>Categorías
+                                <i class="bi bi-tags-fill"></i>
+                                <span>Categorías</span>
                             </a></li>
+                        </ul>
+                    </div>
+
+                    <div class="nav-group">
+                        <h3 class="nav-group-title">Distribución</h3>
+                        <ul class="space-y-1">
                             <li><a href="#" data-tab="distribucionUtilidades" class="nav-link">
-                                <i class="bi bi-pie-chart mr-3"></i>Distribución Utilidades
+                                <i class="bi bi-pie-chart-fill"></i>
+                                <span>Distribución Utilidades</span>
                             </a></li>
                             <li><a href="#" data-tab="distribucionDetalle" class="nav-link">
-                                <i class="bi bi-list-check mr-3"></i>Distribución Detalle
+                                <i class="bi bi-list-check"></i>
+                                <span>Distribución Detalle</span>
                             </a></li>
                         </ul>
                     </div>

@@ -150,6 +150,16 @@ window.PersonasView = {
                     }
                 },
                 {
+                    title: "Gastos Totales",
+                    field: "gastosTotales",
+                    formatter: function(cell){
+                        const personaId = cell.getRow().getData().id;
+                        const trans = DataManager.getAll('transaccionesData').filter(t => t.tipo === 'Gasto' && t.personaId === personaId);
+                        const total = trans.reduce((sum, t) => sum + (t.monto || 0), 0);
+                        return Utils.formatCurrency(total);
+                    }
+                },
+                {
                     title: "Valor Hora",
                     field: "valorHora",
                     formatter: function(cell) {

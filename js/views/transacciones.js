@@ -19,11 +19,11 @@ window.TransaccionesView = {
             const container = document.getElementById('transacciones-table');
             if (!container) {
                 console.error('Contenedor transacciones-table no encontrado');
-                return;
-            }
+            return;
+        }
 
             // Inicializar componentes
-            this.setupForm();
+        this.setupForm();
             this.loadPersonasSelect();
             this.loadCampanasSelect();
             this.loadCategoriasSelect();
@@ -31,7 +31,7 @@ window.TransaccionesView = {
 
             // Inicializar tabla después de un pequeño delay
             setTimeout(() => {
-                this.initTable();
+        this.initTable();
                 this.setupEvents();
                 this.mostrarEstadisticas();
                 this.initialized = true;
@@ -312,7 +312,6 @@ window.TransaccionesView = {
                     maxWidth: 150,
                     editor: "input",
                     editorParams: { type: "date" },
-                    validator: "required",
                     sorter: "date",
                     responsive: 1,
                     formatter: function(cell) {
@@ -331,15 +330,16 @@ window.TransaccionesView = {
                     editor: "select",
                     editorParams: {
                         values: {
+                            "__clear__": "🗑️ Quitar tipo",
                             "Ingreso": "Ingreso",
                             "Gasto": "Gasto",
                             "Aporte": "Aporte"
                         }
                     },
-                    validator: "required",
                     responsive: 2,
                     formatter: function(cell) {
                         const value = cell.getValue();
+                        if (!value) return '<span class="text-gray-400 italic">Sin tipo</span>';
                         const colors = {
                             "Ingreso": "bg-green-100 text-green-800",
                             "Gasto": "bg-red-100 text-red-800",
@@ -355,14 +355,16 @@ window.TransaccionesView = {
                     width: 200,
                     minWidth: 150,
                     editor: "input",
-                    validator: "required",
                     responsive: 3,
                     formatter: function(cell) {
                         const value = cell.getValue() || '';
+                        if (!value) {
+                            return '<span class="text-gray-400 italic">Sin concepto</span>';
+                        }
                         return value.length > 30 ? value.substring(0, 30) + '...' : value;
                     }
                 },
-                {
+                                {
                     title: "Categoría",
                     field: "categoria",
                     width: 150,
@@ -370,13 +372,21 @@ window.TransaccionesView = {
                     editor: "select",
                     editorParams: function(cell) {
                         const categorias = DataManager.getAll('categoriasData') || [];
-                        const values = { "Otros": "Otros" };
+                        const values = {
+                            "__clear__": "🗑️ Quitar categoría",
+                            "Otros": "Otros"
+                        };
                         categorias.forEach(cat => {
                             values[cat.nombreCategoria] = cat.nombreCategoria;
                         });
                         return { values: values };
                     },
-                    responsive: 4
+                    responsive: 4,
+                    formatter: function(cell) {
+                        const value = cell.getValue();
+                        if (!value) return '<span class="text-gray-400 italic">Sin categoría</span>';
+                        return value;
+                    }
                 },
                 {
                     title: "Monto",
@@ -386,7 +396,6 @@ window.TransaccionesView = {
                     maxWidth: 180,
                     editor: "number",
                     editorParams: { min: 0, step: 1000 },
-                    validator: ["required", "min:1"],
                     responsive: 1,
                     sorter: "number",
                     formatter: function(cell) {
@@ -426,26 +435,35 @@ window.TransaccionesView = {
                     field: "personaId",
                     width: 150,
                     minWidth: 120,
-                    editor: "select",
-                    editorParams: function(cell) {
+                    editor: "list",
+                    editorParams: function(cell){
                         const personas = DataManager.getAll('personasData');
-                        const values = {};
-
-                        personas.forEach(persona => {
-                            values[persona.id] = persona.nombre;
-                        });
-
-                        // Si no hay personas, agregar opción por defecto
-                        if (Object.keys(values).length === 0) {
-                            values[""] = "Sin personas disponibles";
+                        const current = cell.getValue();
+                        const list = [];
+                        // 1) valor actual primero
+                        if(current!==null && current!==undefined){
+                            const curPerson = personas.find(p=>p.id===current);
+                            if(curPerson){
+                                list.push({value:curPerson.id, label:`${curPerson.nombre} (actual)`});
+                            }
                         }
-
-                        return { values: values };
+                        // 2) resto de personas
+                        personas.forEach(p=>{
+                            if(p.id!==current){
+                                list.push({value:p.id, label:p.nombre});
+                            }
+                        });
+                        // 3) opción limpiar al final
+                        list.push({value:'__clear__', label:'🗑️ Quitar persona'});
+                        if(personas.length===0){
+                            list.push({value:'__no_personas__', label:'Sin personas disponibles'});
+                        }
+                        return { values:list };
                     },
                     responsive: 6,
                     formatter: function(cell) {
                         const personaId = cell.getValue();
-                        if (!personaId) return '<span class="text-gray-400 italic">Sin persona</span>';
+                        if (!personaId || personaId === '__clear__') return '<span class="text-gray-400 italic">Sin persona</span>';
                         const persona = DataManager.getById('personasData', personaId);
                         return persona ? `<span class="text-blue-600 font-medium">${persona.nombre}</span>` : '<span class="text-gray-400 italic">Sin persona</span>';
                     }
@@ -455,26 +473,32 @@ window.TransaccionesView = {
                     field: "campanaId",
                     width: 150,
                     minWidth: 120,
-                    editor: "select",
-                    editorParams: function(cell) {
+                    editor: "list",
+                    editorParams: function(cell){
                         const campanas = DataManager.getAll('campanasData');
-                        const values = {};
-
-                        campanas.forEach(campana => {
-                            values[campana.id] = campana.nombre;
-                        });
-
-                        // Si no hay campañas, agregar opción por defecto
-                        if (Object.keys(values).length === 0) {
-                            values[""] = "Sin campañas disponibles";
+                        const cur = cell.getValue();
+                        const list = [];
+                        if(cur!==null && cur!==undefined){
+                            const curCamp = campanas.find(c=>c.id===cur);
+                            if(curCamp){
+                                list.push({value:curCamp.id, label:`${curCamp.nombre} (actual)`});
+                            }
                         }
-
-                        return { values: values };
+                        campanas.forEach(c=>{
+                            if(c.id!==cur){
+                                list.push({value:c.id, label:c.nombre});
+                            }
+                        });
+                        list.push({value:'__clear__', label:'🗑️ Quitar campaña'});
+                        if(campanas.length===0){
+                            list.push({value:'__no_campanas__', label:'Sin campañas disponibles'});
+                        }
+                        return { values:list };
                     },
                     responsive: 7,
                     formatter: function(cell) {
                         const campanaId = cell.getValue();
-                        if (!campanaId) return '<span class="text-gray-400 italic">Sin campaña</span>';
+                        if (!campanaId || campanaId === '__clear__') return '<span class="text-gray-400 italic">Sin campaña</span>';
                         const campana = DataManager.getById('campanasData', campanaId);
                         return campana ? `<span class="text-purple-600 font-medium">${campana.nombre}</span>` : '<span class="text-gray-400 italic">Sin campaña</span>';
                     }
@@ -516,21 +540,27 @@ window.TransaccionesView = {
         // Redimensionar tabla cuando cambie el tamaño de página
         this.table.on("pageSizeChanged", (size) => {
             setTimeout(() => {
-                this.table.redraw(true);
+                if (this.table) {
+                    this.table.redraw(true);
+                }
             }, 100);
         });
 
         // Redimensionar tabla cuando cambie de página
         this.table.on("pageLoaded", (pageno) => {
             setTimeout(() => {
-                this.table.redraw(true);
+                if (this.table) {
+                    this.table.redraw(true);
+                }
             }, 50);
         });
 
         // Redimensionar cuando se apliquen filtros
         this.table.on("dataFiltered", (filters, rows) => {
             setTimeout(() => {
-                this.table.redraw(true);
+                if (this.table) {
+                    this.table.redraw(true);
+                }
             }, 50);
         });
 
@@ -545,6 +575,16 @@ window.TransaccionesView = {
 
             // Marcar la fila como modificada visualmente
             row.getElement().style.backgroundColor = '#fef3c7'; // Fondo amarillo claro
+
+            // Si seleccionó opción de limpiar
+            if (value === '__clear__') {
+                // Actualizar valor a null usando la propia celda para evitar conflictos con editorClear
+                setTimeout(() => {
+                    cell.setValue(null, true);
+                    row.reformat();
+                }, 0);
+                return; // Salir temprano
+            }
 
             // Para campos de persona y campaña, asegurar que el formatter se actualice
             if (field === 'personaId' || field === 'campanaId') {
@@ -577,7 +617,9 @@ window.TransaccionesView = {
     // Cargar datos en tabla
     loadData() {
         if (!this.table) return;
-        const transacciones = DataManager.getAll('transaccionesData');
+        const transaccionesOrig = DataManager.getAll('transaccionesData');
+        // Clonar profundamente para que las ediciones no afecten los datos originales
+        const transacciones = JSON.parse(JSON.stringify(transaccionesOrig));
         this.table.setData(transacciones);
         this.mostrarEstadisticas();
 
@@ -594,12 +636,15 @@ window.TransaccionesView = {
         const personaCol = this.table.getColumn("personaId");
         const campanaCol = this.table.getColumn("campanaId");
 
-        // Actualizar definiciones de columnas con nuevos datos
+                // Actualizar definiciones de columnas con nuevos datos
         if (categoriaCol) {
             categoriaCol.updateDefinition({
                 editorParams: function(cell) {
                     const categorias = DataManager.getAll('categoriasData') || [];
-                    const values = { "Otros": "Otros" };
+                    const values = {
+                        "__clear__": "🗑️ Quitar categoría",
+                        "Otros": "Otros"
+                    };
                     categorias.forEach(cat => {
                         values[cat.nombreCategoria] = cat.nombreCategoria;
                     });
@@ -610,26 +655,40 @@ window.TransaccionesView = {
 
         if (personaCol) {
             personaCol.updateDefinition({
-                editorParams: function(cell) {
+                editorParams: function(cell){
                     const personas = DataManager.getAll('personasData');
-                    const values = { "": "-- Sin persona --" };
-                    personas.forEach(persona => {
-                        values[persona.id] = persona.nombre;
-                    });
-                    return { values: values };
+                    const cur=cell.getValue();
+                    const list=[];
+                    if(cur!==null && cur!==undefined){
+                        const curP=personas.find(p=>p.id===cur);
+                        if(curP) list.push({value:curP.id,label:`${curP.nombre} (actual)`});
+                    }
+                    personas.forEach(p=>{ if(p.id!==cur) list.push({value:p.id,label:p.nombre});});
+                    list.push({value:'__clear__',label:'🗑️ Quitar persona'});
+                    if(personas.length===0){
+                        list.push({value:'__no_personas__',label:'Sin personas disponibles'});
+                    }
+                    return { values:list };
                 }
             });
         }
 
         if (campanaCol) {
             campanaCol.updateDefinition({
-                editorParams: function(cell) {
+                editorParams: function(cell){
                     const campanas = DataManager.getAll('campanasData');
-                    const values = { "": "-- Sin campaña --" };
-                    campanas.forEach(campana => {
-                        values[campana.id] = campana.nombre;
-                    });
-                    return { values: values };
+                    const curVal=cell.getValue();
+                    const list = [];
+                    if(curVal!==null && curVal!==undefined){
+                        const curCamp=campanas.find(c=>c.id===curVal);
+                        if(curCamp) list.push({value:curCamp.id,label:`${curCamp.nombre} (actual)`});
+                    }
+                    campanas.forEach(c=>{ if(c.id!==curVal) list.push({value:c.id,label:c.nombre}); });
+                    list.push({value:'__clear__', label:'🗑️ Quitar campaña'});
+                    if(campanas.length===0){
+                        list.push({value:'__no_campanas__', label:'Sin campañas disponibles'});
+                    }
+                    return { values:list };
                 }
             });
         }
@@ -1014,33 +1073,25 @@ window.TransaccionesView = {
     refreshTable() {
         console.log('Refrescando tabla de transacciones...');
 
-        if (!this.initialized) {
-            console.log('Vista no inicializada, inicializando...');
-            this.init();
+        if (!this.initialized || !this.table) {
+            console.log('Vista no inicializada o tabla no existe, saltando refresh...');
             return;
         }
 
-        if (this.table) {
-            try {
-                this.loadData();
-                this.loadFiltrosSelects();
-                this.refreshSelectOptions();
-                // Forzar redimensionamiento para evitar columnas negras
-                setTimeout(() => {
-                    if (this.table) {
-                        this.table.redraw(true);
-                        this.table.recalc();
-                    }
-                }, 100);
-                console.log('Tabla refrescada correctamente');
-            } catch (error) {
-                console.error('Error refrescando tabla:', error);
-                // Si hay error, reinicializar completamente
-                this.init();
-            }
-        } else {
-            console.log('Tabla no existe, inicializando...');
-            this.initTable();
+        try {
+            this.loadData();
+            this.loadFiltrosSelects();
+            this.refreshSelectOptions();
+            // Forzar redimensionamiento para evitar columnas negras
+            setTimeout(() => {
+                if (this.table) {
+                    this.table.redraw(true);
+                    this.table.recalc();
+                }
+            }, 100);
+            console.log('Tabla refrescada correctamente');
+        } catch (error) {
+            console.error('Error refrescando tabla:', error);
         }
     },
 
@@ -1076,6 +1127,12 @@ window.TransaccionesView = {
 
     // Limpiar recursos al salir de la vista
     cleanup() {
+        // Evitar múltiples ejecuciones
+        if (!this.initialized) {
+            console.log('TransaccionesView ya limpiada');
+            return true;
+        }
+
         console.log('Limpiando TransaccionesView...');
 
         // Verificar cambios pendientes antes de limpiar
@@ -1091,10 +1148,13 @@ window.TransaccionesView = {
             }
         }
 
+        // Marcar como no inicializada primero para evitar loops
+        this.initialized = false;
+
         // Destruir tabla si existe
         if (this.table) {
             try {
-                this.table.destroy();
+            this.table.destroy();
             } catch (error) {
                 console.warn('Error destruyendo tabla:', error);
             }
@@ -1114,27 +1174,19 @@ window.TransaccionesView = {
 
         // Limpiar event listeners del formulario
         const searchInput = document.getElementById('search-transacciones');
-        if (searchInput) {
-            searchInput.removeEventListener('input', this.searchHandler);
+        if (searchInput && this.searchHandler) {
+            try {
+                searchInput.removeEventListener('input', this.searchHandler);
+            } catch (error) {
+                console.warn('Error removiendo search handler:', error);
+            }
+            this.searchHandler = null;
         }
-
-        // Marcar como no inicializada
-        this.initialized = false;
 
         console.log('TransaccionesView limpiada correctamente');
         return true; // Permitir la navegación
     }
 };
 
-// Auto-inicializar
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        if (document.getElementById('transacciones-table')) {
-            TransaccionesView.init();
-        }
-    });
-} else {
-    if (document.getElementById('transacciones-table')) {
-        TransaccionesView.init();
-    }
-}
+// La inicialización se maneja desde navigation.js
+// No auto-inicializar aquí para evitar loops

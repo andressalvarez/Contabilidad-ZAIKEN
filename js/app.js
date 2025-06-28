@@ -71,8 +71,20 @@ window.App = {
 
         // Manejador global de errores
         window.addEventListener('error', (e) => {
-            console.error('Error global capturado:', e.error);
-            Utils.showToast('Ha ocurrido un error inesperado', 'error');
+            if (e.message && e.message.includes('ResizeObserver loop completed')) {
+                // Error benigno de ResizeObserver emitido por algunos navegadores, se ignora
+                return;
+            }
+            console.groupCollapsed('%c⚠️ Error global capturado','color:red;font-weight:bold');
+            console.error('Mensaje:', e.message);
+            console.error('Archivo:', e.filename + ':' + e.lineno + ':' + e.colno);
+            if (e.error && e.error.stack) {
+                console.error('Stack:', e.error.stack);
+            } else {
+                console.error('Objeto error:', e.error);
+            }
+            console.groupEnd();
+            Utils.showToast('Error inesperado (ver consola)', 'error');
         });
 
         // Manejo de promesas rechazadas
@@ -284,3 +296,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Exponer App globalmente para debugging
 window.App = App;
+
+// Parche de estabilidad para Tabulator: retrasar initializeEditor unos ms
+(function(){
+    if (window.Tabulator && !window.Tabulator._patchedSlowEditor){
+        window.Tabulator._patchedSlowEditor = true;
+        const EditModule = window.Tabulator.prototype.modules.edit;
+        const originalInit = EditModule.initializeEditor;
+        EditModule.initializeEditor = function(cell, onRendered, success, cancel, editorParams){
+            // Pequeño retardo para permitir que el DOM del editor se hidrate y evitar editorClear doble
+            setTimeout(()=>{
+                originalInit.call(this, cell, onRendered, success, cancel, editorParams);
+            }, 30); // 30 ms — imperceptible para el usuario
+        };
+        console.log('Tabulator patched: initializeEditor delayed 30ms');
+    }
+})();
+
+// Parche de estabilidad para Tabulator: capturar error en clearEditor y prevenir bubbling
+if (window.Tabulator && !window.Tabulator._patchedClearEditor){
+    window.Tabulator._patchedClearEditor = true;
+    const EditModule = window.Tabulator.prototype.modules.edit;
+    const origClear = EditModule.clearEditor;
+    EditModule.clearEditor = function(){
+        try {
+            origClear.apply(this, arguments);
+        } catch(err){
+            console.warn('Tabulator clearEditor error suprimido:', err.message);
+        }
+    };
+    console.log('Tabulator patched: clearEditor wrapped');
+}

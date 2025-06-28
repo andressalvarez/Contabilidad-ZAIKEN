@@ -228,19 +228,19 @@ window.Calculations = {
         // Crear nuevos registros en distribucionDetalleData
         arrayWeighted.forEach(obj => {
             if (obj.weighted > 0) { // Solo incluir personas con weighted > 0
-                const porcentaje = (obj.weighted / sumWeighted) * 100;
-                const montoRecibir = (porcentaje / 100) * utilidadTotal;
+            const porcentaje = (obj.weighted / sumWeighted) * 100;
+            const montoRecibir = (porcentaje / 100) * utilidadTotal;
 
-                const nuevoDetalle = {
-                    distribucionId: distribucionId,
-                    personaId: obj.personaId,
+            const nuevoDetalle = {
+                distribucionId: distribucionId,
+                personaId: obj.personaId,
                     participacionPorc: +porcentaje.toFixed(2),  // ✅ CORREGIDO: Campo correcto
                     montoRecibir: +montoRecibir.toFixed(0),     // ✅ CORREGIDO: Campo correcto
                     fecha: dist.fecha,
                     notas: `Auto distribuido - Weighted: ${obj.weighted.toFixed(2)}`
-                };
+            };
 
-                DataManager.add('distribucionDetalleData', nuevoDetalle);
+            DataManager.add('distribucionDetalleData', nuevoDetalle);
             }
         });
 
