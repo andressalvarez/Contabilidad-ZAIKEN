@@ -3,6 +3,9 @@ window.TransaccionesView = {
     table: null,
     initialized: false,
     resizeHandler: null,
+    // Gráficos de transacciones
+    chartMensual: null,
+    chartGastosCat: null,
 
     // Función principal que se ejecuta al cargar la vista
     async init() {
@@ -84,7 +87,7 @@ window.TransaccionesView = {
         if (!select) return;
 
         const campanas = DataManager.getAll('campanasData');
-        select.innerHTML = '<option value="">-- Seleccione campaña --</option>';
+        select.innerHTML = '<option value="">-- Seleccione tipo de gasto --</option>';
 
         campanas.forEach(campana => {
             const option = document.createElement('option');
@@ -469,7 +472,7 @@ window.TransaccionesView = {
                     }
                 },
                 {
-                    title: "Campaña",
+                    title: "Tipo de Gasto",
                     field: "campanaId",
                     width: 150,
                     minWidth: 120,
@@ -489,18 +492,18 @@ window.TransaccionesView = {
                                 list.push({value:c.id, label:c.nombre});
                             }
                         });
-                        list.push({value:'__clear__', label:'🗑️ Quitar campaña'});
+                        list.push({value:'__clear__', label:'🗑️ Quitar tipo'});
                         if(campanas.length===0){
-                            list.push({value:'__no_campanas__', label:'Sin campañas disponibles'});
+                            list.push({value:'__no_campanas__', label:'Sin tipos disponibles'});
                         }
                         return { values:list };
                     },
                     responsive: 7,
                     formatter: function(cell) {
                         const campanaId = cell.getValue();
-                        if (!campanaId || campanaId === '__clear__') return '<span class="text-gray-400 italic">Sin campaña</span>';
+                        if (!campanaId || campanaId === '__clear__') return '<span class="text-gray-400 italic">Sin tipo</span>';
                         const campana = DataManager.getById('campanasData', campanaId);
-                        return campana ? `<span class="text-purple-600 font-medium">${campana.nombre}</span>` : '<span class="text-gray-400 italic">Sin campaña</span>';
+                        return campana ? `<span class="text-purple-600 font-medium">${campana.nombre}</span>` : '<span class="text-gray-400 italic">Sin tipo</span>';
                     }
                 },
                 {
@@ -625,6 +628,9 @@ window.TransaccionesView = {
 
         // Refrescar los datos de los selects editables
         this.refreshSelectOptions();
+
+        // Actualizar gráficos con la data más reciente
+        this.updateCharts();
     },
 
     // Refrescar opciones de los selects editables
@@ -728,7 +734,7 @@ window.TransaccionesView = {
         const filtroCampana = document.getElementById('filtro-campana');
         if (filtroCampana) {
             const campanas = DataManager.getAll('campanasData');
-            filtroCampana.innerHTML = '<option value="">Todas las campañas</option>';
+            filtroCampana.innerHTML = '<option value="">Todos los tipos de gasto</option>';
 
             campanas.forEach(campana => {
                 const option = document.createElement('option');
@@ -913,6 +919,16 @@ window.TransaccionesView = {
             filtros.push({ field: 'campanaId', type: '=', value: parseInt(campanaId) });
         }
 
+        const startDate = document.getElementById('filtro-startDate')?.value;
+        const endDate = document.getElementById('filtro-endDate')?.value;
+
+        if (startDate) {
+            filtros.push({ field: 'fecha', type: '>=', value: startDate });
+        }
+        if (endDate) {
+            filtros.push({ field: 'fecha', type: '<=', value: endDate });
+        }
+
         if (filtros.length > 0) {
             this.table.setFilter(filtros);
         } else {
@@ -934,6 +950,11 @@ window.TransaccionesView = {
         // Limpiar búsqueda
         const searchInput = document.getElementById('search-transacciones');
         if (searchInput) searchInput.value = '';
+
+        ['filtro-startDate','filtro-endDate'].forEach(id=>{
+            const el=document.getElementById(id);
+            if(el) el.value='';
+        });
 
         this.table.clearFilter();
     },
@@ -1183,9 +1204,125 @@ window.TransaccionesView = {
             this.searchHandler = null;
         }
 
+        // Destruir gráficos si existen
+        if (this.chartMensual) { try { this.chartMensual.destroy(); } catch(e){} this.chartMensual = null; }
+        if (this.chartGastosCat) { try { this.chartGastosCat.destroy(); } catch(e){} this.chartGastosCat = null; }
+
         console.log('TransaccionesView limpiada correctamente');
         return true; // Permitir la navegación
-    }
+    },
+
+    // ---------------------------
+    //  GRÁFICOS
+    // ---------------------------
+    setupCharts() {
+        // Destruir si existen
+        if (this.chartMensual) { this.chartMensual.destroy(); this.chartMensual = null; }
+        if (this.chartGastosCat) { this.chartGastosCat.destroy(); this.chartGastosCat = null; }
+
+        const ctxMensual = document.getElementById('tx-chart-mensual');
+        const ctxGCat = document.getElementById('tx-chart-gastos-cat');
+
+        if (ctxMensual) {
+            this.chartMensual = new Chart(ctxMensual, {
+                type: 'line',
+                data: { labels: [], datasets: [
+                    { label: 'Ingresos', data: [], borderColor: '#10B981', backgroundColor: 'rgba(16,185,129,0.2)', tension: 0.3 },
+                    { label: 'Gastos', data: [], borderColor: '#EF4444', backgroundColor: 'rgba(239,68,68,0.2)', tension: 0.3 },
+                    { label: 'Aportes', data: [], borderColor: '#3B82F6', backgroundColor: 'rgba(59,130,246,0.2)', tension: 0.3 }
+                ] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, ticks: { callback: (v)=> 'COP '+Utils.formatearMoneda(v) } } } }
+            });
+        }
+
+        if (ctxGCat) {
+            this.chartGastosCat = new Chart(ctxGCat, {
+                type: 'bar',
+                data: { labels: [], datasets: [
+                    { label: 'Gasto (COP)', data: [], backgroundColor: Utils.generateColors(10) }
+                ] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: (v)=> 'COP '+Utils.formatearMoneda(v) } } } }
+            });
+        }
+
+        // Poblar selector de persona para gráficas
+        const personaSelectChart = document.getElementById('charts-persona-filter');
+        if (personaSelectChart) {
+            const personas = DataManager.getAll('personasData');
+            // Limpiar excepto primera opción
+            personaSelectChart.querySelectorAll('option:not([value=""])').forEach(o=>o.remove());
+            personas.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.nombre;
+                personaSelectChart.appendChild(opt);
+            });
+            personaSelectChart.onchange = () => {
+                this.updateCharts();
+            };
+        }
+    },
+
+    updateCharts() {
+        // Crear gráficos si aún no existen (primera llamada)
+        if (!this.chartMensual || !this.chartGastosCat) {
+            this.setupCharts();
+        }
+
+        if (!this.chartMensual || !this.chartGastosCat) return;
+
+        let transacciones = DataManager.getAll('transaccionesData') || [];
+
+        // Filtrar por persona si select tiene valor
+        const personaSelectChart = document.getElementById('charts-persona-filter');
+        if (personaSelectChart && personaSelectChart.value) {
+            const pid = +personaSelectChart.value;
+            transacciones = transacciones.filter(t => t.personaId === pid);
+        }
+
+        // Agrupar por mes
+        const mensual = {};
+        transacciones.forEach(t => {
+            if (!t.fecha) return;
+            const mes = t.fecha.slice(0, 7); // YYYY-MM
+            if (!mensual[mes]) mensual[mes] = { ing: 0, gast: 0, aporte: 0 };
+            if (t.tipo === 'Ingreso') mensual[mes].ing += t.monto;
+            else if (t.tipo === 'Gasto') mensual[mes].gast += t.monto;
+            else if (t.tipo === 'Aporte') mensual[mes].aporte += t.monto;
+        });
+
+        const meses = Object.keys(mensual).sort();
+        const dataIng = meses.map(m => mensual[m].ing);
+        const dataGast = meses.map(m => mensual[m].gast);
+        const dataAport = meses.map(m => mensual[m].aporte);
+
+        // Actualizar chart mensual
+        this.chartMensual.data.labels = meses;
+        this.chartMensual.data.datasets[0].data = dataIng;
+        this.chartMensual.data.datasets[1].data = dataGast;
+        this.chartMensual.data.datasets[2].data = dataAport;
+        this.chartMensual.update();
+
+        // Gastos por categoría (Top 10)
+        const gastosCatMap = {};
+        transacciones.filter(t => t.tipo === 'Gasto').forEach(t => {
+            const campId = t.campanaId || 'sin';
+            let nombre = 'Sin tipo';
+            if (campId !== 'sin') {
+                const camp = DataManager.getById('campanasData', campId);
+                if (camp && camp.nombre) nombre = camp.nombre;
+            }
+            gastosCatMap[nombre] = (gastosCatMap[nombre] || 0) + t.monto;
+        });
+        const topCats = Object.entries(gastosCatMap).sort((a,b) => b[1]-a[1]).slice(0,10);
+        const labelsCat = topCats.map(([cat]) => cat);
+        const dataCat = topCats.map(([,val]) => val);
+
+        this.chartGastosCat.data.labels = labelsCat.length ? labelsCat : ['Sin datos'];
+        this.chartGastosCat.data.datasets[0].data = labelsCat.length ? dataCat : [0];
+        this.chartGastosCat.data.datasets[0].backgroundColor = Utils.generateColors(labelsCat.length || 1);
+        this.chartGastosCat.update();
+    },
 };
 
 // La inicialización se maneja desde navigation.js

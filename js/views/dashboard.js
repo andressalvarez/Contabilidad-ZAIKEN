@@ -191,27 +191,31 @@ window.DashboardView = {
 
     // Actualizar gráfico de Gastos por Categoría
     updateGastosCategoriaChart(filtros) {
+        // Ahora calcula gastos por tipo de gasto (campaña)
         if (!this.chartGastosCategoria) return;
 
-        // Obtener transacciones filtradas
         let transacciones = DataManager.getAll('transaccionesData');
 
         if (filtros && (filtros.startDate || filtros.endDate)) {
             transacciones = Calculations.filtrarPorFechas(transacciones, filtros);
         }
 
-        // Calcular gastos por categoría
-        const gastosPorCategoria = {};
+        const gastosPorTipo = {};
+
         transacciones
             .filter(t => t.tipo === 'Gasto')
             .forEach(t => {
-                const categoria = t.categoria || 'Sin categoría';
-                gastosPorCategoria[categoria] = (gastosPorCategoria[categoria] || 0) + t.monto;
+                const campId = t.campanaId || 'sin';
+                let nombre = 'Sin tipo';
+                if (campId !== 'sin') {
+                    const camp = DataManager.getById('campanasData', campId);
+                    if (camp && camp.nombre) nombre = camp.nombre;
+                }
+                gastosPorTipo[nombre] = (gastosPorTipo[nombre] || 0) + t.monto;
             });
 
-        // Preparar datos para el gráfico
-        const labels = Object.keys(gastosPorCategoria);
-        const data = Object.values(gastosPorCategoria);
+        const labels = Object.keys(gastosPorTipo);
+        const data = Object.values(gastosPorTipo);
 
         if (labels.length === 0) {
             labels.push('Sin datos');

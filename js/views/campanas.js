@@ -2,6 +2,9 @@
 window.CampanasView = {
     table: null,
     initialized: false,
+    // Gráficos de campañas
+    chartIngGast: null,
+    chartRentabilidad: null,
 
     // Inicializar vista
     init() {
@@ -13,6 +16,9 @@ window.CampanasView = {
         console.log('Inicializando Campañas...');
         this.setupTable();
         this.setupForm();
+
+        // Configurar gráficos (se crearán después de que el DOM incluya los canvas)
+        this.setupCharts();
 
         this.initialized = true;
         console.log('Campañas vista inicializada');
@@ -174,6 +180,9 @@ window.CampanasView = {
 
         const campanas = DataManager.getAll('campanasData');
         this.table.setData(campanas);
+
+        // Actualizar gráficos con la data más reciente
+        this.updateCharts();
     },
 
     // ✅ CORREGIDO: Agregar nueva campaña
@@ -345,12 +354,92 @@ window.CampanasView = {
         Utils.showToast('Datos de campañas exportados', 'success');
     },
 
+    // ---------------------------
+    //  GRÁFICOS
+    // ---------------------------
+    setupCharts() {
+        // Esperar un pequeño delay para asegurar que los canvas existan
+        setTimeout(() => {
+            // Destruir existentes
+            if (this.chartIngGast) {
+                this.chartIngGast.destroy();
+                this.chartIngGast = null;
+            }
+            if (this.chartRentabilidad) {
+                this.chartRentabilidad.destroy();
+                this.chartRentabilidad = null;
+            }
+
+            const ctxIG = document.getElementById('camp-chart-ing-gast');
+            const ctxRent = document.getElementById('camp-chart-rentabilidad');
+
+            if (ctxIG) {
+                this.chartIngGast = new Chart(ctxIG, {
+                    type: 'bar',
+                    data: { labels: [], datasets: [
+                        { label: 'Ingresos', data: [], backgroundColor: '#10B981' },
+                        { label: 'Gastos', data: [], backgroundColor: '#EF4444' }
+                    ] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, ticks: { callback: (v)=> 'COP '+Utils.formatearMoneda(v) } } } }
+                });
+            }
+
+            if (ctxRent) {
+                this.chartRentabilidad = new Chart(ctxRent, {
+                    type: 'bar',
+                    data: { labels: [], datasets: [
+                        { label: 'Rentabilidad', data: [], backgroundColor: '#3B82F6' }
+                    ] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: (v)=> 'COP '+Utils.formatearMoneda(v) } } } }
+                });
+            }
+
+            // Una vez creados, actualizar con datos reales
+            this.updateCharts();
+        }, 300);
+    },
+
+    updateCharts() {
+        if (!this.chartIngGast || !this.chartRentabilidad) return; // Aún no creados
+
+        const campanas = DataManager.getAll('campanasData');
+        if (!campanas || campanas.length === 0) return;
+
+        const labels = campanas.map(c => c.nombre);
+        const ingresos = campanas.map(c => c.ingresoTotalReal || 0);
+        const gastos = campanas.map(c => c.gastoTotalReal || 0);
+        const rentabilidad = campanas.map(c => c.rentabilidadReal || 0);
+
+        // Ingresos vs Gastos
+        this.chartIngGast.data.labels = labels;
+        this.chartIngGast.data.datasets[0].data = ingresos;
+        this.chartIngGast.data.datasets[1].data = gastos;
+        this.chartIngGast.update();
+
+        // Rentabilidad
+        this.chartRentabilidad.data.labels = labels;
+        this.chartRentabilidad.data.datasets[0].data = rentabilidad;
+        this.chartRentabilidad.data.datasets[0].backgroundColor = rentabilidad.map(v => v >= 0 ? '#10B981' : '#EF4444');
+        this.chartRentabilidad.update();
+    },
+
     // Cleanup
     cleanup() {
         if (this.table) {
             this.table.destroy();
             this.table = null;
         }
+
+        // Destruir gráficos
+        if (this.chartIngGast) {
+            this.chartIngGast.destroy();
+            this.chartIngGast = null;
+        }
+        if (this.chartRentabilidad) {
+            this.chartRentabilidad.destroy();
+            this.chartRentabilidad = null;
+        }
+
         this.initialized = false;
         console.log('Campañas view cleanup completado');
     }

@@ -69,7 +69,7 @@ window.Templates = {
                         <p id="metric-personas" class="text-lg font-semibold text-gray-700">--</p>
                     </div>
                     <div class="bg-gray-50 shadow-sm p-4 rounded-md border border-gray-100">
-                        <p class="text-xs font-semibold text-gray-500 uppercase mb-1">Campañas Activas</p>
+                        <p class="text-xs font-semibold text-gray-500 uppercase mb-1">Tipos de Gasto Activos</p>
                         <p id="metric-campanas" class="text-lg font-semibold text-gray-700">--</p>
                     </div>
                 </div>
@@ -81,7 +81,7 @@ window.Templates = {
                         <div class="relative w-full h-72"><canvas id="chart-ingresos-gastos" class="absolute inset-0 w-full h-full"></canvas></div>
                     </div>
                     <div class="bg-white shadow rounded-lg p-4 overflow-hidden">
-                        <h3 class="graph-title">Gastos por Categoría</h3>
+                        <h3 class="graph-title">Gastos por Tipo de Gasto</h3>
                         <div class="relative w-full h-72"><canvas id="chart-gastos-categoria" class="absolute inset-0 w-full h-full"></canvas></div>
                     </div>
                 </div>
@@ -187,7 +187,7 @@ window.Templates = {
                             <option value="">-- Seleccione persona --</option>
                         </select>
                         <select id="rh-campanaSelect" class="w-full px-3 py-2 border border-gray-300 rounded-md">
-                            <option value="">-- Seleccione campaña --</option>
+                            <option value="">-- Seleccione tipo de gasto --</option>
                         </select>
                         <input type="number" step="0.5" id="rh-horas" placeholder="Horas" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                         <button onclick="RegistroHorasView.agregarRegistroHora()" class="btn btn-primary">
@@ -204,8 +204,8 @@ window.Templates = {
         <div class="space-y-6">
             <div class="bg-white rounded-lg shadow-md p-6">
                 <h2 class="text-2xl font-bold text-gray-800 mb-6">
-                    <i class="bi bi-megaphone mr-2"></i>
-                    Gestión de Campañas
+                    <i class="bi bi-receipt"></i>
+                    Gestión de Gastos
                 </h2>
                 <div class="bg-gray-50 rounded-lg p-6 mb-6">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -222,6 +222,17 @@ window.Templates = {
                     </div>
                 </div>
                 <div id="campanas-table"></div>
+                <!-- Gráficas de Campañas -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8" id="campanas-charts">
+                    <div class="bg-white shadow rounded-lg p-4 overflow-hidden">
+                        <h3 class="graph-title">Ingresos vs Gastos por Campaña</h3>
+                        <div class="relative w-full h-72"><canvas id="camp-chart-ing-gast" class="absolute inset-0 w-full h-full"></canvas></div>
+                    </div>
+                    <div class="bg-white shadow rounded-lg p-4 overflow-hidden">
+                        <h3 class="graph-title">Rentabilidad Real por Campaña</h3>
+                        <div class="relative w-full h-72"><canvas id="camp-chart-rentabilidad" class="absolute inset-0 w-full h-full"></canvas></div>
+                    </div>
+                </div>
             </div>
         </div>
     `,
@@ -261,7 +272,7 @@ window.Templates = {
                             <option value="">-- Seleccione persona --</option>
                         </select>
                         <select id="tx-campanaSelect" class="w-full px-3 py-2 border border-gray-300 rounded-md">
-                            <option value="">-- Seleccione campaña --</option>
+                            <option value="">-- Seleccione tipo de gasto --</option>
                         </select>
                     </div>
                     <div class="grid grid-cols-1 gap-4 mt-4">
@@ -275,6 +286,8 @@ window.Templates = {
                 <div class="bg-blue-50 rounded-lg p-4 mb-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">Filtros y Búsqueda</h3>
                     <div class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4">
+                        <input type="date" id="filtro-startDate" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                        <input type="date" id="filtro-endDate" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
                         <input type="text" id="search-transacciones" placeholder="Buscar..." class="w-full px-3 py-2 border border-gray-300 rounded-md">
                         <select id="filtro-tipo" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                             <option value="">Todos los tipos</option>
@@ -289,7 +302,7 @@ window.Templates = {
                             <option value="">Todas las personas</option>
                         </select>
                         <select id="filtro-campana" class="w-full px-3 py-2 border border-gray-300 rounded-md">
-                            <option value="">Todas las campañas</option>
+                            <option value="">Todos los tipos de gasto</option>
                         </select>
                         <div class="flex gap-2">
                             <button onclick="TransaccionesView.aplicarFiltros()" class="btn btn-sm btn-secondary">
@@ -309,6 +322,25 @@ window.Templates = {
                             <i class="bi bi-bar-chart mr-1"></i>
                             Actualizar Stats
                         </button>
+                    </div>
+                </div>
+
+                <!-- Filtro de persona para gráficas -->
+                <div class="mb-4 flex items-center gap-3">
+                    <label for="charts-persona-filter" class="text-sm font-medium text-gray-700">Filtrar persona (gráficas):</label>
+                    <select id="charts-persona-filter" class="px-3 py-2 border border-gray-300 rounded-md">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+                <!-- Gráficas de Transacciones -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10" id="transacciones-charts">
+                    <div class="bg-white shadow rounded-lg p-4 overflow-hidden">
+                        <h3 class="graph-title">Ingresos y Gastos Mensuales</h3>
+                        <div class="relative w-full h-72"><canvas id="tx-chart-mensual" class="absolute inset-0 w-full h-full"></canvas></div>
+                    </div>
+                    <div class="bg-white shadow rounded-lg p-4 overflow-hidden">
+                        <h3 class="graph-title">Gastos por Tipo de Gasto (Top 10)</h3>
+                        <div class="relative w-full h-72"><canvas id="tx-chart-gastos-cat" class="absolute inset-0 w-full h-full"></canvas></div>
                     </div>
                 </div>
 
