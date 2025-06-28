@@ -1,0 +1,155 @@
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Valor por Hora</h1>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Define el valor que cobra cada persona por hora trabajada
+            </p>
+        </div>
+        <div class="mt-4 sm:mt-0 flex space-x-3">
+            <button onclick="exportarValorHora()" class="btn btn-secondary">
+                <i class="bi bi-download mr-2"></i>Exportar CSV
+            </button>
+            <button onclick="recalcularTodo()" class="btn btn-primary">
+                <i class="bi bi-arrow-clockwise mr-2"></i>Recalcular
+            </button>
+        </div>
+    </div>
+
+    <!-- Formulario de Agregar Valor Hora -->
+    <div class="card">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            <i class="bi bi-currency-dollar mr-2"></i>Agregar Valor por Hora
+        </h3>
+
+        <form id="form-valor-hora" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="form-group">
+                <label for="valorhora-personaId" class="form-label">
+                    Persona:
+                    <i class="bi bi-info-circle-fill ml-1" data-bs-toggle="tooltip"
+                       title="Selecciona la persona para asignar valor por hora"></i>
+                </label>
+                <select id="valorhora-personaId" class="form-input" required>
+                    <option value="">Seleccionar persona...</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="valorhora-valor" class="form-label">
+                    Valor por Hora ($):
+                    <i class="bi bi-info-circle-fill ml-1" data-bs-toggle="tooltip"
+                       title="Precio en pesos que cobra esta persona por cada hora trabajada"></i>
+                </label>
+                <input type="number" id="valorhora-valor" class="form-input"
+                       placeholder="50000" min="0" step="1000" required />
+            </div>
+
+            <div class="form-group">
+                <label for="valorhora-fechaInicio" class="form-label">
+                    Fecha Inicio:
+                    <i class="bi bi-info-circle-fill ml-1" data-bs-toggle="tooltip"
+                       title="Fecha desde cuándo aplica este valor"></i>
+                </label>
+                <input type="date" id="valorhora-fechaInicio" class="form-input" required />
+            </div>
+
+            <div class="flex items-end">
+                <button type="submit" class="btn btn-primary w-full">
+                    <i class="bi bi-currency-dollar mr-2"></i>Asignar Valor
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Estadísticas Rápidas -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="card bg-gradient-to-r from-green-500 to-green-600 text-white">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="bi bi-currency-dollar text-3xl opacity-80"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-green-100 text-sm font-medium">Valor Promedio</p>
+                    <p class="text-2xl font-bold" id="stat-valor-promedio">$0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="bi bi-people text-3xl opacity-80"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-blue-100 text-sm font-medium">Personas con Valor</p>
+                    <p class="text-2xl font-bold" id="stat-personas-valor">0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="bi bi-graph-up text-3xl opacity-80"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-purple-100 text-sm font-medium">Valor Máximo</p>
+                    <p class="text-2xl font-bold" id="stat-valor-maximo">$0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Valores por Hora -->
+    <div class="card">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+                <i class="bi bi-table mr-2"></i>Valores por Hora Actuales
+            </h3>
+            <div class="mt-2 sm:mt-0 flex space-x-2">
+                <input type="text" id="search-valor-hora" class="form-input w-64"
+                       placeholder="Buscar valores..." />
+                <button onclick="refreshTable()" class="btn btn-secondary">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="valor-hora-table" class="overflow-hidden"></div>
+    </div>
+
+    <!-- Información Adicional -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="card">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                <i class="bi bi-info-circle mr-2"></i>Información sobre Valores por Hora
+            </h3>
+            <div class="space-y-3 text-sm text-gray-600 dark:text-gray-300">
+                <p>• El valor por hora determina cuánto se cobra por trabajo realizado.</p>
+                <p>• Puedes tener múltiples valores históricos por persona.</p>
+                <p>• Solo el valor más reciente se usa para cálculos actuales.</p>
+                <p>• Los valores se consideran desde la fecha de inicio especificada.</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                <i class="bi bi-calculator mr-2"></i>Calculadora Rápida
+            </h3>
+            <div class="space-y-3">
+                <div class="flex items-center space-x-2">
+                    <input type="number" id="calc-horas" class="form-input flex-1"
+                           placeholder="Horas" min="0" step="0.5" />
+                    <span class="text-gray-500">×</span>
+                    <input type="number" id="calc-valor" class="form-input flex-1"
+                           placeholder="Valor/hora" min="0" step="1000" />
+                </div>
+                <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <span class="text-sm text-gray-600 dark:text-gray-300">Total: </span>
+                    <span class="text-lg font-bold text-gray-900 dark:text-white" id="calc-resultado">$0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

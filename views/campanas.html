@@ -1,0 +1,212 @@
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Gestión de Campañas</h1>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Administra las campañas de marketing y sus resultados
+            </p>
+        </div>
+        <div class="mt-4 sm:mt-0 flex space-x-3">
+            <button onclick="exportarCampanas()" class="btn btn-secondary">
+                <i class="bi bi-download mr-2"></i>Exportar CSV
+            </button>
+            <button onclick="recalcularTodo()" class="btn btn-primary">
+                <i class="bi bi-arrow-clockwise mr-2"></i>Recalcular
+            </button>
+        </div>
+    </div>
+
+    <!-- Formulario de Agregar Campaña -->
+    <div class="card">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            <i class="bi bi-megaphone mr-2"></i>Crear Nueva Campaña
+        </h3>
+
+        <form id="form-campana" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="form-group">
+                <label for="campana-nombre" class="form-label">
+                    Nombre de la Campaña:
+                    <i class="bi bi-info-circle-fill ml-1" data-bs-toggle="tooltip"
+                       title="Nombre identificativo de la campaña"></i>
+                </label>
+                <input type="text" id="campana-nombre" class="form-input"
+                       placeholder="Campaña Black Friday 2024" required />
+            </div>
+
+            <div class="form-group">
+                <label for="campana-fechaInicio" class="form-label">
+                    Fecha Inicio:
+                    <i class="bi bi-info-circle-fill ml-1" data-bs-toggle="tooltip"
+                       title="Fecha de inicio de la campaña"></i>
+                </label>
+                <input type="date" id="campana-fechaInicio" class="form-input" required />
+            </div>
+
+            <div class="form-group">
+                <label for="campana-fechaFin" class="form-label">
+                    Fecha Fin:
+                    <i class="bi bi-info-circle-fill ml-1" data-bs-toggle="tooltip"
+                       title="Fecha de finalización de la campaña"></i>
+                </label>
+                <input type="date" id="campana-fechaFin" class="form-input" />
+            </div>
+
+            <div class="form-group">
+                <label for="campana-presupuesto" class="form-label">
+                    Presupuesto ($):
+                    <i class="bi bi-info-circle-fill ml-1" data-bs-toggle="tooltip"
+                       title="Presupuesto total asignado a la campaña"></i>
+                </label>
+                <input type="number" id="campana-presupuesto" class="form-input"
+                       placeholder="1000000" min="0" step="10000" />
+            </div>
+
+            <div class="form-group">
+                <label for="campana-inversion" class="form-label">
+                    Inversión Real ($):
+                    <i class="bi bi-info-circle-fill ml-1" data-bs-toggle="tooltip"
+                       title="Cantidad realmente invertida en la campaña"></i>
+                </label>
+                <input type="number" id="campana-inversion" class="form-input"
+                       placeholder="850000" min="0" step="10000" />
+            </div>
+
+            <div class="form-group">
+                <label for="campana-ingresos" class="form-label">
+                    Ingresos Generados ($):
+                    <i class="bi bi-info-circle-fill ml-1" data-bs-toggle="tooltip"
+                       title="Ingresos directos generados por la campaña"></i>
+                </label>
+                <input type="number" id="campana-ingresos" class="form-input"
+                       placeholder="2500000" min="0" step="10000" />
+            </div>
+
+            <div class="form-group md:col-span-2">
+                <label for="campana-descripcion" class="form-label">
+                    Descripción:
+                    <i class="bi bi-info-circle-fill ml-1" data-bs-toggle="tooltip"
+                       title="Descripción detallada de la campaña"></i>
+                </label>
+                <textarea id="campana-descripcion" class="form-input" rows="2"
+                          placeholder="Descripción de la campaña, objetivos, canales utilizados..."></textarea>
+            </div>
+
+            <div class="flex items-end">
+                <button type="submit" class="btn btn-primary w-full">
+                    <i class="bi bi-megaphone mr-2"></i>Crear Campaña
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Estadísticas Rápidas -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="card bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="bi bi-megaphone text-3xl opacity-80"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-blue-100 text-sm font-medium">Campañas Activas</p>
+                    <p class="text-2xl font-bold" id="stat-campanas-activas">0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-gradient-to-r from-emerald-500 to-emerald-600 text-white">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="bi bi-graph-up-arrow text-3xl opacity-80"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-emerald-100 text-sm font-medium">ROI Promedio</p>
+                    <p class="text-2xl font-bold" id="stat-roi-promedio">0%</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-gradient-to-r from-amber-500 to-amber-600 text-white">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="bi bi-currency-dollar text-3xl opacity-80"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-amber-100 text-sm font-medium">Inversión Total</p>
+                    <p class="text-2xl font-bold" id="stat-inversion-total">$0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="bi bi-trophy text-3xl opacity-80"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-purple-100 text-sm font-medium">Ingresos Total</p>
+                    <p class="text-2xl font-bold" id="stat-ingresos-total">$0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            <i class="bi bi-funnel mr-2"></i>Filtros de Búsqueda
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="form-group">
+                <label for="filter-estado" class="form-label">Estado:</label>
+                <select id="filter-estado" class="form-input">
+                    <option value="">Todos los estados</option>
+                    <option value="activa">Activas</option>
+                    <option value="finalizada">Finalizadas</option>
+                    <option value="planificada">Planificadas</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="filter-fecha-desde" class="form-label">Desde:</label>
+                <input type="date" id="filter-fecha-desde" class="form-input" />
+            </div>
+            <div class="form-group">
+                <label for="filter-fecha-hasta" class="form-label">Hasta:</label>
+                <input type="date" id="filter-fecha-hasta" class="form-input" />
+            </div>
+            <div class="flex items-end">
+                <button onclick="aplicarFiltros()" class="btn btn-secondary w-full">
+                    <i class="bi bi-search mr-2"></i>Filtrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Campañas -->
+    <div class="card">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+                <i class="bi bi-table mr-2"></i>Listado de Campañas
+            </h3>
+            <div class="mt-2 sm:mt-0 flex space-x-2">
+                <input type="text" id="search-campanas" class="form-input w-64"
+                       placeholder="Buscar campañas..." />
+                <button onclick="refreshTable()" class="btn btn-secondary">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="campanas-table" class="overflow-hidden"></div>
+    </div>
+
+    <!-- Gráfico de Performance -->
+    <div class="card">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            <i class="bi bi-bar-chart mr-2"></i>Performance de Campañas
+        </h3>
+        <div class="h-64">
+            <canvas id="campanasChart"></canvas>
+        </div>
+    </div>
+</div>

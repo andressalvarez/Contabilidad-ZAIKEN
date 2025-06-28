@@ -1,0 +1,2011 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Sistema de Gestión Completo (Filtrado por Fechas Corrección)</title>
+
+    <!-- Bootstrap (para tooltips e íconos) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Tabulator CSS y JS -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/tabulator-tables@5.4.4/dist/css/tabulator.min.css"
+        rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/tabulator-tables@5.4.4/dist/js/tabulator.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+
+        h1 {
+            margin: 20px;
+            text-align: center;
+            color: #333;
+        }
+
+        /* Estilos para las pestañas */
+        .tabs {
+            display: flex;
+            background-color: #333;
+        }
+
+        .tabs button {
+            background-color: inherit;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: background-color 0.3s;
+            color: white;
+            font-size: 16px;
+        }
+
+        .tabs button:hover {
+            background-color: #575757;
+        }
+
+        .tabs button.active {
+            background-color: #575757;
+        }
+
+        /* Estilos para el contenido de las pestañas */
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Container para las secciones */
+        .container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Estilos para las secciones individuales */
+        .table-section {
+            border: 1px solid #ccc;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            background-color: #fafafa;
+        }
+
+        .table-section h2 {
+            margin-top: 0;
+            color: #444;
+        }
+
+        .tabulator {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .form-inline {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .form-inline label {
+            width: auto;
+            min-width: 100px;
+            color: #555;
+        }
+
+        .form-inline input,
+        .form-inline select {
+            padding: 6px;
+            border: 1px solid #aaa;
+            border-radius: 4px;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .form-inline button {
+            padding: 6px 12px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .form-inline button:hover {
+            background-color: #218838;
+        }
+
+        .summary {
+            margin-top: 1rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .dashboard {
+            border: 1px solid #ccc;
+            padding: 1rem;
+            border-radius: 8px;
+            background-color: #fff;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard h2 {
+            margin-top: 0;
+            color: #444;
+        }
+
+        .dashboard p {
+            margin: 8px 0;
+            font-size: 16px;
+        }
+
+        /* Estilos para el filtrado por fechas en el Dashboard */
+        .fecha-filtro {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .fecha-filtro label {
+            min-width: 100px;
+            color: #555;
+        }
+
+        .fecha-filtro input {
+            padding: 6px;
+            border: 1px solid #aaa;
+            border-radius: 4px;
+            min-width: 150px;
+        }
+
+        .fecha-filtro button {
+            padding: 6px 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .fecha-filtro button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .form-inline,
+            .fecha-filtro {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .form-inline label,
+            .fecha-filtro label {
+                min-width: 100%;
+            }
+
+            .form-inline input,
+            .form-inline select,
+            .fecha-filtro input {
+                min-width: 100%;
+            }
+
+            .form-inline button,
+            .fecha-filtro button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<h1>Sistema de Gestión: Dropshipping</h1>
+
+<!-- Pestañas de Navegación -->
+<div class="tabs">
+    <button class="tab-link active" onclick="openTab(event, 'dashboard')">Dashboard</button>
+    <button class="tab-link" onclick="openTab(event, 'personas')">Personas</button>
+    <button class="tab-link" onclick="openTab(event, 'roles')">Roles</button>
+    <button class="tab-link" onclick="openTab(event, 'valorHora')">Valor Hora</button>
+    <button class="tab-link" onclick="openTab(event, 'registroHoras')">Registro de Horas</button>
+    <button class="tab-link" onclick="openTab(event, 'campanas')">Campañas</button>
+    <button class="tab-link" onclick="openTab(event, 'transacciones')">Transacciones</button>
+    <button class="tab-link" onclick="openTab(event, 'categorias')">Categorías</button>
+    <button class="tab-link" onclick="openTab(event, 'distribucionUtilidades')">Distribución Utilidades</button>
+    <button class="tab-link" onclick="openTab(event, 'distribucionDetalle')">Distribución Detalle</button>
+</div>
+
+<!-- Contenido de las Pestañas -->
+<div id="dashboard" class="tab-content active">
+    <div class="dashboard">
+        <h2>Dashboard de Resúmenes</h2>
+
+        <!-- Sección de Filtrado por Fechas -->
+        <div class="fecha-filtro">
+            <label for="dashboard-startDate">
+              Desde:
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Selecciona la fecha inicial para filtrar"></i>
+            </label>
+            <input type="date" id="dashboard-startDate" />
+            <label for="dashboard-endDate">
+              Hasta:
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Selecciona la fecha final para filtrar"></i>
+            </label>
+            <input type="date" id="dashboard-endDate" />
+            <button onclick="aplicarFiltroFechas()">Filtrar</button>
+            <button onclick="limpiarFiltroFechas()">Limpiar Filtro</button>
+        </div>
+
+        <div id="dashboard-resumen"></div>
+        <button onclick="generarResumen()">Actualizar Resumen</button>
+         <!-- BOTÓN PARA DESCARGAR BACKUP JSON -->
+         <button onclick="descargarBackupJSON()" style="margin-top:10px; background-color:#fa8231; color:#fff;">
+          Descargar Backup JSON
+        </button>
+        <!-- Botón para SUBIR/RESTORE Backup JSON -->
+        <button onclick="seleccionarBackupJSON()" style="margin-top:10px; background-color:#20bf6b; color:#fff;">
+          Cargar Backup JSON
+        </button>
+
+        <!-- Input de archivo (oculto) para seleccionar el JSON -->
+        <input
+          type="file"
+          id="backupFileInput"
+          accept="application/json"
+          style="display:none"
+          onchange="importarBackupJSON(event)"
+        />
+
+    </div>
+</div>
+
+<div id="personas" class="tab-content">
+    <div class="table-section">
+        <h2>Personas</h2>
+        <div class="form-inline">
+            <label>
+              Nombre:
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Ingrese el nombre de la persona (socio, colaborador, etc.)"></i>
+            </label>
+            <input type="text" id="persona-nombre" />
+            <label>
+              Rol:
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Asigne el rol principal que desempeña esta persona"></i>
+            </label>
+            <select id="persona-rolSelect"></select>
+            <button onclick="agregarPersona()">Agregar Persona</button>
+        </div>
+        <div id="personas-table"></div>
+    </div>
+</div>
+
+<div id="roles" class="tab-content">
+    <div class="table-section">
+        <h2>Roles</h2>
+        <div class="form-inline">
+            <label>
+              Nombre Rol:
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Ejemplo: Gerente, Diseñador, etc."></i>
+            </label>
+            <input type="text" id="rol-nombreRol" />
+            <label>
+              Importancia %:
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Peso porcentual que afecta la participación en utilidades"></i>
+            </label>
+            <input type="number" id="rol-importancia" />
+            <button onclick="agregarRol()">Agregar Rol</button>
+        </div>
+        <div id="roles-table"></div>
+    </div>
+</div>
+
+<div id="valorHora" class="tab-content">
+    <div class="table-section">
+        <h2>Valor Hora</h2>
+        <div class="form-inline">
+            <label>
+              Persona:
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Seleccione quién tendrá este valor hora asignado"></i>
+            </label>
+            <select id="vh-personaSelect"></select>
+            <label>
+              Rol:
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Rol asociado a la persona para el cálculo del valor hora"></i>
+            </label>
+            <select id="vh-rolSelect"></select>
+            <label>
+              Valor Hora (COP):
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Monto de dinero por hora de trabajo para esta persona"></i>
+            </label>
+            <input type="number" id="vh-valor" />
+            <button onclick="agregarValorHora()">Agregar ValorHora</button>
+        </div>
+        <div id="valor-hora-table"></div>
+    </div>
+</div>
+
+<div id="registroHoras" class="tab-content">
+    <div class="table-section">
+        <h2>Registro de Horas</h2>
+        <div class="form-inline">
+            <label>
+              Fecha:
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Fecha en que se trabajaron las horas"></i>
+            </label>
+            <input type="date" id="rh-fecha" />
+            <label>
+              Persona:
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Seleccione quién dedicó esas horas"></i>
+            </label>
+            <select id="rh-personaSelect"></select>
+            <label>
+              Campaña:
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Proyecto o campaña a la que se dedicaron las horas"></i>
+            </label>
+            <select id="rh-campanaSelect"></select>
+            <label>
+              Horas dedicadas:
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Número de horas trabajadas en esa fecha"></i>
+            </label>
+            <input type="number" step="0.5" id="rh-horas" />
+            <button onclick="agregarRegistroHora()">Agregar Registro</button>
+        </div>
+        <div id="registro-horas-table"></div>
+    </div>
+</div>
+
+<div id="campanas" class="tab-content">
+    <div class="table-section">
+        <h2>Campañas / Proyectos</h2>
+        <div class="form-inline">
+            <label>
+              Nombre:
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Nombre identificativo de la campaña o proyecto"></i>
+            </label>
+            <input type="text" id="camp-nombre" />
+            <label>
+              Fecha Inicio:
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Fecha de inicio del proyecto"></i>
+            </label>
+            <input type="date" id="camp-fechaInicio" />
+            <label>
+              Fecha Fin:
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Fecha de término del proyecto"></i>
+            </label>
+            <input type="date" id="camp-fechaFin" />
+            <label>
+              Presupuesto (COP):
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Valor estimado para gastar en la campaña"></i>
+            </label>
+            <input type="number" id="camp-presupuesto" />
+            <label>
+              Objetivo Ingresos (COP):
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Ingresos o meta de ventas esperadas con la campaña"></i>
+            </label>
+            <input type="number" id="camp-objetivoIngresos" />
+            <button onclick="agregarCampana()">Agregar Campaña</button>
+        </div>
+        <div id="campanas-table"></div>
+    </div>
+</div>
+
+<div id="transacciones" class="tab-content">
+    <div class="table-section">
+        <h2>Transacciones</h2>
+        <div class="form-inline">
+            <label>
+              Fecha:
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Fecha de la transacción (gasto, ingreso o aporte)"></i>
+            </label>
+            <input type="date" id="tx-fecha" />
+            <label>
+              Tipo:
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Seleccione si es Ingreso, Gasto o Aporte socio"></i>
+            </label>
+            <select id="tx-tipo">
+                <option value="Ingreso">Ingreso</option>
+                <option value="Gasto">Gasto</option>
+                <option value="Aporte">Aporte</option>
+            </select>
+            <label>
+              Concepto:
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Descripción breve de la transacción"></i>
+            </label>
+            <input type="text" id="tx-concepto" />
+            <label>
+              Categoría:
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Clasificación de la transacción (ej. Publicidad, Aporte socio, etc.)"></i>
+            </label>
+            <select id="tx-categoria"></select>
+            <label>
+              Monto (COP):
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Valor total de la transacción en pesos colombianos"></i>
+            </label>
+            <input type="number" id="tx-monto" />
+            <label>
+              Persona:
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Quién realiza la transacción, si aplica"></i>
+            </label>
+            <select id="tx-personaSelect"></select>
+            <label>
+              Campaña:
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Proyecto o campaña relacionada con la transacción"></i>
+            </label>
+            <select id="tx-campanaSelect"></select>
+            <button onclick="agregarTransaccion()">Agregar Tx</button>
+        </div>
+        <div id="transacciones-table"></div>
+    </div>
+</div>
+
+<div id="categorias" class="tab-content">
+    <div class="table-section">
+        <h2>Categorías</h2>
+        <div class="form-inline">
+            <label>
+              Nombre Categoría:
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Ejemplo: Dominio/Hosting, Publicidad, etc."></i>
+            </label>
+            <input type="text" id="categoria-nombre" />
+            <button onclick="agregarCategoria()">Agregar Categoría</button>
+        </div>
+        <div id="categorias-table"></div>
+    </div>
+</div>
+
+<div id="distribucionUtilidades" class="tab-content">
+    <div class="table-section">
+        <h2>Distribución de Utilidades</h2>
+        <div class="form-inline">
+            <label>
+              Periodo:
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Ejemplo: 'Enero 2025' para agrupar las utilidades del periodo"></i>
+            </label>
+            <input type="text" id="du-periodo" placeholder="Enero 2025" />
+            <label>
+              Fecha:
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Fecha en que se registra la distribución de utilidades"></i>
+            </label>
+            <input type="date" id="du-fecha" />
+            <label>
+              Utilidad Total (COP):
+              <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Monto final de utilidades a repartir"></i>
+            </label>
+            <input type="number" id="du-utilidad" />
+            <button onclick="agregarDistribucion()">Agregar Distribución</button>
+        </div>
+        <div id="distribucion-utilidades-table"></div>
+    </div>
+</div>
+
+<div id="distribucionDetalle" class="tab-content">
+    <div class="table-section">
+      <h2>Distribución Detalle</h2>
+      <div class="form-inline">
+        <label>
+          Distribución:
+          <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Seleccione la distribución de utilidades donde desea agregar detalle"></i>
+        </label>
+        <select id="dd-distSelect"></select>
+        <label>
+          Persona:
+          <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="El socio o colaborador que recibirá parte de la utilidad"></i>
+        </label>
+        <select id="dd-personaSelect"></select>
+        <label>
+          Participación %:
+          <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Porcentaje de esa distribución que corresponde a esta persona"></i>
+        </label>
+        <input type="number" step="1" id="dd-participacion" />
+        <label>
+          Fecha:
+          <i class="bi bi-info-circle-fill" data-bs-toggle="tooltip" title="Fecha específica del registro (puede ser la misma de la distribución)"></i>
+        </label>
+        <input type="date" id="dd-fecha" />
+        <button onclick="agregarDistribucionDetalle()">Agregar Detalle</button>
+
+        <!-- NUEVO BOTÓN: Repartir automático -->
+        <button onclick="repartirUtilidadAutomatica()"
+                style="background-color:#f39c12; color:white;">
+          Repartir Automático
+        </button>
+      </div>
+      <div id="distribucion-detalle-table"></div>
+    </div>
+  </div>
+
+
+<script>
+    /********************************************************
+     *                   DATOS INICIALES
+     ********************************************************/
+        // Roles
+    let rolesData = [
+            { id: 1, nombreRol: "Director", importancia: 40, descripcion: "Gestión general" },
+            { id: 2, nombreRol: "Operativo", importancia: 30, descripcion: "Operaciones diarias" },
+            { id: 3, nombreRol: "Marketing", importancia: 30, descripcion: "Publicidad y campañas" },
+        ];
+
+    // Personas
+    let personasData = [
+        {
+            id: 1,
+            nombre: "Juan Pérez",
+            rolId: 1,
+            horasTotales: 0,
+            aportesTotales: 0,
+            valorHora: 0,
+            inversionHoras: 0,
+            inversionTotal: 0,
+            participacionPorc: 40,
+            notas: "",
+        },
+        {
+            id: 2,
+            nombre: "Salma Gómez",
+            rolId: 3,
+            horasTotales: 0,
+            aportesTotales: 0,
+            valorHora: 0,
+            inversionHoras: 0,
+            inversionTotal: 0,
+            participacionPorc: 30,
+            notas: "",
+        },
+    ];
+
+    // Valor Hora
+    let valorHoraData = [
+        { id: 1, personaId: 1, rolId: 1, valor: 50000, notas: "" },
+        { id: 2, personaId: 2, rolId: 3, valor: 30000, notas: "" },
+    ];
+
+    // Registro de Horas
+    let registroHorasData = [];
+
+    // Campañas
+    let campanasData = [];
+
+    // Transacciones
+    let transaccionesData = [];
+
+    // Distribución de Utilidades
+    let distribucionUtilidadesData = [];
+
+    // Distribución Detalle
+    let distribucionDetalleData = [];
+
+    // Categorías
+    let categoriasData = [
+        { id: 1, nombreCategoria: "Publicidad (TikTok)" },
+        { id: 2, nombreCategoria: "Publicidad (Facebook)" },
+        { id: 3, nombreCategoria: "Dominio/Hosting" },
+        { id: 4, nombreCategoria: "Aporte socio" },
+        { id: 5, nombreCategoria: "Venta / Ingreso campaña" },
+        { id: 6, nombreCategoria: "Otros" },
+    ];
+
+    /********************************************************
+     *  FUNCIÓN PARA OBTENER EL ID MÁXIMO DE UN ARRAY
+     ********************************************************/
+    function getMaxId(dataArray) {
+      let max = 0;
+      dataArray.forEach(item => {
+        if (item.id > max) {
+          max = item.id;
+        }
+      });
+      return max;
+    }
+
+    /********************************************************
+     *  SINCRONIZAR LOS CONTADORES CON EL ID MÁS ALTO
+     ********************************************************/
+    let rolCounter                    = getMaxId(rolesData) + 1;
+    let personaCounter                = getMaxId(personasData) + 1;
+    let valorHoraCounter              = getMaxId(valorHoraData) + 1;
+    let registroHorasCounter          = getMaxId(registroHorasData) + 1;
+    let campanasCounter               = getMaxId(campanasData) + 1;
+    let transaccionesCounter          = getMaxId(transaccionesData) + 1;
+    let distribucionUtilidadesCounter = getMaxId(distribucionUtilidadesData) + 1;
+    let distribucionDetalleCounter    = getMaxId(distribucionDetalleData) + 1;
+    let categoriasCounter             = getMaxId(categoriasData) + 1;
+
+
+
+    /********************************************************
+     *        CARGAR / GUARDAR DATOS EN LOCALSTORAGE
+     ********************************************************/
+    function cargarDatos() {
+        rolesData = JSON.parse(localStorage.getItem('rolesData')) || rolesData;
+        personasData = JSON.parse(localStorage.getItem('personasData')) || personasData;
+        valorHoraData = JSON.parse(localStorage.getItem('valorHoraData')) || valorHoraData;
+        registroHorasData = JSON.parse(localStorage.getItem('registroHorasData')) || registroHorasData;
+        campanasData = JSON.parse(localStorage.getItem('campanasData')) || campanasData;
+        transaccionesData = JSON.parse(localStorage.getItem('transaccionesData')) || transaccionesData;
+        distribucionUtilidadesData = JSON.parse(localStorage.getItem('distribucionUtilidadesData')) || distribucionUtilidadesData;
+        distribucionDetalleData = JSON.parse(localStorage.getItem('distribucionDetalleData')) || distribucionDetalleData;
+        categoriasData = JSON.parse(localStorage.getItem('categoriasData')) || categoriasData;
+
+       // 2) Volvemos a SINCRONIZAR contadores al ID máximo
+            rolCounter                    = getMaxId(rolesData) + 1;
+            personaCounter                = getMaxId(personasData) + 1;
+            valorHoraCounter              = getMaxId(valorHoraData) + 1;
+            registroHorasCounter          = getMaxId(registroHorasData) + 1;
+            campanasCounter               = getMaxId(campanasData) + 1;
+            transaccionesCounter          = getMaxId(transaccionesData) + 1;
+            distribucionUtilidadesCounter = getMaxId(distribucionUtilidadesData) + 1;
+            distribucionDetalleCounter    = getMaxId(distribucionDetalleData) + 1;
+            categoriasCounter             = getMaxId(categoriasData) + 1;
+    }
+
+    function guardarDatos() {
+        localStorage.setItem('rolesData', JSON.stringify(rolesData));
+        localStorage.setItem('personasData', JSON.stringify(personasData));
+        localStorage.setItem('valorHoraData', JSON.stringify(valorHoraData));
+        localStorage.setItem('registroHorasData', JSON.stringify(registroHorasData));
+        localStorage.setItem('campanasData', JSON.stringify(campanasData));
+        localStorage.setItem('transaccionesData', JSON.stringify(transaccionesData));
+        localStorage.setItem('distribucionUtilidadesData', JSON.stringify(distribucionUtilidadesData));
+        localStorage.setItem('distribucionDetalleData', JSON.stringify(distribucionDetalleData));
+        localStorage.setItem('categoriasData', JSON.stringify(categoriasData));
+    }
+
+    /********************************************************
+     *   FUNCIONES DE CÁLCULO (Rollups / Relacionados)
+     ********************************************************/
+    function recalcularValorHora(personaId) {
+        const registro = valorHoraData.find((vh) => vh.personaId === personaId);
+        return registro ? +registro.valor : 0;
+    }
+
+    function recalcularHorasTotales(personaId) {
+        return registroHorasData.filter((rh) => rh.personaId === personaId)
+            .reduce((acc, curr) => acc + Number(curr.horas || 0), 0);
+    }
+
+    function recalcularAportesTotales(personaId) {
+        return transaccionesData.filter((t) => t.tipo === "Aporte" && t.personaId === personaId)
+            .reduce((acc, curr) => acc + Number(curr.monto || 0), 0);
+    }
+
+    function calcInversionHoras(horas, valorHora) {
+        return horas * valorHora;
+    }
+
+    function calcInversionTotal(aportesTotales, inversionHoras) {
+        return aportesTotales + inversionHoras;
+    }
+
+    function getParticipacionPorRol(rolId) {
+        const rol = rolesData.find((r) => r.id === rolId);
+        return rol ? Number(rol.importancia) : 0;
+    }
+
+    function calcGastoCampana(campanaId) {
+        return transaccionesData.filter((t) => t.tipo === "Gasto" && t.campanaId === campanaId)
+            .reduce((acc, t) => acc + Number(t.monto), 0);
+    }
+
+    function calcIngresoCampana(campanaId) {
+        return transaccionesData.filter((t) => t.tipo === "Ingreso" && t.campanaId === campanaId)
+            .reduce((acc, t) => acc + Number(t.monto), 0);
+    }
+
+    function calcHorasCampana(campanaId) {
+        return registroHorasData.filter((rh) => rh.campanaId === campanaId)
+            .reduce((acc, rh) => acc + Number(rh.horas), 0);
+    }
+
+    function calcMontoRecibir(utilidadTotal, participacion) {
+        return (utilidadTotal * participacion) / 100;
+    }
+
+    function recalcularPersonas() {
+        personasData.forEach((p) => {
+           // Forzamos rolId a número
+            p.rolId = +p.rolId;
+            // (o parseInt(p.rolId) si prefieres)
+
+            const valHora = recalcularValorHora(p.id);
+            const horasTot = recalcularHorasTotales(p.id);
+            const aportesTot = recalcularAportesTotales(p.id);
+            // Buscamos el rol con ID numérico
+            const rolPorc = getParticipacionPorRol(p.rolId);
+
+            p.valorHora = valHora;
+            p.horasTotales = horasTot;
+            p.aportesTotales = aportesTot;
+            p.inversionHoras = calcInversionHoras(horasTot, valHora);
+            p.inversionTotal = calcInversionTotal(aportesTot, p.inversionHoras);
+            p.participacionPorc = rolPorc;
+        });
+        guardarDatos();
+    }
+
+    function recalcularCampanas() {
+        campanasData.forEach((c) => {
+            c.horasInvertidas = calcHorasCampana(c.id);
+            c.gastoTotalReal = calcGastoCampana(c.id);
+            c.ingresoTotalReal = calcIngresoCampana(c.id);
+            c.rentabilidadReal = c.ingresoTotalReal - c.gastoTotalReal;
+        });
+        guardarDatos();
+    }
+
+    function recalcularDistribucion() {
+        distribucionDetalleData.forEach((d) => {
+            const dist = distribucionUtilidadesData.find((du) => du.id === d.distribucionId);
+            const utilidadTotal = dist ? dist.utilidadTotal : 0;
+            d.montoRecibir = calcMontoRecibir(utilidadTotal, d.participacionPorc);
+        });
+        guardarDatos();
+    }
+
+    function recalcularCategorias() {
+        guardarDatos();
+    }
+
+    /********************************************************
+     *        FUNCIÓN PARA PARSEAR FECHAS DE MANERA SEGURA
+     ********************************************************/
+    function parseDate(dateStr) {
+        if (!dateStr) return null;
+        const parts = dateStr.split("-");
+        if (parts.length === 3) {
+            const year = +parts[0];
+            const month = +parts[1] - 1;
+            const day = +parts[2];
+            return new Date(year, month, day);
+        }
+        const fallback = new Date(dateStr);
+        return isNaN(fallback.getTime()) ? null : fallback;
+    }
+
+    /********************************************************
+     *           INICIALIZAR TABULATORS (Tablas)
+     ********************************************************/
+    let personasTable, rolesTable, valorHoraTable,
+        registroHorasTable, campanasTable, transaccionesTable,
+        distribucionUtilidadesTable, distribucionDetalleTable,
+        categoriasTable;
+
+    function initTabulators() {
+        // Botón genérico de Eliminar
+        const deleteButton = function(cell) {
+            const button = document.createElement("button");
+            button.innerHTML = "Eliminar";
+            button.style.padding = "4px 8px";
+            button.style.backgroundColor = "#dc3545";
+            button.style.color = "white";
+            button.style.border = "none";
+            button.style.borderRadius = "4px";
+            button.style.cursor = "pointer";
+
+            button.addEventListener("click", function(){
+                const row = cell.getRow();
+                const data = row.getData();
+                const tableId = cell.getTable().element.id;
+                if(confirm(`¿Estás seguro de eliminar el registro ID ${data.id}?`)){
+                    eliminarRegistro(tableId, data.id);
+                }
+            });
+            return button;
+        };
+
+        function eliminarRegistro(tableId, id) {
+            switch(tableId) {
+                case 'personas-table':
+                    personasData = personasData.filter(p => p.id !== id);
+                    break;
+                case 'roles-table':
+                    rolesData = rolesData.filter(r => r.id !== id);
+                    // Ajustar rol en personas y valorHora
+                    personasData.forEach(p => { if(p.rolId === id) p.rolId = 0; });
+                    valorHoraData.forEach(vh => { if(vh.rolId === id) vh.rolId = 0; });
+                    break;
+                case 'valor-hora-table':
+                    valorHoraData = valorHoraData.filter(vh => vh.id !== id);
+                    break;
+                case 'registro-horas-table':
+                    registroHorasData = registroHorasData.filter(rh => rh.id !== id);
+                    break;
+                case 'campanas-table':
+                    campanasData = campanasData.filter(c => c.id !== id);
+                    registroHorasData = registroHorasData.filter(rh => rh.campanaId !== id);
+                    transaccionesData = transaccionesData.filter(t => t.campanaId !== id);
+                    break;
+                case 'transacciones-table':
+                    transaccionesData = transaccionesData.filter(t => t.id !== id);
+                    break;
+                case 'categorias-table':
+                    const categoriaEliminada = categoriasData.find(cat => cat.id === id)?.nombreCategoria;
+                    categoriasData = categoriasData.filter(cat => cat.id !== id);
+                    transaccionesData.forEach(t => {
+                        if(t.categoria === categoriaEliminada) t.categoria = "Otros";
+                    });
+                    break;
+                case 'distribucion-utilidades-table':
+                    distribucionUtilidadesData = distribucionUtilidadesData.filter(du => du.id !== id);
+                    distribucionDetalleData = distribucionDetalleData.filter(dd => dd.distribucionId !== id);
+                    break;
+                case 'distribucion-detalle-table':
+                    distribucionDetalleData = distribucionDetalleData.filter(dd => dd.id !== id);
+                    break;
+                default:
+                    alert("Campo no reconocido para eliminación.");
+                    return;
+            }
+
+            // Recalcular
+            recalcularPersonas();
+            recalcularCampanas();
+            recalcularDistribucion();
+            recalcularCategorias();
+            refreshTabulators();
+            actualizarSelectsEnFormularios();
+            guardarDatos();
+            generarResumen();
+        }
+
+        function refreshTabulators() {
+            personasTable.replaceData(personasData);
+            rolesTable.replaceData(rolesData);
+            valorHoraTable.replaceData(valorHoraData);
+            registroHorasTable.replaceData(registroHorasData);
+            campanasTable.replaceData(campanasData);
+            transaccionesTable.replaceData(transaccionesData);
+            categoriasTable.replaceData(categoriasData);
+            distribucionUtilidadesTable.replaceData(distribucionUtilidadesData);
+            distribucionDetalleTable.replaceData(distribucionDetalleData);
+        }
+
+        // Personas
+        personasTable = new Tabulator("#personas-table", {
+            data: personasData,
+            layout: "fitColumns",
+            responsiveLayout: "hide",
+            columns: [
+                { title: "ID", field: "id", width: 50 },
+                { title: "Nombre", field: "nombre", editor: "input" },
+                {
+                    title: "Rol",
+                    field: "rolId",
+                    editor: "select",
+                    editorParams: {
+                    values: rolesData.reduce((obj, role) => {
+                        obj[role.id] = role.nombreRol;
+                        return obj;
+                    }, {})
+                    },
+                    formatter: "lookup",
+                    formatterParams: {
+                        lookup: rolesData.reduce((obj, role) => {
+                            obj[role.id] = role.nombreRol; return obj;
+                        }, {})
+                    },
+                },
+                { title: "Horas Totales", field: "horasTotales", editor: false },
+                { title: "Aportes Totales (COP)", field: "aportesTotales", editor: false, formatter: "money", formatterParams: {symbol: "COP ", precision: 0} },
+                { title: "Valor Hora (COP)", field: "valorHora", editor: false, formatter: "money", formatterParams: {symbol: "COP ", precision: 0} },
+                { title: "Inversión Horas (COP)", field: "inversionHoras", editor: false, formatter: "money", formatterParams: {symbol: "COP ", precision: 0} },
+                { title: "Inversión Total (COP)", field: "inversionTotal", editor: false, formatter: "money", formatterParams: {symbol: "COP ", precision: 0} },
+                { title: "Participación %", field: "participacionPorc", editor: false },
+                { title: "Notas", field: "notas", editor: "input" },
+                {
+                    title: "Acciones",
+                    field: "acciones",
+                    formatter: deleteButton,
+                    hozAlign: "center",
+                    width: 100
+                },
+            ],
+            cellEdited: () => {
+                recalcularPersonas();
+                recalcularDistribucion();
+                personasTable.replaceData(personasData);
+                distribucionDetalleTable.replaceData(distribucionDetalleData);
+                generarResumen();
+            },
+        });
+
+        // Roles
+        rolesTable = new Tabulator("#roles-table", {
+            data: rolesData,
+            layout: "fitColumns",
+            columns: [
+                { title: "ID", field: "id", width: 50 },
+                { title: "Nombre Rol", field: "nombreRol", editor: "input" },
+                { title: "Importancia %", field: "importancia", editor: "number" },
+                { title: "Descripción", field: "descripcion", editor: "input" },
+                { title: "Acciones", field: "acciones", formatter: deleteButton, width: 100, hozAlign: "center" },
+            ],
+            cellEdited: () => {
+                recalcularPersonas();
+                recalcularDistribucion();
+                rolesTable.replaceData(rolesData);
+                personasTable.replaceData(personasData);
+                distribucionDetalleTable.replaceData(distribucionDetalleData);
+                actualizarSelectsEnFormularios();
+                generarResumen();
+            },
+        });
+
+        // ValorHora
+        valorHoraTable = new Tabulator("#valor-hora-table", {
+            data: valorHoraData,
+            layout: "fitColumns",
+            columns: [
+                { title: "ID", field: "id", width: 50 },
+                {
+                    title: "Persona",
+                    field: "personaId",
+                    editor: "select",
+                    editorParams: {
+                        values: personasData.reduce((obj, p) => {
+                            obj[p.id] = p.nombre; return obj;
+                        }, {})
+                    },
+                    formatter: "lookup",
+                    formatterParams: {
+                        lookup: personasData.reduce((obj, p) => {
+                            obj[p.id] = p.nombre; return obj;
+                        }, {})
+                    },
+                },
+                {
+                    title: "Rol",
+                    field: "rolId",
+                    editor: "select",
+                    editorParams: {
+                        values: rolesData.reduce((obj, role) => {
+                            obj[role.id] = role.nombreRol; return obj;
+                        }, {})
+                    },
+                    formatter: "lookup",
+                    formatterParams: {
+                        lookup: rolesData.reduce((obj, role) => {
+                            obj[role.id] = role.nombreRol; return obj;
+                        }, {})
+                    },
+                },
+                { title: "Valor por Hora (COP)", field: "valor", editor: "number", formatter: "money", formatterParams: { symbol: "COP ", precision: 0 } },
+                { title: "Notas", field: "notas", editor: "input" },
+                { title: "Acciones", field: "acciones", formatter: deleteButton, width: 100, hozAlign: "center" },
+            ],
+            cellEdited: () => {
+                recalcularPersonas();
+                valorHoraTable.replaceData(valorHoraData);
+                personasTable.replaceData(personasData);
+                generarResumen();
+            },
+        });
+
+        // Registro de Horas
+        registroHorasTable = new Tabulator("#registro-horas-table", {
+            data: registroHorasData,
+            layout: "fitColumns",
+            columns: [
+                { title: "ID", field: "id", width: 50 },
+                { title: "Fecha", field: "fecha", editor: "input" },
+                {
+                    title: "Persona",
+                    field: "personaId",
+                    editor: "select",
+                    editorParams: {
+                        values: personasData.reduce((obj, p) => { obj[p.id] = p.nombre; return obj; }, {})
+                    },
+                    formatter: "lookup",
+                    formatterParams: {
+                        lookup: personasData.reduce((obj, p) => { obj[p.id] = p.nombre; return obj; }, {})
+                    },
+                },
+                {
+                    title: "Campaña",
+                    field: "campanaId",
+                    editor: "select",
+                    editorParams: {
+                        values: campanasData.reduce((obj, c) => { obj[c.id] = c.nombre; return obj; }, {})
+                    },
+                    formatter: "lookup",
+                    formatterParams: {
+                        lookup: campanasData.reduce((obj, c) => { obj[c.id] = c.nombre; return obj; }, {})
+                    },
+                },
+                { title: "Horas dedicadas", field: "horas", editor: "number" },
+                { title: "Notas", field: "notas", editor: "input" },
+                { title: "Acciones", field: "acciones", formatter: deleteButton, width: 100, hozAlign: "center" },
+            ],
+            cellEdited: () => {
+                recalcularPersonas();
+                recalcularCampanas();
+                recalcularDistribucion();
+                registroHorasTable.replaceData(registroHorasData);
+                personasTable.replaceData(personasData);
+                campanasTable.replaceData(campanasData);
+                distribucionDetalleTable.replaceData(distribucionDetalleData);
+                generarResumen();
+            },
+        });
+
+        // Campañas
+        campanasTable = new Tabulator("#campanas-table", {
+            data: campanasData,
+            layout: "fitColumns",
+            columns: [
+                { title: "ID", field: "id", width: 50 },
+                { title: "Nombre", field: "nombre", editor: "input" },
+                { title: "Fecha Inicio", field: "fechaInicio", editor: "input", sorter: "date" },
+                { title: "Fecha Fin", field: "fechaFin", editor: "input", sorter: "date" },
+                { title: "Presupuesto Estimado (COP)", field: "presupuesto", editor: "number", formatter: "money", formatterParams: {symbol: "COP ", precision: 0} },
+                { title: "Objetivo Ingresos (COP)", field: "objetivoIngresos", editor: "number", formatter: "money", formatterParams: {symbol: "COP ", precision: 0} },
+                { title: "Horas Invertidas", field: "horasInvertidas", editor: false },
+                { title: "Gasto Total Real (COP)", field: "gastoTotalReal", editor: false, formatter: "money", formatterParams: {symbol: "COP ", precision: 0} },
+                { title: "Ingreso Total Real (COP)", field: "ingresoTotalReal", editor: false, formatter: "money", formatterParams: {symbol: "COP ", precision: 0} },
+                { title: "Rentabilidad Real (COP)", field: "rentabilidadReal", editor: false, formatter: "money", formatterParams: {symbol: "COP ", precision: 0} },
+                { title: "Notas", field: "notas", editor: "input" },
+                { title: "Acciones", field: "acciones", formatter: deleteButton, width: 100, hozAlign: "center" },
+            ],
+            cellEdited: () => {
+                recalcularCampanas();
+                recalcularDistribucion();
+                campanasTable.replaceData(campanasData);
+                distribucionDetalleTable.replaceData(distribucionDetalleData);
+                actualizarSelectsEnFormularios();
+                generarResumen();
+            },
+        });
+
+        // Transacciones
+        transaccionesTable = new Tabulator("#transacciones-table", {
+            data: transaccionesData,
+            layout: "fitColumns",
+            columns: [
+                { title: "ID", field: "id", width: 50 },
+                { title: "Fecha", field: "fecha", editor: "input" },
+                {
+                    title: "Tipo",
+                    field: "tipo",
+                    editor: "select",
+                    editorParams: { values: ["Ingreso", "Gasto", "Aporte"] },
+                },
+                { title: "Concepto", field: "concepto", editor: "input" },
+                {
+                    title: "Categoría",
+                    field: "categoria",
+                    editor: "select",
+                    editorParams: {
+                        values: categoriasData.reduce((obj, cat) => {
+                            obj[cat.nombreCategoria] = cat.nombreCategoria; return obj;
+                        }, {})
+                    },
+                },
+                { title: "Monto (COP)", field: "monto", editor: "number", formatter: "money", formatterParams: {symbol: "COP ", precision: 0} },
+                {
+                    title: "Moneda",
+                    field: "moneda",
+                    editor: "select",
+                    editorParams: { values: ["COP", "USD"] },
+                },
+                {
+                    title: "Persona",
+                    field: "personaId",
+                    editor: "select",
+                    editorParams: {
+                        values: personasData.reduce((obj, p) => { obj[p.id] = p.nombre; return obj; }, {})
+                    },
+                    formatter: "lookup",
+                    formatterParams: {
+                        lookup: personasData.reduce((obj, p) => { obj[p.id] = p.nombre; return obj; }, {})
+                    },
+                },
+                {
+                    title: "Campaña",
+                    field: "campanaId",
+                    editor: "select",
+                    editorParams: {
+                        values: campanasData.reduce((obj, c) => { obj[c.id] = c.nombre; return obj; }, {})
+                    },
+                    formatter: "lookup",
+                    formatterParams: {
+                        lookup: campanasData.reduce((obj, c) => { obj[c.id] = c.nombre; return obj; }, {})
+                    },
+                },
+                { title: "Notas", field: "notas", editor: "input" },
+                { title: "Acciones", field: "acciones", formatter: deleteButton, width: 100, hozAlign: "center" },
+            ],
+            cellEdited: () => {
+                recalcularPersonas();
+                recalcularCampanas();
+                recalcularDistribucion();
+                recalcularCategorias();
+                transaccionesTable.replaceData(transaccionesData);
+                personasTable.replaceData(personasData);
+                campanasTable.replaceData(campanasData);
+                distribucionDetalleTable.replaceData(distribucionDetalleData);
+                generarResumen();
+            },
+        });
+
+        // Categorías
+        categoriasTable = new Tabulator("#categorias-table", {
+            data: categoriasData,
+            layout: "fitColumns",
+            columns: [
+                { title: "ID", field: "id", width: 50 },
+                { title: "Nombre Categoría", field: "nombreCategoria", editor: "input" },
+                { title: "Acciones", field: "acciones", formatter: deleteButton, width: 100, hozAlign: "center" },
+            ],
+            cellEdited: () => {
+                actualizarSelectsEnFormularios();
+                guardarDatos();
+                transaccionesTable.replaceData(transaccionesData);
+                generarResumen();
+            },
+        });
+
+        // Distribución Utilidades
+        distribucionUtilidadesTable = new Tabulator("#distribucion-utilidades-table", {
+            data: distribucionUtilidadesData,
+            layout: "fitColumns",
+            columns: [
+                { title: "ID", field: "id", width: 50 },
+                { title: "Periodo", field: "periodo", editor: "input" },
+                { title: "Fecha", field: "fecha", editor: "input", sorter: "date" },
+                { title: "Utilidad Total (COP)", field: "utilidadTotal", editor: "number", formatter: "money", formatterParams: {symbol: "COP ", precision: 0} },
+                { title: "Notas", field: "notes", editor: "input" },
+                { title: "Acciones", field: "acciones", formatter: deleteButton, width: 100, hozAlign: "center" },
+            ],
+            cellEdited: () => {
+                recalcularDistribucion();
+                distribucionUtilidadesTable.replaceData(distribucionUtilidadesData);
+                distribucionDetalleTable.replaceData(distribucionDetalleData);
+                guardarDatos();
+                generarResumen();
+            },
+        });
+
+        // Distribución Detalle (AGREGADO EL CAMPO FECHA)
+        distribucionDetalleTable = new Tabulator("#distribucion-detalle-table", {
+            data: distribucionDetalleData,
+            layout: "fitColumns",
+            columns: [
+                { title: "ID", field: "id", width: 50 },
+                {
+                    title: "Distribución",
+                    field: "distribucionId",
+                    editor: "select",
+                    editorParams: {
+                        values: distribucionUtilidadesData.reduce((obj, dist) => {
+                            obj[dist.id] = `${dist.periodo} (${dist.fecha})`;
+                            return obj;
+                        }, {})
+                    },
+                    formatter: "lookup",
+                    formatterParams: {
+                        lookup: distribucionUtilidadesData.reduce((obj, dist) => {
+                            obj[dist.id] = `${dist.periodo} (${dist.fecha})`;
+                            return obj;
+                        }, {})
+                    },
+                },
+                {
+                    title: "Persona",
+                    field: "personaId",
+                    editor: "select",
+                    editorParams: {
+                        values: personasData.reduce((obj, p) => {
+                            obj[p.id] = p.nombre; return obj;
+                        }, {})
+                    },
+                    formatter: "lookup",
+                    formatterParams: {
+                        lookup: personasData.reduce((obj, p) => {
+                            obj[p.id] = p.nombre; return obj;
+                        }, {})
+                    },
+                },
+                { title: "Participación %", field: "participacionPorc", editor: "number" },
+                {
+                    title: "Monto a Recibir (COP)",
+                    field: "montoRecibir",
+                    editor: false,
+                    formatter: "money",
+                    formatterParams: {symbol: "COP ", precision: 0}
+                },
+                // AGREGADO: COLUMNA FECHA
+                { title: "Fecha", field: "fecha", editor: "input" },
+                { title: "Notas", field: "notas", editor: "input" },
+                {
+                    title: "Acciones",
+                    field: "acciones",
+                    formatter: deleteButton,
+                    width: 100,
+                    hozAlign: "center"
+                },
+            ],
+            cellEdited: () => {
+                recalcularDistribucion();
+                distribucionDetalleTable.replaceData(distribucionDetalleData);
+                guardarDatos();
+                generarResumen();
+            },
+        });
+    }
+
+    /********************************************************
+     *           AGREGAR DATOS (formularios)
+     ********************************************************/
+    function agregarPersona() {
+        const nombre = document.getElementById("persona-nombre").value.trim();
+        const rolId = +document.getElementById("persona-rolSelect").value;
+        if (!nombre) {
+            alert("Debe ingresar un nombre");
+            return;
+        }
+        personaCounter++;
+        personasData.push({
+            id: personaCounter,
+            nombre,
+            rolId: rolId || 0,
+            horasTotales: 0,
+            aportesTotales: 0,
+            valorHora: 0,
+            inversionHoras: 0,
+            inversionTotal: 0,
+            participacionPorc: 0,
+            notas: "",
+        });
+        recalcularPersonas();
+        personasTable.replaceData(personasData);
+
+        document.getElementById("persona-nombre").value = "";
+        document.getElementById("persona-rolSelect").value = "";
+        actualizarSelectsEnFormularios();
+        generarResumen();
+    }
+
+    function agregarRol() {
+        const nombreRol = document.getElementById("rol-nombreRol").value.trim();
+        const importancia = +document.getElementById("rol-importancia").value;
+        if (!nombreRol) {
+            alert("Debe ingresar un nombre de rol");
+            return;
+        }
+        rolCounter++;
+        rolesData.push({
+            id: rolCounter,
+            nombreRol,
+            importancia: importancia || 0,
+            descripcion: "",
+        });
+        rolesTable.replaceData(rolesData);
+        recalcularPersonas();
+        personasTable.replaceData(personasData);
+
+        document.getElementById("rol-nombreRol").value = "";
+        document.getElementById("rol-importancia").value = "";
+        actualizarSelectsEnFormularios();
+        generarResumen();
+    }
+
+    function agregarValorHora() {
+        const personaId = +document.getElementById("vh-personaSelect").value;
+        const rolId = +document.getElementById("vh-rolSelect").value;
+        const valor = +document.getElementById("vh-valor").value;
+        if (!personaId || !valor) {
+            alert("Debe ingresar Persona y ValorHora");
+            return;
+        }
+        valorHoraCounter++;
+        valorHoraData.push({
+            id: valorHoraCounter,
+            personaId,
+            rolId,
+            valor,
+            notas: "",
+        });
+        valorHoraTable.replaceData(valorHoraData);
+        recalcularPersonas();
+        personasTable.replaceData(personasData);
+        document.getElementById("vh-personaSelect").value = "";
+        document.getElementById("vh-rolSelect").value = "";
+        document.getElementById("vh-valor").value = "";
+        generarResumen();
+    }
+
+    function agregarRegistroHora() {
+        const fecha = document.getElementById("rh-fecha").value;
+        const personaId = +document.getElementById("rh-personaSelect").value;
+        const campanaId = +document.getElementById("rh-campanaSelect").value;
+        const horas = +document.getElementById("rh-horas").value;
+        if (!personaId || !horas) {
+            alert("Debe ingresar Persona y Horas");
+            return;
+        }
+        registroHorasCounter++;
+        registroHorasData.push({
+            id: registroHorasCounter,
+            fecha: fecha || "",
+            personaId,
+            campanaId: campanaId || null,
+            horas,
+            notas: "",
+        });
+        registroHorasTable.replaceData(registroHorasData);
+        recalcularPersonas();
+        personasTable.replaceData(personasData);
+        recalcularCampanas();
+        campanasTable.replaceData(campanasData);
+
+        document.getElementById("rh-fecha").value = "";
+        document.getElementById("rh-personaSelect").value = "";
+        document.getElementById("rh-campanaSelect").value = "";
+        document.getElementById("rh-horas").value = "";
+        generarResumen();
+    }
+
+    function agregarCampana() {
+        const nombre = document.getElementById("camp-nombre").value.trim();
+        const fechaInicio = document.getElementById("camp-fechaInicio").value;
+        const fechaFin = document.getElementById("camp-fechaFin").value;
+        const presupuesto = +document.getElementById("camp-presupuesto").value;
+        const objetivoIngresos = +document.getElementById("camp-objetivoIngresos").value;
+
+        if (!nombre) {
+            alert("Debe ingresar un nombre de campaña");
+            return;
+        }
+        if (!fechaInicio || !fechaFin) {
+            alert("Debe ingresar Fecha Inicio y Fecha Fin");
+            return;
+        }
+        if (new Date(fechaInicio) > new Date(fechaFin)) {
+            alert("La Fecha Inicio no puede ser posterior a la Fecha Fin");
+            return;
+        }
+        campanasCounter++;
+        campanasData.push({
+            id: campanasCounter,
+            nombre,
+            fechaInicio: fechaInicio || "",
+            fechaFin: fechaFin || "",
+            presupuesto: presupuesto || 0,
+            objetivoIngresos: objetivoIngresos || 0,
+            horasInvertidas: 0,
+            gastoTotalReal: 0,
+            ingresoTotalReal: 0,
+            rentabilidadReal: 0,
+            notas: "",
+        });
+        campanasTable.replaceData(campanasData);
+        recalcularCampanas();
+        campanasTable.replaceData(campanasData);
+
+        document.getElementById("camp-nombre").value = "";
+        document.getElementById("camp-fechaInicio").value = "";
+        document.getElementById("camp-fechaFin").value = "";
+        document.getElementById("camp-presupuesto").value = "";
+        document.getElementById("camp-objetivoIngresos").value = "";
+        actualizarSelectsEnFormularios();
+        generarResumen();
+    }
+
+    function agregarTransaccion() {
+        const fecha = document.getElementById("tx-fecha").value;
+        const tipo = document.getElementById("tx-tipo").value;
+        const concepto = document.getElementById("tx-concepto").value.trim();
+        const categoria = document.getElementById("tx-categoria").value;
+        const monto = +document.getElementById("tx-monto").value;
+        const personaId = +document.getElementById("tx-personaSelect").value || null;
+        const campanaId = +document.getElementById("tx-campanaSelect").value || null;
+
+        if (!tipo || !monto) {
+            alert("Debe ingresar Tipo y Monto");
+            return;
+        }
+        transaccionesCounter++;
+        transaccionesData.push({
+            id: transaccionesCounter,
+            fecha: fecha || "",
+            tipo,
+            concepto: concepto || "",
+            categoria: categoria || "Otros",
+            monto,
+            moneda: "COP",
+            personaId,
+            campanaId,
+            notas: "",
+        });
+        transaccionesTable.replaceData(transaccionesData);
+        recalcularPersonas();
+        personasTable.replaceData(personasData);
+        recalcularCampanas();
+        campanasTable.replaceData(campanasData);
+        recalcularDistribucion();
+        recalcularCategorias();
+        distribucionDetalleTable.replaceData(distribucionDetalleData);
+
+        document.getElementById("tx-fecha").value = "";
+        document.getElementById("tx-tipo").value = "Ingreso";
+        document.getElementById("tx-concepto").value = "";
+        document.getElementById("tx-monto").value = "";
+        document.getElementById("tx-categoria").value = "Otros";
+        document.getElementById("tx-personaSelect").value = "";
+        document.getElementById("tx-campanaSelect").value = "";
+        generarResumen();
+    }
+
+    function agregarCategoria() {
+        const nombreCategoria = document.getElementById("categoria-nombre").value.trim();
+        if (!nombreCategoria) {
+            alert("Debe ingresar un nombre de categoría");
+            return;
+        }
+        if (categoriasData.some(cat => cat.nombreCategoria.toLowerCase() === nombreCategoria.toLowerCase())) {
+            alert("La categoría ya existe.");
+            return;
+        }
+        categoriasCounter++;
+        categoriasData.push({
+            id: categoriasCounter,
+            nombreCategoria,
+        });
+        categoriasTable.replaceData(categoriasData);
+        actualizarSelectsEnFormularios();
+        guardarDatos();
+
+        document.getElementById("categoria-nombre").value = "";
+        generarResumen();
+    }
+
+    function agregarDistribucion() {
+    const periodo = document.getElementById("du-periodo").value.trim();
+    const fecha = document.getElementById("du-fecha").value;
+    const utilidad = +document.getElementById("du-utilidad").value;
+    if (!periodo) {
+        alert("Debe ingresar un periodo");
+        return;
+    }
+    distribucionUtilidadesCounter++;
+    distribucionUtilidadesData.push({
+        id: distribucionUtilidadesCounter,
+        periodo: periodo || "Periodo " + distribucionUtilidadesCounter,
+        fecha: fecha || "",
+        utilidadTotal: utilidad || 0,
+        notes: "",
+    });
+
+    // Refrescamos la tabla
+    distribucionUtilidadesTable.replaceData(distribucionUtilidadesData);
+    recalcularDistribucion();
+    distribucionDetalleTable.replaceData(distribucionDetalleData);
+
+    // (BUG FIX) ---> ACTUALIZAMOS EL SELECT QUE MUESTRA LAS DISTRIBUCIONES:
+    actualizarSelectsEnFormularios(); // <<--- IMPORTANTE
+
+    // Limpiamos el formulario
+    document.getElementById("du-periodo").value = "";
+    document.getElementById("du-fecha").value = "";
+    document.getElementById("du-utilidad").value = "";
+
+    guardarDatos();
+    generarResumen();
+}
+
+
+    // AGREGADO: Fecha para Distribución Detalle
+    function agregarDistribucionDetalle() {
+        const distId = +document.getElementById("dd-distSelect").value;
+        const personaId = +document.getElementById("dd-personaSelect").value;
+        const participacion = +document.getElementById("dd-participacion").value;
+        const fecha = document.getElementById("dd-fecha").value; // nuevo campo
+        if (!distId || !personaId || !participacion) {
+            alert("Debe seleccionar Distribución, Persona y Participación");
+            return;
+        }
+        const totalParticipacion = distribucionDetalleData
+            .filter(d => d.distribucionId === distId)
+            .reduce((acc, d) => acc + d.participacionPorc, 0) + participacion;
+        const dist = distribucionUtilidadesData.find(d => d.id === distId);
+        if (dist && totalParticipacion > 100) {
+            alert("La participación total no puede exceder el 100%");
+            return;
+        }
+        distribucionDetalleCounter++;
+        distribucionDetalleData.push({
+            id: distribucionDetalleCounter,
+            distribucionId: distId,
+            personaId,
+            participacionPorc: participacion,
+            montoRecibir: 0,
+            notas: "",
+            fecha: fecha || "",  // Guardamos la fecha
+        });
+        distribucionDetalleTable.replaceData(distribucionDetalleData);
+        recalcularDistribucion();
+        distribucionDetalleTable.replaceData(distribucionDetalleData);
+
+        document.getElementById("dd-distSelect").value = "";
+        document.getElementById("dd-personaSelect").value = "";
+        document.getElementById("dd-participacion").value = "";
+        document.getElementById("dd-fecha").value = ""; // Limpiamos el campo
+        guardarDatos();
+        generarResumen();
+    }
+
+    /********************************************************
+     *   ACTUALIZACIÓN DE SELECTS DE LOS FORMULARIOS
+     ********************************************************/
+     function actualizarSelect(selectId, data, labelField, valueField) {
+    const sel = document.getElementById(selectId);
+    if (!sel) return;
+    sel.innerHTML = '<option value="">-- Seleccione --</option>';
+
+    // Si es para "Distribución Detalle", mostramos algo más amigable:
+    if (selectId === "dd-distSelect") {
+        data.forEach((dist) => {
+            const opt = document.createElement("option");
+            opt.value = dist.id;  // Valor real
+            // Texto: "Periodo (fecha)" o como prefieras
+            opt.textContent = `${dist.periodo} (${dist.fecha})`;
+            sel.appendChild(opt);
+        });
+    } else {
+        // Caso genérico que ya tenías
+        data.forEach((item) => {
+            const opt = document.createElement("option");
+            opt.value = item[valueField];
+            opt.textContent = item[labelField];
+            sel.appendChild(opt);
+        });
+    }
+}
+function setDefaultDatesToToday() {
+    const dateInputs = [
+        "rh-fecha",       // Registro Horas
+        "camp-fechaInicio",
+        "camp-fechaFin",
+        "tx-fecha",       // Transacciones
+        "du-fecha",       // Distribucion Utilidades
+        "dd-fecha"        // Distribucion Detalle
+    ];
+
+    // Obtenemos fecha de hoy en formato YYYY-MM-DD
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+
+    // Asignamos por defecto si están vacíos
+    dateInputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && !el.value) {
+            el.value = todayStr;
+        }
+    });
+}
+
+
+    function actualizarSelectsEnFormularios() {
+        actualizarSelect("persona-rolSelect", rolesData, "nombreRol", "id");
+        actualizarSelect("vh-personaSelect", personasData, "nombre", "id");
+        actualizarSelect("vh-rolSelect", rolesData, "nombreRol", "id");
+        actualizarSelect("rh-personaSelect", personasData, "nombre", "id");
+        actualizarSelect("rh-campanaSelect", campanasData, "nombre", "id");
+        actualizarSelect("tx-personaSelect", personasData, "nombre", "id");
+        actualizarSelect("tx-campanaSelect", campanasData, "nombre", "id");
+        actualizarSelect("dd-personaSelect", personasData, "nombre", "id");
+        actualizarSelect("dd-distSelect", distribucionUtilidadesData, "id", "id");
+        actualizarSelect("tx-categoria", categoriasData, "nombreCategoria", "nombreCategoria");
+    }
+
+    /********************************************************
+     *                DASHBOARD / RESUMEN
+     ********************************************************/
+    function generarResumen() {
+        let transaccionesFiltradas = transaccionesData;
+        let registroHorasFiltradas = registroHorasData;
+        let distribucionUtilidadesFiltradas = distribucionUtilidadesData;
+
+        // Use global date filters for consistency
+        if (globalStartDate || globalEndDate) {
+            transaccionesFiltradas = transaccionesData.filter(t => {
+                const fecha = parseDate(t.fecha);
+                if (!fecha) return false;
+                if (globalStartDate && fecha < globalStartDate) return false;
+                if (globalEndDate && fecha > globalEndDate) return false;
+                return true;
+            });
+
+            registroHorasFiltradas = registroHorasData.filter(rh => {
+                const fecha = parseDate(rh.fecha);
+                if (!fecha) return false;
+                if (globalStartDate && fecha < globalStartDate) return false;
+                if (globalEndDate && fecha > globalEndDate) return false;
+                return true;
+            });
+
+            distribucionUtilidadesFiltradas = distribucionUtilidadesData.filter(du => {
+                const fecha = parseDate(du.fecha);
+                if (!fecha) return false;
+                if (globalStartDate && fecha < globalStartDate) return false;
+                if (globalEndDate && fecha > globalEndDate) return false;
+                return true;
+            });
+        }
+
+        // Calculate totals with filtered data
+        const totalIngresos = transaccionesFiltradas
+            .filter(t => t.tipo === "Ingreso")
+            .reduce((acc, t) => acc + t.monto, 0);
+        const totalGastos = transaccionesFiltradas
+            .filter(t => t.tipo === "Gasto")
+            .reduce((acc, t) => acc + t.monto, 0);
+        const totalAportes = transaccionesFiltradas
+            .filter(t => t.tipo === "Aporte")
+            .reduce((acc, t) => acc + t.monto, 0);
+        const balance = totalIngresos - totalGastos;
+        const horasTotales = registroHorasFiltradas.reduce((acc, rh) => acc + rh.horas, 0);
+
+        const dash = document.getElementById("dashboard-resumen");
+        dash.innerHTML = `
+    <p>Ingresos Totales: COP ${formatearMoneda(totalIngresos)}</p>
+    <p>Gastos Totales: COP ${formatearMoneda(totalGastos)}</p>
+    <p>Balance: COP ${formatearMoneda(balance)}</p>
+    <p>Aportes Totales: COP ${formatearMoneda(totalAportes)}</p>
+    <p>Horas Totales (todos): ${horasTotales}</p>
+  `;
+    }
+
+    function formatearMoneda(monto) {
+        return monto.toLocaleString('es-CO', { minimumFractionDigits: 0 });
+    }
+
+    let globalStartDate = null;
+    let globalEndDate = null;
+
+    function aplicarFiltroFechas() {
+        const startInput = document.getElementById("dashboard-startDate").value;
+        const endInput = document.getElementById("dashboard-endDate").value;
+
+        globalStartDate = startInput ? parseDate(startInput) : null;
+        globalEndDate = endInput ? parseDate(endInput) : null;
+
+        // Apply filters to all tables
+        applyDateFiltersToAllTables();
+
+        // Update dashboard summary
+        generarResumen();
+    }
+
+    function applyDateFiltersToAllTables() {
+        const dateFilterFunction = function(data) {
+            const fecha = parseDate(data.fecha);
+            if (!fecha) return false;
+            if (globalStartDate && fecha < globalStartDate) return false;
+            if (globalEndDate && fecha > globalEndDate) return false;
+            return true;
+        };
+
+        const campaignFilterFunction = function(data) {
+            const inicio = parseDate(data.fechaInicio);
+            const fin = parseDate(data.fechaFin);
+            if (!inicio || !fin) return false;
+            if (globalStartDate && fin < globalStartDate) return false;
+            if (globalEndDate && inicio > globalEndDate) return false;
+            return true;
+        };
+
+        if (transaccionesTable) {
+            transaccionesTable.setFilter(dateFilterFunction);
+        }
+        if (registroHorasTable) {
+            registroHorasTable.setFilter(dateFilterFunction);
+        }
+        if (campanasTable) {
+            campanasTable.setFilter(campaignFilterFunction);
+        }
+        if (distribucionUtilidadesTable) {
+            distribucionUtilidadesTable.setFilter(dateFilterFunction);
+        }
+
+        // AGREGADO: Filtrar también Distribución Detalle por su fecha
+        if (distribucionDetalleTable) {
+            distribucionDetalleTable.setFilter(dateFilterFunction);
+        }
+    }
+
+    function limpiarFiltroFechas() {
+        globalStartDate = null;
+        globalEndDate = null;
+        document.getElementById("dashboard-startDate").value = "";
+        document.getElementById("dashboard-endDate").value = "";
+
+        if (transaccionesTable) transaccionesTable.clearFilter();
+        if (registroHorasTable) registroHorasTable.clearFilter();
+        if (campanasTable) campanasTable.clearFilter();
+        if (distribucionUtilidadesTable) distribucionUtilidadesTable.clearFilter();
+
+        // AGREGADO: limpiar filtro en distribucionDetalleTable
+        if (distribucionDetalleTable) distribucionDetalleTable.clearFilter();
+
+        generarResumen();
+    }
+
+    function openTab(evt, tabName) {
+        const tabContents = document.getElementsByClassName("tab-content");
+        for (let i = 0; i < tabContents.length; i++) {
+            tabContents[i].classList.remove("active");
+        }
+        const tabLinks = document.getElementsByClassName("tab-link");
+        for (let i = 0; i < tabLinks.length; i++) {
+            tabLinks[i].classList.remove("active");
+        }
+        document.getElementById(tabName).classList.add("active");
+        evt.currentTarget.classList.add("active");
+
+        // Reapply filters when switching tabs
+        if (globalStartDate || globalEndDate) {
+            applyDateFiltersToAllTables();
+        }
+    }
+
+    /********************************************************
+     *              INICIALIZACIÓN DEL SISTEMA
+     ********************************************************/
+    document.addEventListener("DOMContentLoaded", () => {
+        cargarDatos();
+        initTabulators();
+        // Recalcular
+        recalcularPersonas();
+        personasTable.replaceData(personasData);
+
+        recalcularCampanas();
+        campanasTable.replaceData(campanasData);
+
+        recalcularDistribucion();
+        distribucionDetalleTable.replaceData(distribucionDetalleData);
+
+        recalcularCategorias();
+        categoriasTable.replaceData(categoriasData);
+
+        // Actualizar selects y resumen
+        actualizarSelectsEnFormularios();
+        generarResumen();
+
+        // (NUEVO) Fechas por defecto en “hoy”
+        setDefaultDatesToToday(); // <<--- LLAMADA AQUÍ
+
+        // Activar tooltips de Bootstrap
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+    function repartirUtilidadAutomatica() {
+    // 1) Ver qué distribución tenemos seleccionada en el <select id="dd-distSelect">
+    const distId = +document.getElementById("dd-distSelect").value;
+    if (!distId) {
+        alert("Primero selecciona alguna distribución en el campo 'Distribución'.");
+        return;
+    }
+    // Buscamos el objeto de esa distribución
+    const dist = distribucionUtilidadesData.find(d => d.id === distId);
+    if (!dist) {
+        alert("No se encontró la distribución con ID: " + distId);
+        return;
+    }
+
+    // 2) Tomamos la utilidad total
+    const utilidadTotal = dist.utilidadTotal;
+    if (!utilidadTotal || utilidadTotal <= 0) {
+        alert("La utilidad total de esta distribución es 0 o está vacía.");
+        return;
+    }
+
+    // 3) Calculamos WeightedInversion para cada persona
+    // WeightedInversion = inversionTotal +
+    //                     un extra según la importancia del rol
+    WeightedInversion = inversionTotal * (1 + rolImportancia / 100);
+    let arrayWeighted = [];
+    personasData.forEach((p) => {
+        // Obtenemos la importancia del rol
+        const rol = rolesData.find(r => r.id === p.rolId);
+        const rolImportancia = rol ? rol.importancia : 0;
+
+        // Weighted = p.inversionTotal * (1 + (rolImportancia / 100))
+        const weighted = p.inversionTotal * (1 + (rolImportancia / 100));
+
+        // Guardamos un array con { personaId, weighted }
+        arrayWeighted.push({
+        personaId: p.id,
+        personaNombre: p.nombre,
+        weighted: weighted
+        });
+    });
+
+    // 4) Sumamos todas esas WeightedInversion
+    const sumWeighted = arrayWeighted.reduce((acc, obj) => acc + obj.weighted, 0);
+    if (sumWeighted <= 0) {
+        alert("No hay WeightedInversion > 0. Verifica que las personas tengan horas/aportes y roles con importancia > 0.");
+        return;
+    }
+
+    // 5) Eliminamos detalles previos para esta distribución
+    distribucionDetalleData = distribucionDetalleData.filter(dd => dd.distribucionId !== distId);
+
+    // 6) Creamos nuevos registros en distribucionDetalleData
+    arrayWeighted.forEach(obj => {
+        const porcentaje = (obj.weighted / sumWeighted) * 100;
+        const montoRecibir = (porcentaje / 100) * utilidadTotal;
+
+        distribucionDetalleCounter++;
+        distribucionDetalleData.push({
+        id: distribucionDetalleCounter,
+        distribucionId: distId,
+        personaId: obj.personaId,
+        participacionPorc: +porcentaje.toFixed(2),
+        montoRecibir: +montoRecibir.toFixed(0), // Redondea a entero
+        notas: "Auto distribuido",
+        fecha: dist.fecha,  // Usamos la misma fecha de la Distribución
+        });
+    });
+
+    // 7) Refrescamos la tabla y guardamos
+    distribucionDetalleTable.replaceData(distribucionDetalleData);
+    recalcularDistribucion();
+    guardarDatos();
+    generarResumen();
+
+    alert(`¡Distribución automática realizada para la distribución ID ${distId}!`);
+}
+
+    /********************************************************
+     *              FUNCIONES DE INTERFAZ
+     ********************************************************/
+    function openTab(evt, tabName) {
+        const tabContents = document.getElementsByClassName("tab-content");
+        for (let i = 0; i < tabContents.length; i++) {
+            tabContents[i].classList.remove("active");
+        }
+        const tabLinks = document.getElementsByClassName("tab-link");
+        for (let i = 0; i < tabLinks.length; i++) {
+            tabLinks[i].classList.remove("active");
+        }
+        document.getElementById(tabName).classList.add("active");
+        evt.currentTarget.classList.add("active");
+    }
+    /********************************************************
+     *    NUEVA FUNCIÓN PARA DESCARGAR BACKUP EN FORMATO JSON
+     ********************************************************/
+     function descargarBackupJSON() {
+        // Creamos un objeto con todas tus variables de datos
+        const backup = {
+            rolesData,
+            personasData,
+            valorHoraData,
+            registroHorasData,
+            campanasData,
+            transaccionesData,
+            distribucionUtilidadesData,
+            distribucionDetalleData,
+            categoriasData,
+        };
+
+        // Convertimos a string JSON (con indentación para facilidad de lectura)
+        const backupStr = JSON.stringify(backup, null, 2);
+
+        // Generamos un Blob con ese contenido
+        const blob = new Blob([backupStr], { type: "application/json" });
+
+        // Creamos una URL temporal
+        const url = URL.createObjectURL(blob);
+
+        // Creamos un enlace "invisible"
+        const a = document.createElement("a");
+        a.href = url;
+        // Nombre de archivo sugerido
+        a.download = "backup_data.json";
+
+        // Forzamos el click y luego limpiamos la URL
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    /**
+   * seleccionarBackupJSON():
+   * Llamada al hacer click en el botón "Cargar Backup JSON".
+   * Simplemente activa el <input type="file"> oculto.
+   */
+  function seleccionarBackupJSON(){
+    document.getElementById("backupFileInput").click();
+  }
+
+  /**
+   * importarBackupJSON(event):
+   * Se dispara cuando el usuario selecciona un archivo.
+   * Leemos su contenido, parseamos y restauramos las variables.
+   */
+  function importarBackupJSON(event){
+    const file = event.target.files[0];
+    if(!file) return;  // Por si el usuario cancela
+
+    const reader = new FileReader();
+    reader.onload = function(e){
+      try {
+        // 1) Parseamos el JSON
+        const backup = JSON.parse(e.target.result);
+
+        // 2) Restauramos cada array, si existen
+        rolesData                     = backup.rolesData                     || [];
+        personasData                  = backup.personasData                  || [];
+        valorHoraData                 = backup.valorHoraData                 || [];
+        registroHorasData             = backup.registroHorasData             || [];
+        campanasData                  = backup.campanasData                  || [];
+        transaccionesData             = backup.transaccionesData             || [];
+        distribucionUtilidadesData    = backup.distribucionUtilidadesData    || [];
+        distribucionDetalleData       = backup.distribucionDetalleData       || [];
+        categoriasData                = backup.categoriasData                || [];
+
+        // 3) Recalcular todo y refrescar las tablas (similar a tu DOMContentLoaded)
+        recalcularPersonas();
+        recalcularCampanas();
+        recalcularDistribucion();
+        recalcularCategorias();
+
+        // Reemplazar datos en las Tabulator
+        personasTable.replaceData(personasData);
+        rolesTable.replaceData(rolesData);
+        valorHoraTable.replaceData(valorHoraData);
+        registroHorasTable.replaceData(registroHorasData);
+        campanasTable.replaceData(campanasData);
+        transaccionesTable.replaceData(transaccionesData);
+        categoriasTable.replaceData(categoriasData);
+        distribucionUtilidadesTable.replaceData(distribucionUtilidadesData);
+        distribucionDetalleTable.replaceData(distribucionDetalleData);
+
+        // Guardar en localStorage
+        guardarDatos();
+
+        // Finalmente, refrescar el dashboard/resumen
+        generarResumen();
+
+        // (NUEVO) Fechas por defecto en “hoy”
+        setDefaultDatesToToday(); // <<--- LLAMADA AQUÍ
+
+        alert("¡Backup restaurado con éxito!");
+
+      } catch (err) {
+        alert("Error al leer el archivo JSON: " + err);
+      }
+    };
+
+    // Leemos el contenido del archivo como texto
+    reader.readAsText(file);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Sistema de Gestión Completo - Modular</title>
+
+    <!-- Bootstrap (para tooltips e íconos) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Tabulator CSS y JS -->
+    <link href="https://cdn.jsdelivr.net/npm/tabulator-tables@5.4.4/dist/css/tabulator.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/tabulator-tables@5.4.4/dist/js/tabulator.min.js"></script>
+
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Estilos globales -->
+    <link rel="stylesheet" href="./styles/global.css">
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-4">
+                    <h1 class="text-2xl font-bold text-gray-900">Sistema de Gestión: Dropshipping</h1>
+                    <div class="flex items-center space-x-4">
+                        <button id="darkModeToggle" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
+                            <i class="bi bi-moon-fill"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex">
+            <!-- Sidebar -->
+            <aside class="w-64 bg-white shadow-sm h-screen sticky top-0">
+                <nav class="mt-8">
+                    <div class="px-4">
+                        <ul class="space-y-2" id="navigation">
+                            <li><a href="#" data-tab="dashboard" class="nav-link active">
+                                <i class="bi bi-speedometer2 mr-3"></i>Dashboard
+                            </a></li>
+                            <li><a href="#" data-tab="personas" class="nav-link">
+                                <i class="bi bi-people mr-3"></i>Personas
+                            </a></li>
+                            <li><a href="#" data-tab="roles" class="nav-link">
+                                <i class="bi bi-person-badge mr-3"></i>Roles
+                            </a></li>
+                            <li><a href="#" data-tab="valorHora" class="nav-link">
+                                <i class="bi bi-clock mr-3"></i>Valor Hora
+                            </a></li>
+                            <li><a href="#" data-tab="registroHoras" class="nav-link">
+                                <i class="bi bi-calendar-check mr-3"></i>Registro Horas
+                            </a></li>
+                            <li><a href="#" data-tab="campanas" class="nav-link">
+                                <i class="bi bi-megaphone mr-3"></i>Campañas
+                            </a></li>
+                            <li><a href="#" data-tab="transacciones" class="nav-link">
+                                <i class="bi bi-cash-stack mr-3"></i>Transacciones
+                            </a></li>
+                            <li><a href="#" data-tab="categorias" class="nav-link">
+                                <i class="bi bi-tags mr-3"></i>Categorías
+                            </a></li>
+                            <li><a href="#" data-tab="distribucionUtilidades" class="nav-link">
+                                <i class="bi bi-pie-chart mr-3"></i>Distribución Utilidades
+                            </a></li>
+                            <li><a href="#" data-tab="distribucionDetalle" class="nav-link">
+                                <i class="bi bi-list-check mr-3"></i>Distribución Detalle
+                            </a></li>
+                        </ul>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="flex-1 p-6">
+                <div id="main-content">
+                    <!-- Las vistas se cargarán aquí dinámicamente -->
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts del sistema -->
+    <script src="./js/config.js"></script>
+    <script src="./js/templates.js"></script>
+    <script src="./js/data-manager.js"></script>
+    <script src="./js/utils.js"></script>
+    <script src="./js/calculations.js"></script>
+    <script src="./js/navigation.js"></script>
+
+    <!-- Scripts de vistas -->
+    <script src="./js/views/dashboard.js"></script>
+    <script src="./js/views/personas.js"></script>
+    <script src="./js/views/roles.js"></script>
+    <script src="./js/views/valor-hora.js"></script>
+    <script src="./js/views/registro-horas.js"></script>
+    <script src="./js/views/campanas.js"></script>
+    <script src="./js/views/transacciones.js"></script>
+    <script src="./js/views/categorias.js"></script>
+    <script src="./js/views/distribucion-utilidades.js"></script>
+    <script src="./js/views/distribucion-detalle.js"></script>
+
+    <!-- Aplicación principal -->
+    <script src="./js/app.js"></script>
+</body>
+</html>

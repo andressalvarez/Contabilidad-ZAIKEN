@@ -1,0 +1,589 @@
+/* Estilos globales para el sistema de gestión */
+
+/* Configuración de Tailwind */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Estilos personalizados */
+.nav-link {
+    @apply flex items-center px-4 py-3 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200;
+}
+
+.nav-link.active {
+    @apply bg-blue-50 text-blue-700 border-r-4 border-blue-700;
+}
+
+.card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+}
+
+.form-group {
+    @apply mb-4;
+}
+
+.form-label {
+    @apply block text-sm font-medium text-gray-700 mb-2;
+}
+
+.form-input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+}
+
+.btn {
+    @apply px-4 py-2 rounded-md font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+}
+
+.btn-primary {
+    @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500;
+}
+
+.btn-secondary {
+    @apply bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500;
+}
+
+.btn-success {
+    @apply bg-green-600 text-white hover:bg-green-700 focus:ring-green-500;
+}
+
+.btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+}
+
+.btn-warning {
+    @apply bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-yellow-500;
+}
+
+.btn-info {
+    @apply bg-cyan-600 text-white hover:bg-cyan-700 focus:ring-cyan-500;
+}
+
+.btn-outline {
+    @apply border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500;
+}
+
+.btn-sm {
+    @apply px-3 py-1.5 text-sm;
+}
+
+/* Estilos para las tablas Tabulator */
+.tabulator {
+    @apply border border-gray-200 rounded-lg overflow-hidden;
+}
+
+.tabulator-header {
+    @apply bg-gray-50;
+}
+
+.tabulator-row:nth-child(even) {
+    @apply bg-gray-50;
+}
+
+.tabulator-row:hover {
+    @apply bg-blue-50;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .nav-link {
+        @apply text-xs px-2 py-2;
+    }
+
+    aside {
+        @apply w-16;
+    }
+
+    .nav-link span {
+        @apply hidden;
+    }
+}
+
+/* Dark mode */
+.dark .nav-link {
+    @apply text-gray-300 hover:bg-gray-700 hover:text-white;
+}
+
+.dark .nav-link.active {
+    @apply bg-blue-900 text-blue-300 border-blue-300;
+}
+
+.dark .card {
+    @apply bg-gray-800 border-gray-700;
+}
+
+.dark .form-input {
+    @apply bg-gray-700 border-gray-600 text-white placeholder-gray-400;
+}
+
+/* Animaciones */
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Estilos globales para el sistema */
+:root {
+    --primary-color: #3b82f6;
+    --secondary-color: #64748b;
+    --success-color: #10b981;
+    --danger-color: #ef4444;
+    --warning-color: #f59e0b;
+    --info-color: #06b6d4;
+    --light-color: #f8fafc;
+    --dark-color: #1e293b;
+}
+
+/* Correcciones para Tabulator */
+.tabulator {
+    background-color: white !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+}
+
+.tabulator-table {
+    background-color: white !important;
+    width: 100% !important;
+}
+
+.tabulator-tableHolder {
+    background-color: white !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+}
+
+/* Eliminar cualquier pseudo-elemento que cause columnas negras */
+.tabulator::before,
+.tabulator::after,
+.tabulator-table::before,
+.tabulator-table::after,
+.tabulator-tableHolder::before,
+.tabulator-tableHolder::after {
+    display: none !important;
+    content: none !important;
+}
+
+/* Forzar fondo blanco en todas las filas y celdas */
+.tabulator-row {
+    background-color: white !important;
+    border-bottom: 1px solid #f3f4f6 !important;
+    transition: background-color 0.2s ease !important;
+}
+
+.tabulator-row:hover {
+    background-color: #f8fafc !important;
+}
+
+.tabulator-row.tabulator-row-even {
+    background-color: #fafbfc !important;
+}
+
+.tabulator-row.tabulator-row-odd {
+    background-color: white !important;
+}
+
+.tabulator-cell {
+    background-color: transparent !important;
+    border-right: 1px solid #f1f3f4 !important;
+    padding: 10px 12px !important;
+    vertical-align: middle !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* Header mejorado */
+.tabulator-header {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
+    border-bottom: 2px solid #cbd5e1 !important;
+    font-weight: 600 !important;
+}
+
+.tabulator-col {
+    background-color: transparent !important;
+    border-right: 1px solid #cbd5e1 !important;
+    position: relative !important;
+}
+
+.tabulator-col:last-child {
+    border-right: none !important;
+}
+
+.tabulator-col-title {
+    color: #1e293b !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    padding: 12px !important;
+}
+
+/* Responsive collapse mejorado */
+.tabulator-responsive-collapse {
+    background-color: #f8fafc !important;
+    border-top: 1px solid #e2e8f0 !important;
+    padding: 10px !important;
+}
+
+.tabulator-responsive-collapse-toggle {
+    background-color: #3b82f6 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 4px !important;
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+}
+
+/* Paginación mejorada */
+.tabulator-footer {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
+    border-top: 2px solid #cbd5e1 !important;
+    padding: 12px !important;
+    border-radius: 0 0 8px 8px !important;
+}
+
+.tabulator-page {
+    background-color: white !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #475569 !important;
+    margin: 0 2px !important;
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+}
+
+.tabulator-page:hover {
+    background-color: #f1f5f9 !important;
+    border-color: #3b82f6 !important;
+    transform: translateY(-1px) !important;
+}
+
+.tabulator-page.active {
+    background-color: #3b82f6 !important;
+    color: white !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3) !important;
+}
+
+.tabulator-paginator {
+    color: #64748b !important;
+    font-weight: 500 !important;
+}
+
+/* Selectores de tamaño de página */
+.tabulator-page-size {
+    background-color: white !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    padding: 6px 10px !important;
+    color: #475569 !important;
+    font-weight: 500 !important;
+}
+
+/* Eliminar scrollbars innecesarios que pueden causar espacios negros */
+.tabulator-tableHolder::-webkit-scrollbar {
+    height: 8px !important;
+    background-color: #f1f5f9 !important;
+}
+
+.tabulator-tableHolder::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1 !important;
+    border-radius: 4px !important;
+}
+
+.tabulator-tableHolder::-webkit-scrollbar-thumb:hover {
+    background-color: #94a3b8 !important;
+}
+
+/* Forzar que no haya espacios vacíos */
+.tabulator .tabulator-table {
+    min-width: 100% !important;
+}
+
+/* Corrección específica para evitar columnas fantasma */
+.tabulator-col:empty,
+.tabulator-cell:empty {
+    display: none !important;
+}
+
+/* Estilos para los badges de tipo */
+.tabulator .badge {
+    display: inline-block !important;
+    padding: 4px 8px !important;
+    border-radius: 12px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* Mejoras visuales para los datos */
+.tabulator-cell .text-gray-400 {
+    font-style: italic !important;
+    opacity: 0.7 !important;
+}
+
+.tabulator-cell .font-semibold {
+    font-weight: 600 !important;
+}
+
+.tabulator-cell .text-blue-600 {
+    color: #2563eb !important;
+}
+
+.tabulator-cell .text-purple-600 {
+    color: #9333ea !important;
+}
+
+/* Responsive breakpoints */
+@media (max-width: 768px) {
+    .tabulator {
+        font-size: 14px !important;
+    }
+
+    .tabulator-cell {
+        padding: 8px 6px !important;
+    }
+
+    .tabulator-col-title {
+        font-size: 13px !important;
+        padding: 10px 6px !important;
+    }
+}
+
+/* Animaciones suaves */
+.tabulator-row {
+    transition: all 0.2s ease !important;
+}
+
+.tabulator-cell {
+    transition: background-color 0.2s ease !important;
+}
+
+/* Loading state */
+.tabulator-loading {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.tabulator-loading-msg {
+    background-color: white !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 8px !important;
+    padding: 20px !important;
+    color: #374151 !important;
+    font-weight: 500 !important;
+}
+
+/* Estilos para los botones de acción */
+.d-flex {
+    display: flex;
+}
+
+.gap-1 {
+    gap: 0.25rem;
+}
+
+.me-1 {
+    margin-right: 0.25rem;
+}
+
+/* Tooltips mejorados */
+.tabulator-tooltip {
+    background-color: #1f2937 !important;
+    color: white !important;
+    border-radius: 6px !important;
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+    z-index: 1001 !important;
+}
+
+/* Editores de Tabulator mejorados */
+.tabulator-edit-select-list {
+    background-color: white !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 8px !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+    max-height: 200px !important;
+    overflow-y: auto !important;
+    z-index: 1000 !important;
+    margin-top: 2px !important;
+}
+
+.tabulator-edit-select-list-item {
+    background-color: white !important;
+    color: #374151 !important;
+    padding: 10px 14px !important;
+    border-bottom: 1px solid #f3f4f6 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    font-size: 14px !important;
+}
+
+.tabulator-edit-select-list-item:hover {
+    background-color: #f8fafc !important;
+    color: #1f2937 !important;
+}
+
+.tabulator-edit-select-list-item.active {
+    background-color: #3b82f6 !important;
+    color: white !important;
+}
+
+.tabulator-edit-select-list-item:last-child {
+    border-bottom: none !important;
+}
+
+.tabulator-editor {
+    background-color: white !important;
+    border: 2px solid #d1d5db !important;
+    border-radius: 6px !important;
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+    color: #374151 !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.2s ease !important;
+}
+
+.tabulator-editor:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+    outline: none !important;
+}
+
+.tabulator-editor[type="date"] {
+    cursor: pointer !important;
+}
+
+.tabulator-editor[type="number"] {
+    text-align: right !important;
+}
+
+/* Mejoras específicas para selects editables */
+.tabulator-edit-select-list {
+    min-width: 150px !important;
+    width: auto !important;
+}
+
+.tabulator-edit-select-list-item {
+    white-space: nowrap !important;
+    min-height: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.tabulator-edit-select-list-item:empty {
+    display: none !important;
+}
+
+/* Asegurar que los selects mantengan su valor */
+.tabulator-cell[tabulator-field="personaId"] .tabulator-editor,
+.tabulator-cell[tabulator-field="campanaId"] .tabulator-editor {
+    min-width: 120px !important;
+}
+
+/* Prevenir que los selects se colapsen */
+.tabulator-editor select {
+    width: 100% !important;
+    min-width: 100px !important;
+}
+
+/* Mejorar la apariencia de los selects */
+.tabulator-editor select option {
+    padding: 8px 12px !important;
+    background-color: white !important;
+    color: #374151 !important;
+}
+
+.tabulator-editor select option:hover {
+    background-color: #f3f4f6 !important;
+}
+
+/* Evitar que se muestren opciones vacías problemáticas */
+.tabulator-edit-select-list-item[data-value=""] {
+    color: #9ca3af !important;
+    font-style: italic !important;
+}
+
+/* Estilo para cuando está seleccionada una opción válida */
+.tabulator-cell[tabulator-field="personaId"]:not(:empty),
+.tabulator-cell[tabulator-field="campanaId"]:not(:empty) {
+    font-weight: 500 !important;
+}
+
+/* Estilos para filas modificadas */
+.tabulator-row[style*="background-color: rgb(254, 243, 199)"] {
+    border-left: 4px solid #f59e0b !important;
+    position: relative !important;
+}
+
+.tabulator-row[style*="background-color: rgb(254, 243, 199)"]:before {
+    content: "✏️ Modificado - Presiona ✅ para guardar o ↩️ para descartar";
+    position: absolute;
+    top: -20px;
+    left: 0;
+    background-color: #f59e0b;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px 4px 0 0;
+    font-size: 11px;
+    font-weight: 500;
+    z-index: 10;
+    white-space: nowrap;
+}
+
+/* Botones de acción mejorados */
+.btn-success.btn-sm {
+    background-color: #10b981 !important;
+    border-color: #10b981 !important;
+}
+
+.btn-success.btn-sm:hover {
+    background-color: #059669 !important;
+    border-color: #059669 !important;
+    transform: scale(1.05) !important;
+}
+
+.btn-warning.btn-sm {
+    background-color: #f59e0b !important;
+    border-color: #f59e0b !important;
+}
+
+.btn-warning.btn-sm:hover {
+    background-color: #d97706 !important;
+    border-color: #d97706 !important;
+    transform: scale(1.05) !important;
+}
+
+.btn-danger.btn-sm:hover {
+    transform: scale(1.05) !important;
+}
+
+/* Transiciones suaves para botones */
+.btn-sm {
+    transition: all 0.2s ease !important;
+}
+
+/* Tooltip mejorado para botones */
+.btn[title]:hover:after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #1f2937;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+}

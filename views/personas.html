@@ -1,0 +1,162 @@
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Gestión de Personas</h1>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Administra socios, colaboradores y su información relacionada
+            </p>
+        </div>
+        <div class="mt-4 sm:mt-0 flex space-x-3">
+            <button onclick="exportarPersonas()" class="btn btn-secondary">
+                <i class="bi bi-download mr-2"></i>Exportar CSV
+            </button>
+            <button onclick="recalcularPersonas()" class="btn btn-primary">
+                <i class="bi bi-arrow-clockwise mr-2"></i>Recalcular
+            </button>
+        </div>
+    </div>
+
+    <!-- Formulario de Agregar Persona -->
+    <div class="card">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            <i class="bi bi-person-plus mr-2"></i>Agregar Nueva Persona
+        </h3>
+
+        <form id="form-persona" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="form-group">
+                <label for="persona-nombre" class="form-label">
+                    Nombre Completo:
+                    <i class="bi bi-info-circle-fill ml-1" data-bs-toggle="tooltip"
+                       title="Ingrese el nombre completo de la persona (socio, colaborador, etc.)"></i>
+                </label>
+                <input type="text" id="persona-nombre" class="form-input"
+                       placeholder="Ej: Juan Pérez" required />
+            </div>
+
+            <div class="form-group">
+                <label for="persona-rolSelect" class="form-label">
+                    Rol Principal:
+                    <i class="bi bi-info-circle-fill ml-1" data-bs-toggle="tooltip"
+                       title="Asigne el rol principal que desempeña esta persona"></i>
+                </label>
+                <select id="persona-rolSelect" class="form-input" required>
+                    <option value="">-- Seleccione Rol --</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="persona-notas" class="form-label">
+                    Notas:
+                    <i class="bi bi-info-circle-fill ml-1" data-bs-toggle="tooltip"
+                       title="Información adicional sobre la persona"></i>
+                </label>
+                <input type="text" id="persona-notas" class="form-input"
+                       placeholder="Información adicional..." />
+            </div>
+
+            <div class="md:col-span-2 lg:col-span-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-person-plus mr-2"></i>Agregar Persona
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Estadísticas Rápidas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="card bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="bi bi-people text-3xl opacity-80"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-blue-100 text-sm font-medium">Total Personas</p>
+                    <p class="text-2xl font-bold" id="stat-total-personas">0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-gradient-to-r from-green-500 to-green-600 text-white">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="bi bi-clock text-3xl opacity-80"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-green-100 text-sm font-medium">Horas Totales</p>
+                    <p class="text-2xl font-bold" id="stat-horas-totales">0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="bi bi-cash-stack text-3xl opacity-80"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-purple-100 text-sm font-medium">Aportes Totales</p>
+                    <p class="text-2xl font-bold" id="stat-aportes-totales">COP 0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-gradient-to-r from-yellow-500 to-yellow-600 text-white">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="bi bi-pie-chart text-3xl opacity-80"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-yellow-100 text-sm font-medium">Inversión Total</p>
+                    <p class="text-2xl font-bold" id="stat-inversion-total">COP 0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Personas -->
+    <div class="card">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+                <i class="bi bi-table mr-2"></i>Listado de Personas
+            </h3>
+            <div class="mt-2 sm:mt-0 flex space-x-2">
+                <input type="text" id="search-personas" class="form-input w-64"
+                       placeholder="Buscar personas..." />
+                <button onclick="refreshTable()" class="btn btn-secondary">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="personas-table" class="overflow-hidden"></div>
+    </div>
+
+    <!-- Modal de Edición (si se necesita) -->
+    <div id="modal-edit-persona" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md mx-4 w-full">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Editar Persona</h3>
+            <form id="form-edit-persona">
+                <!-- Campos del formulario de edición -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="form-label">Nombre:</label>
+                        <input type="text" id="edit-nombre" class="form-input" />
+                    </div>
+                    <div>
+                        <label class="form-label">Rol:</label>
+                        <select id="edit-rol" class="form-input"></select>
+                    </div>
+                    <div>
+                        <label class="form-label">Notas:</label>
+                        <input type="text" id="edit-notas" class="form-input" />
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" onclick="closeEditModal()" class="btn btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

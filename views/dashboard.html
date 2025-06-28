@@ -1,0 +1,201 @@
+<div class="space-y-6">
+    <!-- Header del Dashboard -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Dashboard de Resúmenes</h1>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Vista general de las métricas y rendimiento del negocio
+            </p>
+        </div>
+        <div class="mt-4 sm:mt-0 flex space-x-3">
+            <button onclick="generarResumen()" class="btn btn-primary">
+                <i class="bi bi-arrow-clockwise mr-2"></i>Actualizar
+            </button>
+            <button onclick="descargarBackupJSON()" class="btn btn-warning">
+                <i class="bi bi-download mr-2"></i>Backup
+            </button>
+            <button onclick="seleccionarBackupJSON()" class="btn btn-success">
+                <i class="bi bi-upload mr-2"></i>Importar
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtros de Fecha -->
+    <div class="card">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            <i class="bi bi-funnel mr-2"></i>Filtros de Fecha
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div>
+                <label for="dashboard-startDate" class="form-label">
+                    Desde:
+                    <i class="bi bi-info-circle-fill ml-1" data-bs-toggle="tooltip"
+                       title="Selecciona la fecha inicial para filtrar"></i>
+                </label>
+                <input type="date" id="dashboard-startDate" class="form-input" />
+            </div>
+            <div>
+                <label for="dashboard-endDate" class="form-label">
+                    Hasta:
+                    <i class="bi bi-info-circle-fill ml-1" data-bs-toggle="tooltip"
+                       title="Selecciona la fecha final para filtrar"></i>
+                </label>
+                <input type="date" id="dashboard-endDate" class="form-input" />
+            </div>
+            <div class="flex space-x-2">
+                <button onclick="aplicarFiltroFechas()" class="btn btn-primary flex-1">
+                    <i class="bi bi-search mr-2"></i>Filtrar
+                </button>
+                <button onclick="limpiarFiltroFechas()" class="btn btn-secondary flex-1">
+                    <i class="bi bi-x-circle mr-2"></i>Limpiar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPIs principales -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="card bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="bi bi-cash-stack text-3xl opacity-80"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-blue-100 text-sm font-medium">Ingresos Totales</p>
+                    <p class="text-2xl font-bold" id="kpi-ingresos">COP 0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-gradient-to-r from-red-500 to-red-600 text-white">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="bi bi-credit-card text-3xl opacity-80"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-red-100 text-sm font-medium">Gastos Totales</p>
+                    <p class="text-2xl font-bold" id="kpi-gastos">COP 0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-gradient-to-r from-green-500 to-green-600 text-white">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="bi bi-graph-up text-3xl opacity-80"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-green-100 text-sm font-medium">Balance</p>
+                    <p class="text-2xl font-bold" id="kpi-balance">COP 0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="bi bi-clock text-3xl opacity-80"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-purple-100 text-sm font-medium">Horas Totales</p>
+                    <p class="text-2xl font-bold" id="kpi-horas">0 hrs</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Gráfico de Ingresos vs Gastos -->
+        <div class="card">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                <i class="bi bi-bar-chart mr-2"></i>Ingresos vs Gastos
+            </h3>
+            <div class="h-64">
+                <canvas id="chart-ingresos-gastos"></canvas>
+            </div>
+        </div>
+
+        <!-- Gráfico de Gastos por Categoría -->
+        <div class="card">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                <i class="bi bi-pie-chart mr-2"></i>Gastos por Categoría
+            </h3>
+            <div class="h-64">
+                <canvas id="chart-gastos-categoria"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen Detallado -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Métricas Adicionales -->
+        <div class="card">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                <i class="bi bi-list-check mr-2"></i>Métricas Adicionales
+            </h3>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-600">
+                    <span class="text-gray-600 dark:text-gray-300">Aportes Totales:</span>
+                    <span class="font-medium" id="metric-aportes">COP 0</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-600">
+                    <span class="text-gray-600 dark:text-gray-300">Utilidades Distribuidas:</span>
+                    <span class="font-medium" id="metric-utilidades">COP 0</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-600">
+                    <span class="text-gray-600 dark:text-gray-300">Total Transacciones:</span>
+                    <span class="font-medium" id="metric-transacciones">0</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-600">
+                    <span class="text-gray-600 dark:text-gray-300">Personas Activas:</span>
+                    <span class="font-medium" id="metric-personas">0</span>
+                </div>
+                <div class="flex justify-between items-center py-2">
+                    <span class="text-gray-600 dark:text-gray-300">Campañas Activas:</span>
+                    <span class="font-medium" id="metric-campanas">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estado del Sistema -->
+        <div class="card">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                <i class="bi bi-gear mr-2"></i>Estado del Sistema
+            </h3>
+            <div class="space-y-4">
+                <div class="flex items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                    <i class="bi bi-check-circle text-green-500 mr-3"></i>
+                    <div>
+                        <p class="font-medium text-green-800 dark:text-green-200">Sistema Operativo</p>
+                        <p class="text-sm text-green-600 dark:text-green-300">Todos los módulos funcionando correctamente</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <i class="bi bi-database text-blue-500 mr-3"></i>
+                    <div>
+                        <p class="font-medium text-blue-800 dark:text-blue-200">Datos Sincronizados</p>
+                        <p class="text-sm text-blue-600 dark:text-blue-300">Última actualización: <span id="last-update">Ahora</span></p>
+                    </div>
+                </div>
+
+                <div class="flex items-center p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                    <i class="bi bi-shield-check text-yellow-500 mr-3"></i>
+                    <div>
+                        <p class="font-medium text-yellow-800 dark:text-yellow-200">Backup Automático</p>
+                        <p class="text-sm text-yellow-600 dark:text-yellow-300">Datos guardados en localStorage</p>
+                    </div>
+                </div>
+
+                <button onclick="App.limpiarTodosLosDatos()"
+                        class="w-full btn btn-danger text-sm">
+                    <i class="bi bi-trash mr-2"></i>Limpiar Todos los Datos
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Input hidden para importar backup -->
+    <input type="file" id="backupFileInput" accept="application/json" style="display:none" />
+</div>

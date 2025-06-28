@@ -1,0 +1,160 @@
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Gestión de Roles</h1>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Define roles y su porcentaje de importancia en la distribución de utilidades
+            </p>
+        </div>
+        <div class="mt-4 sm:mt-0 flex space-x-3">
+            <button onclick="exportarRoles()" class="btn btn-secondary">
+                <i class="bi bi-download mr-2"></i>Exportar CSV
+            </button>
+            <button onclick="recalcularTodo()" class="btn btn-primary">
+                <i class="bi bi-arrow-clockwise mr-2"></i>Recalcular
+            </button>
+        </div>
+    </div>
+
+    <!-- Formulario de Agregar Rol -->
+    <div class="card">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            <i class="bi bi-person-badge mr-2"></i>Agregar Nuevo Rol
+        </h3>
+
+        <form id="form-rol" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="form-group">
+                <label for="rol-nombreRol" class="form-label">
+                    Nombre del Rol:
+                    <i class="bi bi-info-circle-fill ml-1" data-bs-toggle="tooltip"
+                       title="Ejemplo: Director, Gerente, Diseñador, etc."></i>
+                </label>
+                <input type="text" id="rol-nombreRol" class="form-input"
+                       placeholder="Ej: Director" required />
+            </div>
+
+            <div class="form-group">
+                <label for="rol-importancia" class="form-label">
+                    Importancia (%):
+                    <i class="bi bi-info-circle-fill ml-1" data-bs-toggle="tooltip"
+                       title="Peso porcentual que afecta la participación en utilidades"></i>
+                </label>
+                <input type="number" id="rol-importancia" class="form-input"
+                       placeholder="40" min="0" max="100" required />
+            </div>
+
+            <div class="form-group">
+                <label for="rol-descripcion" class="form-label">
+                    Descripción:
+                    <i class="bi bi-info-circle-fill ml-1" data-bs-toggle="tooltip"
+                       title="Descripción breve de las responsabilidades del rol"></i>
+                </label>
+                <input type="text" id="rol-descripcion" class="form-input"
+                       placeholder="Gestión general..." />
+            </div>
+
+            <div class="flex items-end">
+                <button type="submit" class="btn btn-primary w-full">
+                    <i class="bi bi-person-badge mr-2"></i>Agregar Rol
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Estadísticas Rápidas -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="card bg-gradient-to-r from-indigo-500 to-indigo-600 text-white">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="bi bi-person-badge text-3xl opacity-80"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-indigo-100 text-sm font-medium">Total Roles</p>
+                    <p class="text-2xl font-bold" id="stat-total-roles">0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-gradient-to-r from-emerald-500 to-emerald-600 text-white">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="bi bi-percent text-3xl opacity-80"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-emerald-100 text-sm font-medium">Importancia Total</p>
+                    <p class="text-2xl font-bold" id="stat-importancia-total">0%</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-gradient-to-r from-amber-500 to-amber-600 text-white">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="bi bi-people text-3xl opacity-80"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-amber-100 text-sm font-medium">Personas Asignadas</p>
+                    <p class="text-2xl font-bold" id="stat-personas-asignadas">0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Roles -->
+    <div class="card">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+                <i class="bi bi-table mr-2"></i>Listado de Roles
+            </h3>
+            <div class="mt-2 sm:mt-0 flex space-x-2">
+                <input type="text" id="search-roles" class="form-input w-64"
+                       placeholder="Buscar roles..." />
+                <button onclick="refreshTable()" class="btn btn-secondary">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="roles-table" class="overflow-hidden"></div>
+    </div>
+
+    <!-- Información Adicional -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="card">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                <i class="bi bi-info-circle mr-2"></i>Información sobre Roles
+            </h3>
+            <div class="space-y-3 text-sm text-gray-600 dark:text-gray-300">
+                <p>• Los roles definen la importancia de cada persona en el negocio.</p>
+                <p>• El porcentaje de importancia afecta directamente la distribución de utilidades.</p>
+                <p>• La suma de importancias no necesariamente debe ser 100%.</p>
+                <p>• Cada persona debe tener un rol asignado para participar en distribuciones.</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                <i class="bi bi-lightbulb mr-2"></i>Sugerencias de Roles
+            </h3>
+            <div class="space-y-2">
+                <div class="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                    <span class="text-sm">Director/CEO</span>
+                    <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">40-50%</span>
+                </div>
+                <div class="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                    <span class="text-sm">Gerente/Manager</span>
+                    <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">25-35%</span>
+                </div>
+                <div class="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                    <span class="text-sm">Especialista</span>
+                    <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">15-25%</span>
+                </div>
+                <div class="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                    <span class="text-sm">Asistente</span>
+                    <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">10-20%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
