@@ -1,8 +1,8 @@
-# Sistema de Gestión de Dropshipping - Arquitectura Modular
+# Sistema de Gestión de ZAIKEN - Arquitectura Modular
 
 ## 📋 Descripción
 
-Sistema completo de gestión para negocios de dropshipping con arquitectura modular, diseño moderno usando Tailwind CSS y funcionalidades avanzadas como gráficos interactivos y carga dinámica de vistas.
+Sistema completo de gestión para negocios de ZAIKEN con arquitectura modular, diseño moderno usando Tailwind CSS y funcionalidades avanzadas como gráficos interactivos y carga dinámica de vistas.
 
 ## 🚀 Características Principales
 
