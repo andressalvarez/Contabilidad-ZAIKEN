@@ -453,6 +453,57 @@ window.Templates = {
                         <div class="relative w-full h-72"><canvas id="estadisticas-chart-aportes-utilidades" class="absolute inset-0 w-full h-full"></canvas></div>
                     </div>
                 </div>
+                <!-- VS de Categorías -->
+                <div class="bg-white shadow rounded-lg p-6 mt-8">
+                    <h3 class="graph-title mb-4 flex items-center gap-2">
+                        <i class="bi bi-bar-chart-steps"></i>
+                        VS de Categorías
+                    </h3>
+                    <form id="vs-categorias-filtros" class="flex flex-wrap gap-4 items-end mb-6">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Categorías</label>
+                            <div id="vs-categorias-chips" class="flex flex-wrap gap-2"></div>
+                            <!-- Botón de agregar categoría eliminado -->
+                            <!-- <button type="button" id="vs-categorias-add" class="btn btn-sm btn-outline mt-2">Agregar categoría</button> -->
+                            <!-- <div id="vs-categorias-dropdown" class="hidden absolute bg-white border rounded shadow-lg mt-1 z-50"></div> -->
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Tipo</label>
+                            <select id="vs-tipo-select" class="form-input">
+                                <option value="Gasto">Gasto</option>
+                                <option value="Ingreso">Ingreso</option>
+                                <option value="Aporte">Aporte</option>
+                                <option value="Todos">Todos</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Desde</label>
+                            <input type="date" id="vs-fecha-desde" class="form-input" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Hasta</label>
+                            <input type="date" id="vs-fecha-hasta" class="form-input" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Tipo de gráfica</label>
+                            <select id="vs-chart-type" class="form-input">
+                                <option value="bar">Barras</option>
+                                <option value="line">Líneas</option>
+                                <option value="pie">Circular</option>
+                                <option value="doughnut">Torta</option>
+                            </select>
+                        </div>
+                        <div>
+                            <button type="button" id="vs-export-img" class="btn btn-secondary">Exportar Imagen</button>
+                        </div>
+                        <div>
+                            <button type="button" id="vs-export-csv" class="btn btn-secondary">Exportar CSV</button>
+                        </div>
+                    </form>
+                    <div class="relative w-full h-80">
+                        <canvas id="estadisticas-vs-categorias-chart" class="absolute inset-0 w-full h-full"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
     `

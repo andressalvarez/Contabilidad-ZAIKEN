@@ -1308,3 +1308,35 @@ ul.space-y-1 > li {
 .tabulator-tableHolder::-webkit-scrollbar-thumb:hover {
     background: #6b7280;
 }
+
+/* Mejoras para que los canvas de gráficas no se salgan del cuadro y sean responsivos */
+.relative.w-full.h-72,
+.relative.w-full.h-80,
+.bg-white.shadow.rounded-lg.p-4.overflow-hidden,
+.bg-white.shadow.rounded-lg.p-6 {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+canvas {
+    max-width: 100% !important;
+    height: auto !important;
+    display: block;
+    margin: 0 auto;
+}
+
+/* Ajuste para el VS de Categorías */
+#estadisticas-vs-categorias-chart {
+    max-width: 100% !important;
+    max-height: 320px !important;
+    min-height: 180px;
+    margin: 0 auto;
+    display: block;
+}
+
+/* Ajuste para los contenedores de gráficas VS */
+.bg-white.shadow.rounded-lg.p-6.mt-8 {
+    overflow-x: auto !important;
+    padding-bottom: 1rem;
+}
