@@ -420,5 +420,40 @@ window.Templates = {
                 <div id="distribucion-detalle-table"></div>
             </div>
         </div>
+    `,
+
+    estadisticas: `
+        <div class="space-y-8">
+            <div class="bg-white rounded-xl shadow p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                    <i class="bi bi-bar-chart-fill"></i>
+                    Estadísticas Generales
+                </h2>
+                <div class="mb-6">
+                    <p class="text-gray-600">Aquí puedes ver todas las gráficas del sistema agrupadas. Pronto podrás filtrar y personalizar esta sección.</p>
+                </div>
+                <!-- Filtros escalables -->
+                <div id="estadisticas-filtros" class="mb-8 flex flex-wrap gap-4"></div>
+                <!-- Gráficas agrupadas -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+                    <div class="bg-white shadow rounded-lg p-4 overflow-hidden">
+                        <h3 class="graph-title">Ingresos vs Gastos</h3>
+                        <div class="relative w-full h-72"><canvas id="estadisticas-chart-ingresos-gastos" class="absolute inset-0 w-full h-full"></canvas></div>
+                    </div>
+                    <div class="bg-white shadow rounded-lg p-4 overflow-hidden">
+                        <h3 class="graph-title">Gastos por Categoría</h3>
+                        <div class="relative w-full h-72"><canvas id="estadisticas-chart-gastos-categoria" class="absolute inset-0 w-full h-full"></canvas></div>
+                    </div>
+                    <div class="bg-white shadow rounded-lg p-4 overflow-hidden">
+                        <h3 class="graph-title">Histórico de Gastos e Ingresos</h3>
+                        <div class="relative w-full h-72"><canvas id="estadisticas-chart-campanas-performance" class="absolute inset-0 w-full h-full"></canvas></div>
+                    </div>
+                    <div class="bg-white shadow rounded-lg p-4 overflow-hidden">
+                        <h3 class="graph-title">Aportes y Utilidades</h3>
+                        <div class="relative w-full h-72"><canvas id="estadisticas-chart-aportes-utilidades" class="absolute inset-0 w-full h-full"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     `
 };

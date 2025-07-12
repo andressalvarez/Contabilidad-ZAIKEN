@@ -277,7 +277,8 @@ window.Navigation = {
             'transacciones': 'TransaccionesView',
             'categorias': 'CategoriasView',
             'distribucionUtilidades': 'DistribucionUtilidadesView',
-            'distribucionDetalle': 'DistribucionDetalleView'
+            'distribucionDetalle': 'DistribucionDetalleView',
+            'estadisticas': 'EstadisticasView'
         };
 
         const className = viewClassNames[viewName];
@@ -296,7 +297,8 @@ window.Navigation = {
             'transacciones': 'TransaccionesView',
             'categorias': 'CategoriasView',
             'distribucionUtilidades': 'DistribucionUtilidadesView',
-            'distribucionDetalle': 'DistribucionDetalleView'
+            'distribucionDetalle': 'DistribucionDetalleView',
+            'estadisticas': 'EstadisticasView'
         };
 
         return viewClassNames[viewName] || null;

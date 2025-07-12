@@ -130,6 +130,11 @@ window.AppConfig = {
             title: 'Distribución Detalle',
             template: './views/distribucion-detalle.html',
             script: './js/views/distribucion-detalle.js'
+        },
+        estadisticas: {
+            title: 'Estadísticas',
+            template: 'estadisticas', // Usar el template embebido
+            script: './js/views/estadisticas.js'
         }
     },
 
