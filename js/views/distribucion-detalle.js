@@ -61,6 +61,7 @@ window.DistribucionDetalleView = {
         this.table = new Tabulator(container, {
             height: "400px",
             layout: "fitColumns",
+            responsiveLayout: false, // <--- Cambiado para que nunca oculte columnas
             pagination: "local",
             paginationSize: 15,
             columns: [

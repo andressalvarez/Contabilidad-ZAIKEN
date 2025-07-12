@@ -7,7 +7,7 @@
                 Administra las campañas de marketing y sus resultados
             </p>
         </div>
-        <div class="mt-4 sm:mt-0 flex space-x-3">
+        <div class="mt-4 sm:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
             <button onclick="exportarCampanas()" class="btn btn-secondary">
                 <i class="bi bi-download mr-2"></i>Exportar CSV
             </button>
@@ -101,7 +101,7 @@
     </div>
 
     <!-- Estadísticas Rápidas -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         <div class="card bg-gradient-to-r from-blue-500 to-blue-600 text-white">
             <div class="flex items-center">
                 <div class="flex-shrink-0">
@@ -156,7 +156,7 @@
         <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
             <i class="bi bi-funnel mr-2"></i>Filtros de Búsqueda
         </h3>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="form-group">
                 <label for="filter-estado" class="form-label">Estado:</label>
                 <select id="filter-estado" class="form-input">
@@ -188,10 +188,10 @@
             <h3 class="text-lg font-medium text-gray-900 dark:text-white">
                 <i class="bi bi-table mr-2"></i>Listado de Campañas
             </h3>
-            <div class="mt-2 sm:mt-0 flex space-x-2">
-                <input type="text" id="search-campanas" class="form-input w-64"
+            <div class="mt-2 sm:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                <input type="text" id="search-campanas" class="form-input w-full sm:w-64"
                        placeholder="Buscar campañas..." />
-                <button onclick="refreshTable()" class="btn btn-secondary">
+                <button onclick="refreshTable()" class="btn btn-secondary w-full sm:w-auto">
                     <i class="bi bi-arrow-clockwise"></i>
                 </button>
             </div>

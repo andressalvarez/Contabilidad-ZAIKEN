@@ -250,7 +250,7 @@ window.Templates = {
 
                 <!-- Formulario de agregar transacción -->
                 <div class="bg-gray-50 rounded-lg p-6 mb-6">
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                         <input type="date" id="tx-fecha" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                         <select id="tx-tipo" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                             <option value="Ingreso">Ingreso</option>
@@ -262,7 +262,7 @@ window.Templates = {
                             <option value="Otros">Otros</option>
                         </select>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <input type="number" id="tx-monto" placeholder="Monto (COP)" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                         <select id="tx-moneda" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                             <option value="COP">COP</option>
@@ -276,7 +276,7 @@ window.Templates = {
                         </select>
                     </div>
                     <div class="grid grid-cols-1 gap-4 mt-4">
-                        <button onclick="TransaccionesView.agregarTransaccion()" class="btn btn-primary">
+                        <button onclick="TransaccionesView.agregarTransaccion()" class="btn btn-primary w-full sm:w-auto">
                             Agregar Transacción
                         </button>
                     </div>
@@ -285,7 +285,7 @@ window.Templates = {
                 <!-- Filtros y búsqueda -->
                 <div class="bg-blue-50 rounded-lg p-4 mb-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">Filtros y Búsqueda</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-4">
                         <input type="date" id="filtro-startDate" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
                         <input type="date" id="filtro-endDate" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
                         <input type="text" id="search-transacciones" placeholder="Buscar..." class="w-full px-3 py-2 border border-gray-300 rounded-md">
@@ -304,21 +304,19 @@ window.Templates = {
                         <select id="filtro-campana" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                             <option value="">Todos los tipos de gasto</option>
                         </select>
-                        <div class="flex gap-2">
-                            <button onclick="TransaccionesView.aplicarFiltros()" class="btn btn-sm btn-secondary">
-                                Filtrar
-                            </button>
-                            <button onclick="TransaccionesView.limpiarFiltros()" class="btn btn-sm btn-outline">
-                                Limpiar
-                            </button>
-                        </div>
                     </div>
-                    <div class="flex gap-2">
-                        <button onclick="TransaccionesView.exportarTransacciones()" class="btn btn-sm btn-success">
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <button onclick="TransaccionesView.aplicarFiltros()" class="btn btn-sm btn-secondary w-full sm:w-auto">
+                            Filtrar
+                        </button>
+                        <button onclick="TransaccionesView.limpiarFiltros()" class="btn btn-sm btn-outline w-full sm:w-auto">
+                            Limpiar
+                        </button>
+                        <button onclick="TransaccionesView.exportarTransacciones()" class="btn btn-sm btn-success w-full sm:w-auto">
                             <i class="bi bi-download mr-1"></i>
                             Exportar CSV
                         </button>
-                        <button onclick="TransaccionesView.mostrarEstadisticas()" class="btn btn-sm btn-info">
+                        <button onclick="TransaccionesView.mostrarEstadisticas()" class="btn btn-sm btn-info w-full sm:w-auto">
                             <i class="bi bi-bar-chart mr-1"></i>
                             Actualizar Stats
                         </button>
@@ -326,9 +324,9 @@ window.Templates = {
                 </div>
 
                 <!-- Filtro de persona para gráficas -->
-                <div class="mb-4 flex items-center gap-3">
+                <div class="mb-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
                     <label for="charts-persona-filter" class="text-sm font-medium text-gray-700">Filtrar persona (gráficas):</label>
-                    <select id="charts-persona-filter" class="px-3 py-2 border border-gray-300 rounded-md">
+                    <select id="charts-persona-filter" class="px-3 py-2 border border-gray-300 rounded-md w-full sm:w-auto">
                         <option value="">Todas</option>
                     </select>
                 </div>

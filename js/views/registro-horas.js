@@ -18,7 +18,7 @@ window.RegistroHorasView = {
         this.table = new Tabulator(tableContainer, {
             data: DataManager.getAll('registroHorasData'),
             layout: "fitColumns",
-            responsiveLayout: "hide",
+            responsiveLayout: false, // <--- Cambiado para que nunca oculte columnas
             columns: [
                 { title: "ID", field: "id", width: 50 },
                 { title: "Fecha", field: "fecha", editor: "input" },

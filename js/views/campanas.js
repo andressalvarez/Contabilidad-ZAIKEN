@@ -58,7 +58,7 @@ window.CampanasView = {
         this.table = new Tabulator(tableContainer, {
             height: "400px",
             layout: "fitColumns",
-            responsiveLayout: "hide",
+            responsiveLayout: false, // <--- Cambiado para que nunca oculte columnas
             pagination: "local",
             paginationSize: 15,
             columns: [

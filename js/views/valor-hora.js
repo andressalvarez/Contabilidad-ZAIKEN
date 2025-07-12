@@ -111,7 +111,7 @@
         valorHoraTable = new Tabulator(tableElement, {
             data: enrichedData,
             layout: "fitColumns",
-            responsiveLayout: "hide",
+            responsiveLayout: false, // <--- Cambiado para que nunca oculte columnas
             pagination: "local",
             paginationSize: 10,
             paginationSizeSelector: [5, 10, 20, 50],

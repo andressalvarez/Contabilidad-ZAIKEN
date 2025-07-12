@@ -262,8 +262,7 @@ window.TransaccionesView = {
         this.table = new Tabulator(container, {
             height: "500px",
             layout: "fitDataStretch",
-            responsiveLayout: "collapse",
-            responsiveLayoutCollapseStartOpen: false,
+            responsiveLayout: false, // <--- Cambiado para que nunca oculte columnas
             pagination: "local",
             paginationSize: 15,
             paginationSizeSelector: [5, 10, 15, 20, 25, 50, 100],

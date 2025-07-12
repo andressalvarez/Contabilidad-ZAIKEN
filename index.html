@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sistema de Gestión Completo - Modular</title>
 
     <!-- Bootstrap (para tooltips e íconos) -->
@@ -33,6 +34,15 @@
                         <h1 class="text-2xl font-bold text-gray-900">Sistema de Gestión: ZAIKEN</h1>
                     </div>
                     <div class="flex items-center space-x-4">
+                        <!-- Botón para colapsar sidebar en móviles -->
+                        <button id="sidebarToggle" class="lg:hidden p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
+                            <i class="bi bi-list"></i>
+                        </button>
+                        <!-- Indicador de última vista -->
+                        <div id="lastViewIndicator" class="hidden sm:flex items-center text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-lg">
+                            <i class="bi bi-clock-history mr-2"></i>
+                            <span id="lastViewText">Última vista guardada</span>
+                        </div>
                         <button id="darkModeToggle" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
                             <i class="bi bi-moon-fill"></i>
                         </button>
@@ -43,7 +53,7 @@
 
         <div class="flex">
             <!-- Sidebar -->
-            <aside class="h-screen sticky top-0 overflow-y-auto">
+            <aside id="sidebar" class="h-screen sticky top-0 overflow-y-auto">
                 <nav>
                     <div class="nav-group">
                         <h3 class="nav-group-title">Principal</h3>
@@ -142,5 +152,86 @@
 
     <!-- Aplicación principal -->
     <script src="./js/app.js"></script>
+
+    <!-- Script para manejo responsive del sidebar -->
+    <script>
+        // Manejo del sidebar responsive
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('sidebar');
+            const lastViewIndicator = document.getElementById('lastViewIndicator');
+            const lastViewText = document.getElementById('lastViewText');
+
+            if (sidebarToggle && sidebar) {
+                sidebarToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('collapsed');
+
+                    // Cambiar ícono
+                    const icon = sidebarToggle.querySelector('i');
+                    if (sidebar.classList.contains('collapsed')) {
+                        icon.className = 'bi bi-x-lg';
+                    } else {
+                        icon.className = 'bi bi-list';
+                    }
+                });
+            }
+
+            // Cerrar sidebar al hacer clic en un enlace en móviles
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 768) {
+                        sidebar.classList.add('collapsed');
+                        const icon = sidebarToggle.querySelector('i');
+                        icon.className = 'bi bi-list';
+                    }
+                });
+            });
+
+            // Manejar resize de ventana
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 768) {
+                    sidebar.classList.remove('collapsed');
+                    const icon = sidebarToggle.querySelector('i');
+                    icon.className = 'bi bi-list';
+                }
+            });
+
+            // Función para actualizar el indicador de última vista
+            function updateLastViewIndicator() {
+                if (window.Navigation && lastViewIndicator && lastViewText) {
+                    const lastViewInfo = window.Navigation.getLastViewInfo();
+                    if (lastViewInfo && lastViewInfo.isValid) {
+                        lastViewText.textContent = `Última: ${lastViewInfo.viewTitle}`;
+                        lastViewIndicator.classList.remove('hidden');
+
+                        // Agregar tooltip con información adicional
+                        lastViewIndicator.title = `Vista actual: ${window.Navigation.getCurrentView()}\nÚltima vista guardada: ${lastViewInfo.viewName}`;
+                    } else {
+                        lastViewIndicator.classList.add('hidden');
+                    }
+                }
+            }
+
+            // Actualizar indicador cuando se carga la página
+            setTimeout(updateLastViewIndicator, 1000);
+
+            // Actualizar indicador cuando cambia la vista
+            const originalLoadView = window.Navigation.loadView;
+            if (originalLoadView) {
+                window.Navigation.loadView = function(viewName) {
+                    const result = originalLoadView.call(this, viewName);
+                    setTimeout(updateLastViewIndicator, 500);
+                    return result;
+                };
+            }
+
+            // Mostrar información de debug en consola (solo en desarrollo)
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                console.log('💡 Tip: Usa Navigation.debugNavigationSystem() para ver información del sistema de navegación');
+                console.log('💡 Tip: Usa Navigation.getLastViewInfo() para ver la última vista guardada');
+            }
+        });
+    </script>
 </body>
 </html>

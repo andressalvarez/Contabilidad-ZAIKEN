@@ -7,7 +7,7 @@
                 Administra socios, colaboradores y su información relacionada
             </p>
         </div>
-        <div class="mt-4 sm:mt-0 flex space-x-3">
+        <div class="mt-4 sm:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
             <button onclick="exportarPersonas()" class="btn btn-secondary">
                 <i class="bi bi-download mr-2"></i>Exportar CSV
             </button>
@@ -56,7 +56,7 @@
             </div>
 
             <div class="md:col-span-2 lg:col-span-3">
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary w-full sm:w-auto">
                     <i class="bi bi-person-plus mr-2"></i>Agregar Persona
                 </button>
             </div>
@@ -64,7 +64,7 @@
     </div>
 
     <!-- Estadísticas Rápidas -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         <div class="card bg-gradient-to-r from-blue-500 to-blue-600 text-white">
             <div class="flex items-center">
                 <div class="flex-shrink-0">
@@ -120,10 +120,10 @@
             <h3 class="text-lg font-medium text-gray-900 dark:text-white">
                 <i class="bi bi-table mr-2"></i>Listado de Personas
             </h3>
-            <div class="mt-2 sm:mt-0 flex space-x-2">
-                <input type="text" id="search-personas" class="form-input w-64"
+            <div class="mt-2 sm:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                <input type="text" id="search-personas" class="form-input w-full sm:w-64"
                        placeholder="Buscar personas..." />
-                <button onclick="refreshTable()" class="btn btn-secondary">
+                <button onclick="refreshTable()" class="btn btn-secondary w-full sm:w-auto">
                     <i class="bi bi-arrow-clockwise"></i>
                 </button>
             </div>
@@ -152,7 +152,7 @@
                         <input type="text" id="edit-notas" class="form-input" />
                     </div>
                 </div>
-                <div class="flex justify-end space-x-3 mt-6">
+                <div class="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 mt-6">
                     <button type="button" onclick="closeEditModal()" class="btn btn-secondary">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Guardar</button>
                 </div>

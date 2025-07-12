@@ -2,11 +2,56 @@
 window.Navigation = {
     currentView: null,
     currentScript: null,
+    lastViewKey: 'zaiken_last_view', // Clave para localStorage
 
     // Inicializar sistema de navegación
     init() {
         this.bindNavigationEvents();
-        this.loadView('dashboard'); // Vista inicial
+        this.loadLastView(); // Cargar la última vista visitada
+    },
+
+    // Cargar la última vista visitada o dashboard por defecto
+    loadLastView() {
+        const lastView = this.getLastView();
+        const defaultView = 'dashboard';
+
+        // Verificar que la vista existe en la configuración
+        const { views } = window.AppConfig;
+        const validView = views[lastView] ? lastView : defaultView;
+
+        console.log(`Cargando vista: ${validView} (última vista: ${lastView})`);
+        this.loadView(validView);
+
+        // Establecer el elemento activo en la navegación
+        this.setActiveNavItemByName(validView);
+    },
+
+    // Obtener la última vista visitada desde localStorage
+    getLastView() {
+        try {
+            return localStorage.getItem(this.lastViewKey) || 'dashboard';
+        } catch (error) {
+            console.warn('Error al obtener última vista:', error);
+            return 'dashboard';
+        }
+    },
+
+    // Guardar la vista actual en localStorage
+    saveLastView(viewName) {
+        try {
+            localStorage.setItem(this.lastViewKey, viewName);
+            console.log(`Vista guardada: ${viewName}`);
+        } catch (error) {
+            console.warn('Error al guardar última vista:', error);
+        }
+    },
+
+    // Establecer elemento activo en navegación por nombre de vista
+    setActiveNavItemByName(viewName) {
+        const activeLink = document.querySelector(`[data-tab="${viewName}"]`);
+        if (activeLink) {
+            this.setActiveNavItem(activeLink);
+        }
     },
 
     // Enlazar eventos de navegación
@@ -34,6 +79,20 @@ window.Navigation = {
                     e.preventDefault();
                     navItems[activeIndex + 1].click();
                 }
+            }
+        });
+
+        // Guardar vista al cerrar la página
+        window.addEventListener('beforeunload', () => {
+            if (this.currentView) {
+                this.saveLastView(this.currentView);
+            }
+        });
+
+        // Guardar vista cuando cambia la visibilidad de la página
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden' && this.currentView) {
+                this.saveLastView(this.currentView);
             }
         });
     },
@@ -147,6 +206,9 @@ window.Navigation = {
             }
 
             this.currentView = viewName;
+
+            // Guardar la vista actual
+            this.saveLastView(viewName);
 
             // Actualizar título de la página
             document.title = `${view.title} - Sistema de Gestión`;
@@ -367,5 +429,131 @@ window.Navigation = {
             console.log(`Forzando reinicialización de ${this.currentView}`);
             this.loadView(this.currentView);
         }
+    },
+
+    // Limpiar la última vista guardada (resetear a dashboard)
+    clearLastView() {
+        try {
+            localStorage.removeItem(this.lastViewKey);
+            console.log('Última vista limpiada, se cargará dashboard en la próxima visita');
+        } catch (error) {
+            console.warn('Error al limpiar última vista:', error);
+        }
+    },
+
+    // Obtener información sobre la última vista guardada
+    getLastViewInfo() {
+        const lastView = this.getLastView();
+        const { views } = window.AppConfig;
+        const viewInfo = views[lastView];
+
+        return {
+            viewName: lastView,
+            viewTitle: viewInfo ? viewInfo.title : 'Vista no encontrada',
+            isValid: !!viewInfo,
+            currentView: this.currentView,
+            isCurrentView: lastView === this.currentView
+        };
+    },
+
+    // Forzar guardado de la vista actual
+    forceSaveCurrentView() {
+        if (this.currentView) {
+            this.saveLastView(this.currentView);
+            console.log(`Vista actual forzada a guardar: ${this.currentView}`);
+        } else {
+            console.warn('No hay vista actual para guardar');
+        }
+    },
+
+    // Verificar si localStorage está disponible
+    isLocalStorageAvailable() {
+        try {
+            const test = '__localStorage_test__';
+            localStorage.setItem(test, test);
+            localStorage.removeItem(test);
+            return true;
+        } catch (error) {
+            return false;
+        }
+    },
+
+    // Función para debugging completo del sistema de navegación
+    debugNavigationSystem() {
+        console.log('=== DEBUG SISTEMA DE NAVEGACIÓN ===');
+        console.log('Vista actual:', this.currentView);
+        console.log('Última vista guardada:', this.getLastView());
+        console.log('Información de última vista:', this.getLastViewInfo());
+        console.log('localStorage disponible:', this.isLocalStorageAvailable());
+        console.log('Configuración de vistas:', window.AppConfig.views);
+
+        // Verificar elementos de navegación
+        const navLinks = document.querySelectorAll('.nav-link');
+        console.log('Enlaces de navegación encontrados:', navLinks.length);
+
+        navLinks.forEach((link, index) => {
+            const viewName = link.getAttribute('data-tab');
+            const isActive = link.classList.contains('active');
+            console.log(`  ${index + 1}. ${viewName} - Activo: ${isActive}`);
+        });
+
+        console.log('=== FIN DEBUG ===');
     }
 };
+
+// Funciones globales para debugging y gestión de la última vista
+window.ZaikenNavigation = {
+    // Obtener información de la última vista
+    getLastViewInfo: () => window.Navigation.getLastViewInfo(),
+
+    // Limpiar última vista guardada
+    clearLastView: () => {
+        window.Navigation.clearLastView();
+        console.log('✅ Última vista limpiada. En la próxima recarga se cargará el dashboard.');
+    },
+
+    // Forzar guardado de vista actual
+    saveCurrentView: () => {
+        window.Navigation.forceSaveCurrentView();
+        console.log('✅ Vista actual guardada.');
+    },
+
+    // Debug completo del sistema
+    debug: () => window.Navigation.debugNavigationSystem(),
+
+    // Navegar a una vista específica
+    goTo: (viewName) => {
+        window.Navigation.navigateTo(viewName);
+        console.log(`✅ Navegando a: ${viewName}`);
+    },
+
+    // Obtener vista actual
+    getCurrent: () => {
+        const current = window.Navigation.getCurrentView();
+        console.log(`📍 Vista actual: ${current}`);
+        return current;
+    }
+};
+
+// Mostrar información de ayuda en consola
+console.log(`
+🚀 Sistema de Navegación ZAIKEN - Funciones de Debug Disponibles:
+
+📋 Información:
+• ZaikenNavigation.getLastViewInfo() - Ver información de la última vista
+• ZaikenNavigation.getCurrent() - Ver vista actual
+
+🔧 Gestión:
+• ZaikenNavigation.clearLastView() - Limpiar última vista guardada
+• ZaikenNavigation.saveCurrentView() - Forzar guardado de vista actual
+• ZaikenNavigation.goTo('nombreVista') - Navegar a vista específica
+
+🐛 Debug:
+• ZaikenNavigation.debug() - Debug completo del sistema
+• Navigation.debugNavigationSystem() - Debug detallado
+
+💡 Ejemplos:
+• ZaikenNavigation.goTo('personas')
+• ZaikenNavigation.clearLastView()
+• ZaikenNavigation.debug()
+`);

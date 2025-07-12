@@ -91,7 +91,7 @@ window.PersonasView = {
         this.table = new Tabulator(tableElement, {
             height: "400px",
             layout: "fitColumns",
-            responsiveLayout: "hide",
+            responsiveLayout: false, // <--- Cambiado para que nunca oculte columnas
             pagination: "local",
             paginationSize: 10,
             paginationSizeSelector: [5, 10, 20, 50],

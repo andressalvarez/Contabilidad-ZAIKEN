@@ -5,6 +5,597 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Layout principal responsive */
+.min-h-screen {
+    min-height: 100vh;
+}
+
+/* Contenedor principal con flexbox responsive */
+.flex {
+    display: flex;
+}
+
+/* Sidebar base */
+aside {
+    width: 16rem; /* w-64 */
+    background-color: #ffffff;
+    border-right: 1px solid #E5E7EB; /* gray-200 */
+    flex-shrink: 0; /* Evitar que se encoja */
+    transition: width 0.3s ease;
+}
+
+/* Contenido principal */
+main {
+    flex: 1;
+    min-width: 0; /* Permitir que se encoja */
+    overflow-x: auto; /* Scroll horizontal si es necesario */
+}
+
+/* Modo oscuro */
+.dark aside {
+    background-color: #111827; /* gray-900 */
+    border-color: #1F2937; /* gray-800 */
+}
+
+/* Responsive para tablets y móviles */
+@media (max-width: 1024px) {
+    aside {
+        width: 14rem; /* Reducir un poco en tablets */
+    }
+}
+
+@media (max-width: 768px) {
+    /* Layout en móviles */
+    .flex {
+        flex-direction: column;
+    }
+
+    aside {
+        width: 100%;
+        height: auto;
+        position: relative;
+        border-right: none;
+        border-bottom: 1px solid #E5E7EB;
+    }
+
+    main {
+        flex: 1;
+        padding: 1rem;
+    }
+
+    /* Sidebar colapsado en móviles */
+    aside.collapsed {
+        height: 60px;
+        overflow: hidden;
+    }
+
+    aside.collapsed nav {
+        display: none;
+    }
+
+    /* Botón para expandir/colapsar sidebar */
+    .sidebar-toggle {
+        display: block;
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        z-index: 10;
+    }
+
+    /* Mejoras para formularios en móviles */
+    .grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+
+    .grid-cols-1.md\\:grid-cols-2,
+    .grid-cols-1.md\\:grid-cols-3,
+    .grid-cols-1.md\\:grid-cols-4,
+    .grid-cols-1.md\\:grid-cols-5,
+    .grid-cols-1.md\\:grid-cols-6 {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Ajustes para cards y contenedores */
+    .card {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Mejoras para botones en móviles */
+    .btn {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    /* Ajustes para inputs y selects */
+    .form-input {
+        padding: 0.75rem;
+        font-size: 1rem; /* Evitar zoom en iOS */
+    }
+
+    /* Mejoras para tablas en móviles */
+    .tabulator {
+        font-size: 14px !important;
+    }
+
+    .tabulator-cell {
+        padding: 8px 6px !important;
+    }
+
+    .tabulator-col-title {
+        font-size: 13px !important;
+        padding: 10px 6px !important;
+    }
+
+    /* Ajustes para gráficos */
+    .h-64, .h-72 {
+        height: 200px !important;
+    }
+
+    /* Mejoras para estadísticas */
+    .text-2xl {
+        font-size: 1.5rem !important;
+    }
+
+    .text-3xl {
+        font-size: 1.875rem !important;
+    }
+}
+
+@media (max-width: 640px) {
+    main {
+        padding: 0.75rem;
+    }
+
+    .card {
+        padding: 0.75rem;
+    }
+
+    .grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem !important;
+    }
+
+    .grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-3,
+    .grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-4,
+    .grid-cols-1.md\\:grid-cols-3.lg\\:grid-cols-4 {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Ajustes para headers */
+    .text-2xl {
+        font-size: 1.25rem !important;
+    }
+
+    /* Mejoras para formularios complejos */
+    .space-y-6 > * + * {
+        margin-top: 1rem !important;
+    }
+
+    /* Ajustes para filtros */
+    .bg-blue-50, .bg-gray-50 {
+        padding: 0.75rem !important;
+    }
+
+    /* Mejoras para botones de acción */
+    .flex.space-x-2, .flex.space-x-3 {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .flex.space-x-2 > *, .flex.space-x-3 > * {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    /* Ajustes para búsquedas */
+    .w-64 {
+        width: 100% !important;
+    }
+}
+
+/* Mejoras específicas para vistas con templates */
+.space-y-6 {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .space-y-6 {
+        gap: 1rem;
+    }
+}
+
+/* Asegurar que los contenedores principales sean responsive */
+#main-content {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* Mejoras para formularios complejos */
+.bg-gray-50.rounded-lg.p-6 {
+    padding: 1rem !important;
+}
+
+@media (max-width: 768px) {
+    .bg-gray-50.rounded-lg.p-6 {
+        padding: 0.75rem !important;
+    }
+}
+
+/* Ajustes para filtros complejos */
+.bg-blue-50.rounded-lg.p-4 {
+    padding: 1rem !important;
+}
+
+@media (max-width: 768px) {
+    .bg-blue-50.rounded-lg.p-4 {
+        padding: 0.75rem !important;
+    }
+}
+
+/* Mejoras para estadísticas en móviles */
+@media (max-width: 768px) {
+    .bg-gradient-to-r {
+        padding: 1rem !important;
+    }
+
+    .bg-gradient-to-r .flex {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+
+    .bg-gradient-to-r .ml-4 {
+        margin-left: 0 !important;
+    }
+
+    .bg-gradient-to-r .text-3xl {
+        font-size: 1.5rem !important;
+    }
+
+    .bg-gradient-to-r .text-2xl {
+        font-size: 1.25rem !important;
+    }
+}
+
+/* Ajustes para gráficos en móviles */
+@media (max-width: 768px) {
+    .relative.w-full.h-72 {
+        height: 200px !important;
+    }
+
+    .graph-title {
+        font-size: 1rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+}
+
+/* Mejoras para tablas en móviles */
+@media (max-width: 768px) {
+    .tabulator-tableHolder {
+        overflow-x: auto !important;
+    }
+
+    .tabulator-col {
+        min-width: 80px !important;
+    }
+
+    .tabulator-col[tabulator-field="actions"] {
+        min-width: 100px !important;
+    }
+}
+
+/* Ajustes para modales en móviles */
+@media (max-width: 768px) {
+    .max-w-md {
+        max-width: 95% !important;
+        margin: 0 0.5rem !important;
+    }
+
+    .mx-4 {
+        margin-left: 0.5rem !important;
+        margin-right: 0.5rem !important;
+    }
+}
+
+/* Mejoras adicionales para responsividad */
+@media (max-width: 480px) {
+    /* Ajustes para pantallas muy pequeñas */
+    main {
+        padding: 0.5rem;
+    }
+
+    .card {
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .btn {
+        padding: 0.625rem 0.875rem;
+        font-size: 0.8125rem;
+    }
+
+    .form-input {
+        padding: 0.625rem;
+        font-size: 1rem;
+    }
+
+    /* Ajustes para headers */
+    .text-2xl {
+        font-size: 1.125rem !important;
+    }
+
+    .text-lg {
+        font-size: 1rem !important;
+    }
+
+    /* Mejoras para estadísticas en pantallas muy pequeñas */
+    .bg-gradient-to-r {
+        padding: 0.75rem !important;
+    }
+
+    .bg-gradient-to-r .text-2xl {
+        font-size: 1.125rem !important;
+    }
+
+    .bg-gradient-to-r .text-3xl {
+        font-size: 1.25rem !important;
+    }
+
+    /* Ajustes para gráficos */
+    .h-64, .h-72 {
+        height: 150px !important;
+    }
+
+    /* Mejoras para tablas */
+    .tabulator {
+        font-size: 12px !important;
+    }
+
+    .tabulator-cell {
+        padding: 6px 4px !important;
+    }
+
+    .tabulator-col-title {
+        font-size: 11px !important;
+        padding: 8px 4px !important;
+    }
+}
+
+/* Asegurar que los tooltips funcionen bien en móviles */
+@media (max-width: 768px) {
+    [data-bs-toggle="tooltip"] {
+        position: relative;
+    }
+
+    [data-bs-toggle="tooltip"]:hover::after {
+        content: attr(title);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #1f2937;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+        z-index: 1000;
+        margin-bottom: 4px;
+    }
+}
+
+/* Mejoras para el modo oscuro en móviles */
+@media (max-width: 768px) {
+    .dark .card {
+        background-color: #1f2937;
+        border-color: #374151;
+    }
+
+    .dark .form-input {
+        background-color: #374151;
+        border-color: #4b5563;
+        color: #f9fafb;
+    }
+
+    .dark .form-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .dark .btn {
+        border-color: #4b5563;
+    }
+}
+
+/* Asegurar que los elementos interactivos sean accesibles en móviles */
+@media (max-width: 768px) {
+    .btn, .form-input, select, button {
+        min-height: 44px; /* Tamaño mínimo recomendado para touch */
+    }
+
+    .nav-link {
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+    }
+
+    /* Mejorar la accesibilidad de los botones */
+    .btn:focus {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
+    }
+
+    /* Mejorar la accesibilidad de los inputs */
+    .form-input:focus {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
+    }
+}
+
+/* Animaciones suaves para transiciones responsive */
+.flex, .grid, .card, .btn, .form-input {
+    transition: all 0.3s ease;
+}
+
+/* Mejoras para el scroll en móviles */
+@media (max-width: 768px) {
+    body {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .tabulator-tableHolder {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Mejorar el scroll del sidebar */
+    aside {
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Asegurar que las imágenes sean responsive */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Mejoras para el logo en el header */
+@media (max-width: 768px) {
+    .h-10.w-10 {
+        height: 2rem;
+        width: 2rem;
+    }
+
+    .text-2xl {
+        font-size: 1.25rem;
+    }
+}
+
+/* Asegurar que los contenedores no se desborden */
+* {
+    box-sizing: border-box;
+}
+
+/* Mejoras para el performance en móviles */
+@media (max-width: 768px) {
+    .tabulator-row {
+        will-change: transform;
+    }
+
+    .card {
+        will-change: transform;
+    }
+}
+
+/* Asegurar que los elementos ocultos no ocupen espacio */
+.hidden {
+    display: none !important;
+}
+
+/* Mejoras para el z-index en móviles */
+@media (max-width: 768px) {
+    .tabulator-edit-select-list {
+        z-index: 1002 !important;
+    }
+
+    .tabulator-tooltip {
+        z-index: 1003 !important;
+    }
+
+    #modal-edit-persona {
+        z-index: 1004 !important;
+    }
+}
+
+/* Estilos para el indicador de última vista */
+#lastViewIndicator {
+    transition: all 0.3s ease;
+    cursor: help;
+    user-select: none;
+}
+
+#lastViewIndicator:hover {
+    background-color: #e5e7eb;
+    transform: scale(1.05);
+}
+
+#lastViewIndicator i {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+/* Animación para el indicador cuando se actualiza */
+@keyframes lastViewUpdate {
+    0% {
+        transform: scale(1);
+        background-color: #f3f4f6;
+    }
+    50% {
+        transform: scale(1.1);
+        background-color: #dbeafe;
+    }
+    100% {
+        transform: scale(1);
+        background-color: #f3f4f6;
+    }
+}
+
+.lastViewUpdated {
+    animation: lastViewUpdate 0.5s ease;
+}
+
+/* Modo oscuro para el indicador */
+.dark #lastViewIndicator {
+    background-color: #374151;
+    color: #d1d5db;
+}
+
+.dark #lastViewIndicator:hover {
+    background-color: #4b5563;
+}
+
+.dark #lastViewIndicator i {
+    color: #9ca3af;
+}
+
+/* Responsive para el indicador */
+@media (max-width: 640px) {
+    #lastViewIndicator {
+        display: none !important;
+    }
+}
+
+/* Estilos para tooltips personalizados */
+[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #1f2937;
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    white-space: pre-line;
+    z-index: 1000;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    pointer-events: none;
+}
+
+/* Mejoras para el modo oscuro en tooltips */
+.dark [title]:hover::after {
+    background-color: #f9fafb;
+    color: #1f2937;
+    border: 1px solid #e5e7eb;
+}
+
 /* Estilos personalizados */
 .nav-link {
     display: flex;
@@ -56,19 +647,6 @@
     margin: 0.5rem 0.75rem 0.25rem;
 }
 
-/* Sidebar base */
-aside {
-    width: 16rem; /* w-64 */
-    background-color: #ffffff;
-    border-right: 1px solid #E5E7EB; /* gray-200 */
-}
-
-/* Modo oscuro */
-.dark aside {
-    background-color: #111827; /* gray-900 */
-    border-color: #1F2937; /* gray-800 */
-}
-
 .dark .nav-link {
     color: #D1D5DB; /* gray-300 */
 }
@@ -98,23 +676,36 @@ aside {
 
 @media (max-width: 768px) {
     aside {
-        width: 4.375rem; /* 70px */
+        width: 100%;
+        height: auto;
+        position: relative;
     }
 
     .nav-link {
-        justify-content: center;
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
+        justify-content: flex-start;
+        padding-left: 1rem;
+        padding-right: 1rem;
     }
 
     .nav-link span,
     .nav-group-title {
-        display: none; /* Hidden */
+        display: block; /* Mostrar texto en móviles */
     }
 
     .nav-group {
         padding-left: 0.5rem;
         padding-right: 0.5rem;
+    }
+
+    /* Sidebar colapsado */
+    aside.collapsed {
+        height: 60px;
+        overflow: hidden;
+    }
+
+    aside.collapsed .nav-link span,
+    aside.collapsed .nav-group-title {
+        display: none;
     }
 }
 
@@ -668,4 +1259,52 @@ nav {
 /* Espaciado y estructura */
 ul.space-y-1 > li {
     margin-bottom: 2px;
+}
+
+/* Scroll horizontal siempre visible para Tabulator */
+.tabulator,
+.tabulator-tableHolder {
+    overflow-x: auto !important;
+    min-width: 100% !important;
+    scrollbar-color: #a3a3a3 #f3f4f6;
+    scrollbar-width: thin;
+}
+
+/* Sombra en el borde derecho para indicar scroll */
+.tabulator-tableHolder::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 24px;
+    height: 100%;
+    pointer-events: none;
+    background: linear-gradient(to left, rgba(0,0,0,0.08), transparent);
+    z-index: 2;
+    display: block;
+}
+
+/* Mejorar visibilidad del scroll en móviles */
+@media (max-width: 768px) {
+    .tabulator,
+    .tabulator-tableHolder {
+        min-width: 600px !important;
+        font-size: 13px !important;
+    }
+    .tabulator-tableHolder::after {
+        width: 32px;
+    }
+}
+
+/* Scrollbar personalizado para webkit */
+.tabulator-tableHolder::-webkit-scrollbar {
+    height: 8px;
+    background: #f3f4f6;
+}
+.tabulator-tableHolder::-webkit-scrollbar-thumb {
+    background: #a3a3a3;
+    border-radius: 4px;
+}
+.tabulator-tableHolder::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
 }
