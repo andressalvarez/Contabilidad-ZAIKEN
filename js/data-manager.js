@@ -131,12 +131,20 @@ window.DataManager = {
 
     // Exportar backup completo
     exportBackup() {
+        const incluirConfig = document.getElementById('backup-incluir-config')?.checked;
         const backup = {
             exportDate: new Date().toISOString(),
             version: '1.0',
             data: { ...this.data }
         };
-
+        if (incluirConfig) {
+            // Guardar configuración personalizada relevante de localStorage
+            backup.configPersonalizada = {
+                vsCategoriasConfig: localStorage.getItem('vsCategoriasConfig'),
+                darkMode: localStorage.getItem('darkMode'),
+                // Agrega aquí otras claves relevantes si las usas
+            };
+        }
         const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -144,7 +152,6 @@ window.DataManager = {
         a.download = `backup_${new Date().toISOString().split('T')[0]}.json`;
         a.click();
         URL.revokeObjectURL(url);
-
         console.log('Backup exportado');
     },
 
@@ -155,11 +162,23 @@ window.DataManager = {
             reader.onload = (e) => {
                 try {
                     const backup = JSON.parse(e.target.result);
-
                     // Validar estructura del backup
                     if (backup.data) {
                         this.replaceAllData(backup.data);
                         this.syncCounters();
+                        // Restaurar configuración personalizada si existe
+                        if (backup.configPersonalizada) {
+                            if (backup.configPersonalizada.vsCategoriasConfig) {
+                                localStorage.setItem('vsCategoriasConfig', backup.configPersonalizada.vsCategoriasConfig);
+                            }
+                            if (backup.configPersonalizada.darkMode) {
+                                localStorage.setItem('darkMode', backup.configPersonalizada.darkMode);
+                            }
+                            // Agrega aquí otras claves relevantes si las usas
+                            if (window.Utils && window.Utils.showToast) {
+                                Utils.showToast('Configuración personalizada restaurada', 'success');
+                            }
+                        }
                         resolve(backup);
                     } else {
                         // Compatibilidad con formato anterior

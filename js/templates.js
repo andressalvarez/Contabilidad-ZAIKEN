@@ -94,6 +94,10 @@ window.Templates = {
                     <button onclick="DataManager.exportBackup()" class="btn btn-warning flex items-center gap-1">
                         <i class="bi bi-download"></i>Descargar Backup
                     </button>
+                    <label class="flex items-center gap-2 text-sm text-gray-700">
+                        <input type="checkbox" id="backup-incluir-config" checked>
+                        Incluir configuración personalizada (filtros, grupos, preferencias)
+                    </label>
                     <label for="backupFileInput" class="btn btn-success flex items-center gap-1 cursor-pointer">
                         <i class="bi bi-upload"></i>Cargar Backup
                     </label>
