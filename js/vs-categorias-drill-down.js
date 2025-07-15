@@ -624,7 +624,30 @@ window.VsCategoriasDrillDown = {
                 <!-- Gráfico visual de transacciones -->
                 <div class="bg-white border border-gray-200 rounded-lg p-6">
                     <h4 class="text-lg font-semibold text-gray-900 mb-4">Visualización de Transacciones</h4>
-                    <p class="text-sm text-gray-600 mb-4">Vista gráfica de la información de la lista para identificación rápida de patrones</p>
+                    <p class="text-sm text-gray-600 mb-3">Vista gráfica de la información de la lista para identificación rápida de patrones</p>
+
+                    <!-- Leyenda visual -->
+                    <div class="bg-gray-50 rounded-lg p-3 mb-4 border">
+                        <div class="flex flex-wrap items-center gap-4 text-sm">
+                            <div class="flex items-center gap-2">
+                                <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                                <span class="text-gray-700">Ingresos</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                                <span class="text-gray-700">Gastos</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                                <span class="text-gray-700">Aportes</span>
+                            </div>
+                            <div class="flex items-center gap-2 ml-4">
+                                <div class="text-gray-600">•</div>
+                                <span class="text-gray-600 text-xs">Tamaño del punto = Valor de la transacción</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="h-80">
                         <canvas id="drill-chart-transacciones"></canvas>
                     </div>
@@ -990,52 +1013,74 @@ window.VsCategoriasDrillDown = {
         }
     },
 
-    // Crear gráfico detallado de transacciones individuales
+        // Crear gráfico visual de transacciones individuales (representación directa de la lista)
     createTransactionDetailChart(canvas, transactionData) {
         const ctx = canvas.getContext('2d');
 
-        // Agrupar por persona para colores consistentes
-        const personasUnicas = [...new Set(transactionData.map(t => t.persona))];
-        const colorMap = {};
-        personasUnicas.forEach((persona, index) => {
-            colorMap[persona] = this.detailColors[index % this.detailColors.length];
-        });
+        // Calcular tamaños de puntos basados en el monto
+        const montos = transactionData.map(t => t.monto);
+        const minMonto = Math.min(...montos);
+        const maxMonto = Math.max(...montos);
+        const rangeMonto = maxMonto - minMonto || 1;
 
-        // Preparar datos para scatter plot
-        const datasets = personasUnicas.map(persona => {
-            const transaccionesPersona = transactionData.filter(t => t.persona === persona);
+        // Preparar datos para visualización directa de transacciones
+        const scatterData = transactionData.map((t, index) => {
+            // Calcular tamaño del punto basado en el monto (entre 4 y 20)
+            const normalizedSize = ((t.monto - minMonto) / rangeMonto);
+            const pointSize = 4 + (normalizedSize * 16);
+
+            // Color basado en el tipo de transacción
+            let color;
+            switch (t.tipo) {
+                case 'Ingreso':
+                    color = '#10b981'; // Verde
+                    break;
+                case 'Gasto':
+                    color = '#ef4444'; // Rojo
+                    break;
+                case 'Aporte':
+                    color = '#3b82f6'; // Azul
+                    break;
+                default:
+                    color = '#6b7280'; // Gris
+            }
 
             return {
-                label: persona,
-                data: transaccionesPersona.map((t, index) => ({
-                    x: index + 1, // Número de transacción
-                    y: t.monto,
-                    concepto: t.concepto,
-                    fecha: t.fecha,
-                    tipo: t.tipo,
-                    notas: t.notas
-                })),
-                backgroundColor: colorMap[persona] + '80', // 50% transparencia
-                borderColor: colorMap[persona],
+                x: index + 1, // Número de transacción en orden
+                y: t.monto,
+                pointRadius: pointSize,
+                pointHoverRadius: pointSize + 3,
+                backgroundColor: color + '80', // 50% transparencia
+                borderColor: color,
                 borderWidth: 2,
-                pointRadius: 6,
-                pointHoverRadius: 8
+                // Datos adicionales para tooltip
+                concepto: t.concepto,
+                fecha: t.fecha,
+                tipo: t.tipo,
+                persona: t.persona,
+                notas: t.notas
             };
         });
 
         new Chart(ctx, {
             type: 'scatter',
-            data: { datasets },
+            data: {
+                datasets: [{
+                    label: 'Transacciones',
+                    data: scatterData,
+                    backgroundColor: scatterData.map(d => d.backgroundColor),
+                    borderColor: scatterData.map(d => d.borderColor),
+                    borderWidth: 2,
+                    pointRadius: scatterData.map(d => d.pointRadius),
+                    pointHoverRadius: scatterData.map(d => d.pointHoverRadius)
+                }]
+            },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        position: 'top',
-                        labels: {
-                            usePointStyle: true,
-                            pointStyle: 'circle'
-                        }
+                        display: false // Ocultar leyenda ya que cada punto es único
                     },
                     tooltip: {
                         callbacks: {
@@ -1046,10 +1091,11 @@ window.VsCategoriasDrillDown = {
                             label: function(context) {
                                 const point = context.raw;
                                 return [
-                                    `${context.dataset.label}: $${point.y.toLocaleString()}`,
+                                    `Monto: $${point.y.toLocaleString()}`,
                                     `Concepto: ${point.concepto}`,
-                                    `Fecha: ${point.fecha}`,
                                     `Tipo: ${point.tipo}`,
+                                    `Persona: ${point.persona}`,
+                                    `Fecha: ${point.fecha}`,
                                     ...(point.notas ? [`Notas: ${point.notas}`] : [])
                                 ];
                             }
@@ -1069,25 +1115,37 @@ window.VsCategoriasDrillDown = {
                         position: 'bottom',
                         title: {
                             display: true,
-                            text: 'Número de Transacción'
+                            text: 'Orden de Transacción',
+                            font: {
+                                weight: 'bold'
+                            }
                         },
                         ticks: {
                             stepSize: 1,
                             callback: function(value) {
                                 return '#' + Math.floor(value);
                             }
+                        },
+                        grid: {
+                            color: 'rgba(0,0,0,0.1)'
                         }
                     },
                     y: {
                         beginAtZero: true,
                         title: {
                             display: true,
-                            text: 'Monto ($)'
+                            text: 'Valor de Transacción ($)',
+                            font: {
+                                weight: 'bold'
+                            }
                         },
                         ticks: {
                             callback: function(value) {
                                 return '$' + value.toLocaleString();
                             }
+                        },
+                        grid: {
+                            color: 'rgba(0,0,0,0.1)'
                         }
                     }
                 },
