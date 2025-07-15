@@ -535,13 +535,45 @@ window.Templates = {
                         </div>
                     </div>
 
+                                        <!-- Tip sobre funcionalidad drill-down -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                        <div class="flex items-start space-x-3">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-lightbulb text-blue-600 text-lg"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="text-sm font-semibold text-blue-900 mb-1">💡 Funcionalidad Interactiva</h4>
+                                <p class="text-sm text-blue-800 mb-2">
+                                    <strong>Haz clic en cualquier segmento del gráfico</strong> para ver detalles expandibles tipo Notion:
+                                    lista de transacciones, análisis estadístico, y gráficos detallados de ese segmento específico.
+                                </p>
+                                <div class="flex gap-2">
+                                    <button onclick="VsCategoriasDrillDown.debugTest()"
+                                            class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700">
+                                        🔧 Test Debug
+                                    </button>
+                                                                        <button onclick="console.log('Estado drill-down:', VsCategoriasDrillDown)"
+                                            class="px-3 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700">
+                                        📊 Ver Estado
+                                    </button>
+                                    <button onclick="VsCategoriasDrillDown.forceShowTest()"
+                                            class="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700">
+                                        🧪 Test Forzado
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Área del Gráfico con Container Mejorado -->
-                    <div id="vs-categorias-chart-container" class="relative bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-200 shadow-inner">
+                    <div id="vs-categorias-chart-container" class="relative bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-200 shadow-inner cursor-pointer">
                         <!-- El gráfico y leyenda se insertan aquí dinámicamente -->
                         <div class="relative w-full h-auto min-h-96 p-4">
                             <canvas id="estadisticas-vs-categorias-chart" class="w-full h-auto min-h-96"></canvas>
                         </div>
                     </div>
+
+                    <!-- Área de drill-down expandible (se crea dinámicamente por el módulo) -->
                 </div>
             </div>
         </div>

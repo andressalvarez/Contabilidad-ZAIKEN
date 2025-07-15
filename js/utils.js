@@ -72,8 +72,8 @@ window.Utils = {
                 const opt = document.createElement("option");
                 opt.value = item[valueField];
                 opt.textContent = item[labelField];
-                if (!item[labelField] && item['nombreCategoria']) {
-                    opt.textContent = item['nombreCategoria'];
+                        if (!item[labelField] && item['nombre']) {
+            opt.textContent = item['nombre'];
                 }
                 sel.appendChild(opt);
             });

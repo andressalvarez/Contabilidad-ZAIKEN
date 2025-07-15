@@ -1895,3 +1895,148 @@ canvas#estadisticas-vs-categorias-chart {
         max-height: none !important;
     }
 }
+
+/* ===== ESTILOS PARA DRILL-DOWN EXPANDIBLE ===== */
+
+/* Contenedor principal del drill-down */
+.drill-down-container {
+    transition: all 0.3s ease-out;
+    will-change: transform, opacity;
+    margin-top: 24px;
+}
+
+.drill-down-container.entering {
+    opacity: 0;
+    transform: translateY(-20px);
+}
+
+.drill-down-container.entered {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Pestañas del drill-down */
+.drill-tab-btn {
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.drill-tab-btn:hover {
+    transform: translateY(-1px);
+}
+
+.drill-tab-btn.active {
+    border-bottom-width: 3px !important;
+    font-weight: 600;
+}
+
+/* Animaciones para las filas de transacciones */
+.drill-down-container tbody tr {
+    transition: all 0.2s ease;
+}
+
+.drill-down-container tbody tr:hover {
+    background-color: #f8fafc !important;
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos para estadísticas rápidas */
+.drill-down-container .grid > div {
+    transition: all 0.2s ease;
+}
+
+.drill-down-container .grid > div:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Cursor pointer para gráficos clickeables */
+#vs-categorias-chart-container canvas {
+    cursor: pointer !important;
+}
+
+#vs-categorias-chart-container:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.2s ease;
+}
+
+/* Animación de pulsación para indicar clickeable */
+@keyframes pulseChart {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+.chart-clickable-hint {
+    animation: pulseChart 2s ease-in-out infinite;
+}
+
+/* Estilos para el tip de funcionalidad */
+.drill-down-tip {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border-left: 4px solid #3b82f6;
+}
+
+/* Estados de loading para drill-down */
+.drill-loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.drill-loading::after {
+    content: '';
+    width: 16px;
+    height: 16px;
+    border: 2px solid #e5e7eb;
+    border-top: 2px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive específico para drill-down */
+@media (max-width: 1024px) {
+    .drill-down-container .grid-cols-2 {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .drill-down-container .grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .drill-down-container .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .drill-down-container .overflow-x-auto {
+        border-radius: 8px;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .drill-down-container tbody tr:hover {
+        transform: none; /* Remover transform en móviles */
+    }
+}
+
+@media (max-width: 480px) {
+    .drill-down-container {
+        margin-top: 16px;
+    }
+
+    .drill-down-container .text-2xl {
+        font-size: 1.25rem !important;
+    }
+
+    .drill-down-container .grid-cols-5 {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+    }
+}

@@ -346,12 +346,21 @@ window.CategoriasView = {
         // Actualizar la organización de grupos
         this.renderCarpetasYGrupos();
 
+        // Actualizar selects en todas las vistas para que aparezca la nueva categoría
+        this.updateSelectsInAllViews();
+
         Utils.showToast('Categoría agregada exitosamente', 'success');
     },
 
     // Eliminar categoría con validaciones mejoradas
     eliminarCategoria(button) {
-        const row = this.table.getRow(button.closest('tr'));
+        // Obtener la fila desde el botón de manera correcta para Tabulator
+        const row = this.table.getRow(button.closest('.tabulator-row'));
+        if (!row) {
+            console.error('No se pudo obtener la fila de Tabulator');
+            Utils.showToast('Error al obtener los datos de la categoría', 'error');
+            return;
+        }
         const categoria = row.getData();
 
         // Verificar si está en uso en transacciones
@@ -377,8 +386,35 @@ window.CategoriasView = {
             DataManager.delete('categoriasData', categoria.id);
             this.loadData();
             this.renderCarpetasYGrupos();
+
+            // Actualizar selects en todas las vistas
+            this.updateSelectsInAllViews();
+
             Utils.showToast('Categoría eliminada exitosamente', 'success');
         }
+    },
+
+    // Actualizar selects en todas las vistas
+    updateSelectsInAllViews() {
+        console.log('Actualizando selects de categorías en todas las vistas...');
+
+        // Actualizar en vista de transacciones si existe
+        if (window.TransaccionesView && TransaccionesView.refreshSelectOptions) {
+            TransaccionesView.refreshSelectOptions();
+        }
+
+        // Actualizar selects generales del sistema
+        if (window.Utils && Utils.actualizarSelectsEnFormularios) {
+            Utils.actualizarSelectsEnFormularios();
+        }
+
+        // Disparar evento personalizado para que otras vistas se actualicen
+        window.dispatchEvent(new CustomEvent('categoriasUpdated', {
+            detail: {
+                categorias: DataManager.getAll('categoriasData'),
+                timestamp: Date.now()
+            }
+        }));
     },
 
     // Limpiar formulario

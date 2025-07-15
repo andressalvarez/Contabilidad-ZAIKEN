@@ -379,7 +379,8 @@ window.TransaccionesView = {
                             "Otros": "Otros"
                         };
                         categorias.forEach(cat => {
-                            values[cat.nombreCategoria] = cat.nombreCategoria;
+                            // Usar 'nombre' que es el campo correcto en la estructura de datos
+                            values[cat.nombre] = cat.nombre;
                         });
                         return { values: values };
                     },
@@ -651,7 +652,8 @@ window.TransaccionesView = {
                         "Otros": "Otros"
                     };
                     categorias.forEach(cat => {
-                        values[cat.nombreCategoria] = cat.nombreCategoria;
+                        // Usar 'nombre' que es el campo correcto en la estructura de datos
+                        values[cat.nombre] = cat.nombre;
                     });
                     return { values: values };
                 }
@@ -709,8 +711,8 @@ window.TransaccionesView = {
 
             categorias.forEach(categoria => {
                 const option = document.createElement('option');
-                option.value = categoria.nombreCategoria;
-                option.textContent = categoria.nombreCategoria;
+                            option.value = categoria.nombre;
+            option.textContent = categoria.nombre;
                 filtroCategoria.appendChild(option);
             });
         }
