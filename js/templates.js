@@ -457,55 +457,90 @@ window.Templates = {
                         <div class="relative w-full h-72"><canvas id="estadisticas-chart-aportes-utilidades" class="absolute inset-0 w-full h-full"></canvas></div>
                     </div>
                 </div>
-                <!-- VS de Categorías -->
-                <div class="bg-white shadow rounded-lg p-6 mt-8">
-                    <h3 class="graph-title mb-4 flex items-center gap-2">
-                        <i class="bi bi-bar-chart-steps"></i>
-                        VS de Categorías
-                    </h3>
-                    <form id="vs-categorias-filtros" class="flex flex-wrap gap-4 items-end mb-6">
+                <!-- VS de Categorías MEJORADO -->
+                <div class="bg-white shadow-lg rounded-xl p-6 mt-8 border border-gray-200">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 pb-4 border-b border-gray-200">
                         <div>
-                            <label class="block text-sm font-medium mb-1">Categorías</label>
-                            <div id="vs-categorias-chips" class="flex flex-wrap gap-2"></div>
-                            <!-- Botón de agregar categoría eliminado -->
-                            <!-- <button type="button" id="vs-categorias-add" class="btn btn-sm btn-outline mt-2">Agregar categoría</button> -->
-                            <!-- <div id="vs-categorias-dropdown" class="hidden absolute bg-white border rounded shadow-lg mt-1 z-50"></div> -->
+                            <h3 class="text-xl font-bold text-gray-900 flex items-center gap-3">
+                                <i class="bi bi-bar-chart-steps text-blue-600"></i>
+                                VS de Categorías
+                            </h3>
+                            <p class="text-sm text-gray-600 mt-1">Análisis comparativo por grupos y carpetas organizadas</p>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Tipo</label>
-                            <select id="vs-tipo-select" class="form-input">
-                                <option value="Gasto">Gasto</option>
-                                <option value="Ingreso">Ingreso</option>
-                                <option value="Aporte">Aporte</option>
-                                <option value="Todos">Todos</option>
-                            </select>
+                        <div class="mt-4 sm:mt-0">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                                <i class="bi bi-graph-up mr-1"></i>
+                                Análisis Avanzado
+                            </span>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Desde</label>
-                            <input type="date" id="vs-fecha-desde" class="form-input" />
+                    </div>
+
+                    <!-- Gestión de Grupos y Carpetas -->
+                    <div class="mb-8">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                            <i class="bi bi-folder-check"></i>
+                            Organización de Métricas
+                        </h4>
+                        <div id="vs-categorias-chips" class="min-h-[120px]">
+                            <!-- Los chips de grupos y carpetas se cargan aquí dinámicamente -->
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Hasta</label>
-                            <input type="date" id="vs-fecha-hasta" class="form-input" />
+                    </div>
+
+                    <!-- Filtros Avanzados -->
+                    <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                            <i class="bi bi-funnel"></i>
+                            Filtros de Análisis
+                        </h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Tipo de Transacción</label>
+                                <select id="vs-tipo-select" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="Gasto">💸 Gastos</option>
+                                    <option value="Ingreso">💰 Ingresos</option>
+                                    <option value="Aporte">🤝 Aportes</option>
+                                    <option value="Todos">📊 Todos</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Fecha Desde</label>
+                                <input type="date" id="vs-fecha-desde"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Fecha Hasta</label>
+                                <input type="date" id="vs-fecha-hasta"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Tipo de Gráfica</label>
+                                <select id="vs-chart-type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="bar">📊 Barras</option>
+                                    <option value="line">📈 Líneas</option>
+                                    <option value="pie">🥧 Circular</option>
+                                    <option value="doughnut">🍩 Dónut</option>
+                                </select>
+                            </div>
+                            <div class="flex flex-col space-y-2">
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Exportar</label>
+                                <button type="button" id="vs-export-img"
+                                        class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm">
+                                    📸 Imagen
+                                </button>
+                                <button type="button" id="vs-export-csv"
+                                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
+                                    📄 CSV
+                                </button>
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Tipo de gráfica</label>
-                            <select id="vs-chart-type" class="form-input">
-                                <option value="bar">Barras</option>
-                                <option value="line">Líneas</option>
-                                <option value="pie">Circular</option>
-                                <option value="doughnut">Torta</option>
-                            </select>
+                    </div>
+
+                    <!-- Área del Gráfico con Container Mejorado -->
+                    <div id="vs-categorias-chart-container" class="relative bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-200 shadow-inner">
+                        <!-- El gráfico y leyenda se insertan aquí dinámicamente -->
+                        <div class="relative w-full h-auto min-h-96 p-4">
+                            <canvas id="estadisticas-vs-categorias-chart" class="w-full h-auto min-h-96"></canvas>
                         </div>
-                        <div>
-                            <button type="button" id="vs-export-img" class="btn btn-secondary">Exportar Imagen</button>
-                        </div>
-                        <div>
-                            <button type="button" id="vs-export-csv" class="btn btn-secondary">Exportar CSV</button>
-                        </div>
-                    </form>
-                    <div class="relative w-full h-80">
-                        <canvas id="estadisticas-vs-categorias-chart" class="absolute inset-0 w-full h-full"></canvas>
                     </div>
                 </div>
             </div>

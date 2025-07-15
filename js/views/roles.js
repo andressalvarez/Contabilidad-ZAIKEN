@@ -267,7 +267,20 @@
         console.log('Roles view cleanup completado');
     }
 
-    // Exponer funciones globalmente
+    // Exponer objeto RolesView
+    window.RolesView = {
+        init: initRoles,
+        cleanup: cleanup,
+        refreshTable: refreshTable,
+        updateStats: updateStats,
+        exportarRoles: exportarRoles,
+        recalcularTodo: recalcularTodo
+    };
+
+    console.log('RolesView registrado en window:', !!window.RolesView);
+    console.log('RolesView tiene método init:', typeof window.RolesView.init);
+
+    // Exponer funciones globalmente (para compatibilidad)
     window.exportarRoles = exportarRoles;
     window.recalcularTodo = recalcularTodo;
     window.refreshTable = refreshTable;

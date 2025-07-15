@@ -297,33 +297,131 @@ document.addEventListener('DOMContentLoaded', () => {
 // Exponer App globalmente para debugging
 window.App = App;
 
-// Parche de estabilidad para Tabulator: retrasar initializeEditor unos ms
-(function(){
-    if (window.Tabulator && !window.Tabulator._patchedSlowEditor){
-        window.Tabulator._patchedSlowEditor = true;
-        const EditModule = window.Tabulator.prototype.modules.edit;
-        const originalInit = EditModule.initializeEditor;
-        EditModule.initializeEditor = function(cell, onRendered, success, cancel, editorParams){
-            // Pequeño retardo para permitir que el DOM del editor se hidrate y evitar editorClear doble
-            setTimeout(()=>{
-                originalInit.call(this, cell, onRendered, success, cancel, editorParams);
-            }, 30); // 30 ms — imperceptible para el usuario
-        };
-        console.log('Tabulator patched: initializeEditor delayed 30ms');
-    }
-})();
+// Función para aplicar patches de Tabulator cuando esté listo
+function applyTabulatorPatches() {
+    // Parche de estabilidad para Tabulator: retrasar initializeEditor unos ms
+    try {
+        if (window.Tabulator &&
+            window.Tabulator.prototype &&
+            window.Tabulator.prototype.modules &&
+            window.Tabulator.prototype.modules.edit &&
+            typeof window.Tabulator.prototype.modules.edit.initializeEditor === 'function' &&
+            !window.Tabulator._patchedSlowEditor){
 
-// Parche de estabilidad para Tabulator: capturar error en clearEditor y prevenir bubbling
-if (window.Tabulator && !window.Tabulator._patchedClearEditor){
-    window.Tabulator._patchedClearEditor = true;
-    const EditModule = window.Tabulator.prototype.modules.edit;
-    const origClear = EditModule.clearEditor;
-    EditModule.clearEditor = function(){
-        try {
-            origClear.apply(this, arguments);
-        } catch(err){
-            console.warn('Tabulator clearEditor error suprimido:', err.message);
+            window.Tabulator._patchedSlowEditor = true;
+            const EditModule = window.Tabulator.prototype.modules.edit;
+            const originalInit = EditModule.initializeEditor;
+
+            EditModule.initializeEditor = function(cell, onRendered, success, cancel, editorParams){
+                // Pequeño retardo para permitir que el DOM del editor se hidrate y evitar editorClear doble
+                setTimeout(()=>{
+                    if (originalInit && typeof originalInit.call === 'function') {
+                        originalInit.call(this, cell, onRendered, success, cancel, editorParams);
+                    }
+                }, 30); // 30 ms — imperceptible para el usuario
+            };
+            console.log('✅ Tabulator patched: initializeEditor delayed 30ms');
         }
-    };
-    console.log('Tabulator patched: clearEditor wrapped');
+    } catch (error) {
+        console.warn('❌ Error aplicando patch de Tabulator initializeEditor:', error);
+    }
+
+    // Parche de estabilidad para Tabulator: capturar error en clearEditor y prevenir bubbling
+    try {
+        if (window.Tabulator &&
+            window.Tabulator.prototype &&
+            window.Tabulator.prototype.modules &&
+            window.Tabulator.prototype.modules.edit &&
+            typeof window.Tabulator.prototype.modules.edit.clearEditor === 'function' &&
+            !window.Tabulator._patchedClearEditor){
+
+            window.Tabulator._patchedClearEditor = true;
+            const EditModule = window.Tabulator.prototype.modules.edit;
+            const origClear = EditModule.clearEditor;
+
+            EditModule.clearEditor = function(){
+                try {
+                    if (origClear && typeof origClear.apply === 'function') {
+                        origClear.apply(this, arguments);
+                    }
+                } catch(err){
+                    console.warn('Tabulator clearEditor error suprimido:', err.message);
+                }
+            };
+            console.log('✅ Tabulator patched: clearEditor wrapped');
+        }
+    } catch (error) {
+        console.warn('❌ Error aplicando patch de Tabulator clearEditor:', error);
+    }
 }
+
+// Aplicar patches inmediatamente si Tabulator ya está disponible
+applyTabulatorPatches();
+
+// Si no está disponible, intentar cada 100ms hasta encontrarlo
+let patchAttempts = 0;
+const maxPatchAttempts = 50; // 5 segundos máximo
+const patchInterval = setInterval(() => {
+    patchAttempts++;
+    if (window.Tabulator && window.Tabulator.prototype && window.Tabulator.prototype.modules) {
+        applyTabulatorPatches();
+        clearInterval(patchInterval);
+        console.log('✅ Tabulator encontrado y patcheado después de', patchAttempts * 100, 'ms');
+    } else if (patchAttempts >= maxPatchAttempts) {
+        clearInterval(patchInterval);
+        console.warn('⚠️ Tabulator no encontrado después de 5 segundos');
+    }
+}, 100);
+
+
+
+// Manejo global de errores para debugging
+window.addEventListener('error', function(e) {
+    console.error('🚨 Error global capturado:', {
+        message: e.message,
+        filename: e.filename ? e.filename.split('/').pop() : 'unknown',
+        location: `${e.lineno}:${e.colno}`,
+        error: e.error,
+        stack: e.error?.stack?.substring(0, 200) + '...'
+    });
+
+    // Si es el error de Tabulator que nos molesta, dar más contexto
+    if (e.message && e.message.includes("Cannot read properties of undefined (reading 'edit')")) {
+        console.warn('🔧 Este parece ser el error de Tabulator. Estado actual:', {
+            tabulatorExists: !!window.Tabulator,
+            hasPrototype: !!(window.Tabulator?.prototype),
+            hasModules: !!(window.Tabulator?.prototype?.modules),
+            hasEdit: !!(window.Tabulator?.prototype?.modules?.edit)
+        });
+    }
+});
+
+// También capturar promesas rechazadas
+window.addEventListener('unhandledrejection', function(e) {
+    console.error('🚨 Promesa rechazada:', e.reason);
+});
+
+// Verificación de estado de Tabulator
+if (typeof window.Tabulator === 'undefined') {
+    console.warn('⚠️ Tabulator no está disponible - algunas funcionalidades de tabla pueden no funcionar');
+} else {
+    console.log('✅ Tabulator disponible');
+}
+
+// Estado de módulos críticos
+setTimeout(() => {
+    const modules = {
+        'DataManager': window.DataManager,
+        'Navigation': window.Navigation,
+        'Utils': window.Utils,
+        'Templates': window.Templates
+    };
+
+    Object.entries(modules).forEach(([name, module]) => {
+        if (module) {
+            console.log(`✅ ${name} disponible`);
+        } else {
+            console.error(`❌ ${name} NO disponible`);
+        }
+    });
+}, 1000);

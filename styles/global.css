@@ -1322,15 +1322,24 @@ ul.space-y-1 > li {
 canvas {
     max-width: 100% !important;
     height: auto !important;
+    min-height: 300px !important;
     display: block;
     margin: 0 auto;
+}
+
+/* Canvas específico para VS de Categorías - CON LÍMITE */
+#estadisticas-vs-categorias-chart {
+    min-height: 350px !important;
+    max-height: 60vh !important;  /* ← LÍMITE CRUCIAL */
+    height: auto !important;
+    width: 100% !important;
 }
 
 /* Ajuste para el VS de Categorías */
 #estadisticas-vs-categorias-chart {
     max-width: 100% !important;
-    max-height: 320px !important;
-    min-height: 180px;
+    min-height: 300px !important;
+    height: auto !important;
     margin: 0 auto;
     display: block;
 }
@@ -1338,5 +1347,551 @@ canvas {
 /* Ajuste para los contenedores de gráficas VS */
 .bg-white.shadow.rounded-lg.p-6.mt-8 {
     overflow-x: auto !important;
-    padding-bottom: 1rem;
+    overflow-y: visible !important;
+    padding-bottom: 2rem;
+    min-height: 500px;
+    height: auto;
+}
+
+/* ===== MEJORAS PARA VS DE CATEGORÍAS ===== */
+
+/* Contenedor principal de VS de Categorías */
+.vs-categorias-container {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.vs-categorias-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="80" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    pointer-events: none;
+    opacity: 0.3;
+}
+
+.vs-categorias-header {
+    position: relative;
+    z-index: 1;
+}
+
+/* Secciones de gestión */
+.vs-gestion-section {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    color: #374151;
+    transition: all 0.3s ease;
+}
+
+.vs-gestion-section:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.vs-gestion-section h3 {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Grid para filtros avanzados */
+.vs-filtros-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.vs-filtro-item {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    border: 2px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+
+.vs-filtro-item:focus-within {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    transform: translateY(-1px);
+}
+
+.vs-filtro-item label {
+    display: block;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.vs-filtro-item select,
+.vs-filtro-item input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    background: white;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.vs-filtro-item select:focus,
+.vs-filtro-item input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Gestión de grupos y carpetas */
+.vs-grupos-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.vs-grupo-card {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.vs-grupo-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(to bottom, #667eea, #764ba2);
+    transition: width 0.3s ease;
+}
+
+.vs-grupo-card:hover {
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+}
+
+.vs-grupo-card:hover::before {
+    width: 6px;
+}
+
+.vs-grupo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.vs-grupo-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.vs-grupo-color {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.vs-grupo-name {
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+.vs-grupo-meta {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin: 0;
+}
+
+.vs-grupo-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.vs-grupo-actions button {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.875rem;
+}
+
+.vs-grupo-actions button:hover {
+    background: #f3f4f6;
+    transform: scale(1.1);
+}
+
+.vs-grupo-actions .text-blue-500:hover {
+    color: #2563eb;
+    background: #dbeafe;
+}
+
+.vs-grupo-actions .text-red-500:hover {
+    color: #dc2626;
+    background: #fef2f2;
+}
+
+/* Tags de categorías */
+.vs-categoria-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    background: #f3f4f6;
+    color: #374151;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin: 0.125rem;
+    transition: all 0.3s ease;
+}
+
+.vs-categoria-tag:hover {
+    background: #e5e7eb;
+    transform: scale(1.05);
+}
+
+/* Contenedor del chart mejorado */
+.vs-chart-container {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-top: 2rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: visible;
+    min-height: 500px;
+    height: auto;
+}
+
+.vs-chart-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+}
+
+.vs-chart-wrapper {
+    position: relative;
+    min-height: 400px;
+    height: auto;
+    margin-top: 1rem;
+    padding-bottom: 2rem;
+}
+
+/* Estados vacíos mejorados */
+.vs-empty-state {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 1rem;
+    border: 2px dashed #cbd5e1;
+    margin: 1rem 0;
+}
+
+.vs-empty-icon {
+    font-size: 3rem;
+    color: #cbd5e1;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.vs-empty-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0.5rem;
+}
+
+.vs-empty-description {
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+/* Animaciones */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.vs-animate-in {
+    animation: slideInUp 0.5s ease-out;
+}
+
+/* Responsive para VS de Categorías */
+@media (max-width: 768px) {
+    .vs-categorias-container {
+        padding: 1.5rem;
+        margin: 1rem;
+    }
+
+    .vs-filtros-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .vs-grupos-container {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .vs-gestion-section {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .vs-chart-container {
+        padding: 1rem;
+        margin: 1rem;
+    }
+
+    .vs-chart-wrapper {
+        min-height: 350px;
+        height: auto;
+        padding-bottom: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .vs-grupo-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .vs-grupo-actions {
+        align-self: flex-end;
+    }
+
+    .vs-filtro-item {
+        padding: 0.75rem;
+    }
+}
+
+/* ===== AJUSTES ADICIONALES PARA ALTURA DINÁMICA ===== */
+
+/* Asegurar que todos los contenedores principales permitan altura dinámica */
+main, .container, .content-wrapper {
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+}
+
+/* Contenedores específicos de estadísticas */
+#estadisticas-content,
+#vs-categorias-section,
+.estadisticas-wrapper {
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    flex: 1;
+}
+
+/* Asegurar que el footer se mantenga al final - simplificado */
+body {
+    min-height: 100vh;
+}
+
+main {
+    min-height: calc(100vh - 60px);
+}
+
+/* Chart.js responsive adjustments */
+.chartjs-render-monitor {
+    height: auto !important;
+    min-height: 400px !important;
+}
+
+/* Contenedores con flex para adaptarse */
+.chart-section {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    height: auto;
+    min-height: 500px;
+}
+
+.chart-section .chart-container {
+    flex: 1;
+    height: auto;
+    min-height: 400px;
+}
+
+/* ===== ESTILOS ESPECÍFICOS PARA CONTENEDOR VS CATEGORÍAS ===== */
+
+/* Contenedor principal del chart - dinámico PERO controlado */
+#vs-categorias-chart-container {
+    position: relative;
+    width: 100%;
+    height: auto;
+    min-height: 400px;
+    max-height: 70vh;  /* ← LÍMITE MÁXIMO bonito */
+    padding: 1rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
+    overflow: hidden;  /* ← Controlar desbordamiento */
+}
+
+/* Contenedor interno del chart - como setupChartContainer PERO controlado */
+#vs-categorias-chart-container .relative {
+    position: relative;
+    height: auto;
+    min-height: 400px;
+    max-height: 65vh;  /* ← Un poco menos que el padre */
+    width: 100%;
+    margin-top: 1rem;
+    overflow: hidden;  /* ← Controlar canvas desbordado */
+}
+
+/* Canvas específico - responsive PERO limitado para que se vea chevere */
+#vs-categorias-chart-container canvas {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 350px !important;
+    max-height: 60vh !important;  /* ← LÍMITE CRUCIAL para evitar infinito */
+    display: block;
+    margin: 0 auto;
+}
+
+/* Override para el template */
+.h-auto.min-h-96 {
+    height: auto !important;
+    min-height: 24rem !important;
+}
+
+/* Responsive específico para el contenedor del chart */
+@media (max-width: 768px) {
+    #vs-categorias-chart-container {
+        min-height: 350px;
+        padding: 0.75rem;
+        max-height: none !important; /* <- quitar límite para móviles */
+        overflow: visible !important; /* <- permitir que crezca */
+    }
+
+    #vs-categorias-chart-container .relative {
+        min-height: 320px;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    #vs-categorias-chart-container canvas,
+    #estadisticas-vs-categorias-chart {
+        min-height: 300px !important;
+        max-height: none !important; /* <- sin límite en móviles */
+    }
+}
+
+@media (max-width: 480px) {
+    #vs-categorias-chart-container {
+        min-height: 300px;
+        max-height: 60vh;  /* ← Ajustado para móviles pequeños */
+        padding: 0.5rem;
+    }
+
+    #vs-categorias-chart-container .relative {
+        min-height: 280px;
+        max-height: 55vh;  /* ← Con límite */
+    }
+
+    #vs-categorias-chart-container canvas {
+        min-height: 250px !important;
+        max-height: 50vh !important;  /* ← Con límite */
+    }
+
+    #estadisticas-vs-categorias-chart {
+        min-height: 250px !important;
+        max-height: 50vh !important;  /* ← Con límite */
+    }
+}
+
+/* ===== FORZAR LÍMITES ESPECÍFICOS PARA CHART.JS ===== */
+
+/* Forzar que Chart.js respete los límites en VS categorías */
+.chartjs-render-monitor#estadisticas-vs-categorias-chart {
+    max-height: 60vh !important;
+    min-height: 350px !important;
+    width: 100% !important;
+}
+
+/* Controlar el contenedor Canvas específicamente */
+canvas#estadisticas-vs-categorias-chart {
+    max-height: 60vh !important;
+    min-height: 350px !important;
+    width: 100% !important;
+    height: auto !important;
+}
+
+/* Prevenir que Chart.js haga el canvas gigante */
+#vs-categorias-chart-container canvas[height] {
+    max-height: 60vh !important;
+    height: auto !important;
+}
+
+/* Estilo para que se vea chevere como las de arriba */
+#vs-categorias-chart-container {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Override cualquier altura loca que Chart.js pueda asignar */
+#estadisticas-vs-categorias-chart[style*="height"] {
+    height: auto !important;
+    max-height: 60vh !important;
+}
+
+/* Ajuste: permitir que el contenedor VS crezca en desktop */
+@media (min-width: 1024px) {
+    #vs-categorias-chart-container {
+        max-height: none !important; /* Sin límite en pantallas grandes */
+    }
+
+    #vs-categorias-chart-container .relative {
+        max-height: none !important;
+    }
+
+    #vs-categorias-chart-container canvas,
+    #estadisticas-vs-categorias-chart {
+        max-height: none !important;
+    }
 }
