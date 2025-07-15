@@ -11,6 +11,15 @@ window.VsCategoriasDrillDown = {
     // Configuración
     useCanvasDirectEvents: false, // Controla si usar eventos directos en canvas (puede causar duplicidad)
 
+    // Estado de filtros y ordenamiento
+    filters: {
+        search: '',
+        tipo: '',
+        persona: '',
+        sortField: 'monto',
+        sortDirection: 'desc'
+    },
+
     // Configuración de colores para gráficos detallados
     detailColors: [
         '#6366f1', '#f59e42', '#10b981', '#ef4444', '#fbbf24',
@@ -417,6 +426,12 @@ window.VsCategoriasDrillDown = {
 
         this.detailsContainer.innerHTML = htmlContent;
 
+        // Popular el select de personas después de insertar el HTML
+        this.populatePersonSelect();
+
+        // Configurar eventos para filtrado en tiempo real
+        this.setupFilterEvents();
+
         console.log('✅ Contenido HTML asignado al contenedor');
         console.log('📦 Contenedor en DOM:', document.contains(this.detailsContainer));
         console.log('👁️ Contenedor visible:', this.detailsContainer.style.display !== 'none');
@@ -462,21 +477,84 @@ window.VsCategoriasDrillDown = {
                 </div>
             </div>
 
-            <!-- Tabla de transacciones -->
+            <!-- Controles de filtro y búsqueda -->
+            <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
+                        <input type="text" id="drill-search" placeholder="Buscar en concepto, persona, notas..."
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Filtrar por Tipo</label>
+                        <select id="drill-filter-tipo" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Todos los tipos</option>
+                            <option value="Ingreso">Ingresos</option>
+                            <option value="Gasto">Gastos</option>
+                            <option value="Aporte">Aportes</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Filtrar por Persona</label>
+                        <select id="drill-filter-persona" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Todas las personas</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Ordenar por Monto</label>
+                        <select id="drill-sort-monto" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="desc">Mayor a menor</option>
+                            <option value="asc">Menor a mayor</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-3 flex gap-2">
+                    <button onclick="VsCategoriasDrillDown.applyFilters()"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm">
+                        <i class="bi bi-funnel mr-1"></i>
+                        Aplicar Filtros
+                    </button>
+                    <button onclick="VsCategoriasDrillDown.clearFilters()"
+                            class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors text-sm">
+                        <i class="bi bi-x-circle mr-1"></i>
+                        Limpiar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabla de transacciones con headers clickeables -->
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Concepto</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Persona</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notas</th>
+                            <th onclick="VsCategoriasDrillDown.sortTable('fecha')"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors">
+                                Fecha <i class="bi bi-arrow-down-up ml-1"></i>
+                            </th>
+                            <th onclick="VsCategoriasDrillDown.sortTable('concepto')"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors">
+                                Concepto <i class="bi bi-arrow-down-up ml-1"></i>
+                            </th>
+                            <th onclick="VsCategoriasDrillDown.sortTable('tipo')"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors">
+                                Tipo <i class="bi bi-arrow-down-up ml-1"></i>
+                            </th>
+                            <th onclick="VsCategoriasDrillDown.sortTable('monto')"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors">
+                                Monto <i class="bi bi-arrow-down-up ml-1"></i>
+                            </th>
+                            <th onclick="VsCategoriasDrillDown.sortTable('persona')"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors">
+                                Persona <i class="bi bi-arrow-down-up ml-1"></i>
+                            </th>
+                            <th onclick="VsCategoriasDrillDown.sortTable('notas')"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors">
+                                Notas <i class="bi bi-arrow-down-up ml-1"></i>
+                            </th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        ${transactions.map(t => this.renderTransactionRow(t)).join('')}
+                    <tbody id="drill-table-body" class="bg-white divide-y divide-gray-200">
+                        ${this.getFilteredTransactions().map(t => this.renderTransactionRow(t)).join('')}
                     </tbody>
                 </table>
             </div>
@@ -543,10 +621,10 @@ window.VsCategoriasDrillDown = {
 
         return `
             <div class="space-y-6">
-                <!-- Gráfico detallado de transacciones -->
+                <!-- Gráfico visual de transacciones -->
                 <div class="bg-white border border-gray-200 rounded-lg p-6">
-                    <h4 class="text-lg font-semibold text-gray-900 mb-4">Detalle de Transacciones por Persona</h4>
-                    <p class="text-sm text-gray-600 mb-4">Cada punto representa una transacción individual para identificar casos puntuales</p>
+                    <h4 class="text-lg font-semibold text-gray-900 mb-4">Visualización de Transacciones</h4>
+                    <p class="text-sm text-gray-600 mb-4">Vista gráfica de la información de la lista para identificación rápida de patrones</p>
                     <div class="h-80">
                         <canvas id="drill-chart-transacciones"></canvas>
                     </div>
@@ -662,6 +740,206 @@ window.VsCategoriasDrillDown = {
                 </div>
             </div>
         `;
+    },
+
+    // Obtener transacciones filtradas y ordenadas
+    getFilteredTransactions() {
+        let filtered = [...this.currentTransactions];
+
+        // Aplicar filtro de búsqueda
+        if (this.filters.search) {
+            const searchTerm = this.filters.search.toLowerCase();
+            filtered = filtered.filter(t => {
+                const persona = t.personaId ?
+                    DataManager.getById('personasData', t.personaId) : null;
+                const personName = persona ? persona.nombre.toLowerCase() : '';
+
+                return (t.concepto || '').toLowerCase().includes(searchTerm) ||
+                       personName.includes(searchTerm) ||
+                       (t.notas || '').toLowerCase().includes(searchTerm);
+            });
+        }
+
+        // Aplicar filtro de tipo
+        if (this.filters.tipo) {
+            filtered = filtered.filter(t => t.tipo === this.filters.tipo);
+        }
+
+        // Aplicar filtro de persona
+        if (this.filters.persona) {
+            filtered = filtered.filter(t => {
+                const persona = t.personaId ?
+                    DataManager.getById('personasData', t.personaId) : null;
+                return persona ? persona.nombre === this.filters.persona : this.filters.persona === 'Sin persona';
+            });
+        }
+
+        // Aplicar ordenamiento
+        filtered.sort((a, b) => {
+            let valueA, valueB;
+
+            switch (this.filters.sortField) {
+                case 'fecha':
+                    valueA = a.fecha || '';
+                    valueB = b.fecha || '';
+                    break;
+                case 'concepto':
+                    valueA = (a.concepto || '').toLowerCase();
+                    valueB = (b.concepto || '').toLowerCase();
+                    break;
+                case 'tipo':
+                    valueA = a.tipo || '';
+                    valueB = b.tipo || '';
+                    break;
+                case 'monto':
+                    valueA = a.monto || 0;
+                    valueB = b.monto || 0;
+                    break;
+                case 'persona':
+                    const personaA = a.personaId ? DataManager.getById('personasData', a.personaId) : null;
+                    const personaB = b.personaId ? DataManager.getById('personasData', b.personaId) : null;
+                    valueA = personaA ? personaA.nombre.toLowerCase() : 'zzz';
+                    valueB = personaB ? personaB.nombre.toLowerCase() : 'zzz';
+                    break;
+                case 'notas':
+                    valueA = (a.notas || '').toLowerCase();
+                    valueB = (b.notas || '').toLowerCase();
+                    break;
+                default:
+                    valueA = a.monto || 0;
+                    valueB = b.monto || 0;
+            }
+
+            if (this.filters.sortDirection === 'asc') {
+                return valueA > valueB ? 1 : valueA < valueB ? -1 : 0;
+            } else {
+                return valueA < valueB ? 1 : valueA > valueB ? -1 : 0;
+            }
+        });
+
+        return filtered;
+    },
+
+    // Aplicar filtros
+    applyFilters() {
+        this.filters.search = document.getElementById('drill-search')?.value || '';
+        this.filters.tipo = document.getElementById('drill-filter-tipo')?.value || '';
+        this.filters.persona = document.getElementById('drill-filter-persona')?.value || '';
+
+        const sortMonto = document.getElementById('drill-sort-monto')?.value || 'desc';
+        this.filters.sortField = 'monto';
+        this.filters.sortDirection = sortMonto;
+
+        this.updateTableView();
+    },
+
+    // Limpiar filtros
+    clearFilters() {
+        this.filters = {
+            search: '',
+            tipo: '',
+            persona: '',
+            sortField: 'monto',
+            sortDirection: 'desc'
+        };
+
+        // Limpiar controles
+        const searchInput = document.getElementById('drill-search');
+        const tipoSelect = document.getElementById('drill-filter-tipo');
+        const personaSelect = document.getElementById('drill-filter-persona');
+        const sortSelect = document.getElementById('drill-sort-monto');
+
+        if (searchInput) searchInput.value = '';
+        if (tipoSelect) tipoSelect.value = '';
+        if (personaSelect) personaSelect.value = '';
+        if (sortSelect) sortSelect.value = 'desc';
+
+        this.updateTableView();
+    },
+
+    // Ordenar tabla por columna
+    sortTable(field) {
+        if (this.filters.sortField === field) {
+            // Cambiar dirección si es la misma columna
+            this.filters.sortDirection = this.filters.sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            // Nueva columna, empezar con orden descendente
+            this.filters.sortField = field;
+            this.filters.sortDirection = 'desc';
+        }
+
+        this.updateTableView();
+    },
+
+    // Actualizar solo la vista de tabla
+    updateTableView() {
+        const tableBody = document.getElementById('drill-table-body');
+        if (tableBody) {
+            const filteredTransactions = this.getFilteredTransactions();
+            tableBody.innerHTML = filteredTransactions.map(t => this.renderTransactionRow(t)).join('');
+        }
+    },
+
+    // Popular select de personas
+    populatePersonSelect() {
+        const personSelect = document.getElementById('drill-filter-persona');
+        if (!personSelect) return;
+
+        // Obtener personas únicas de las transacciones actuales
+        const personasEnTransacciones = new Set();
+        this.currentTransactions.forEach(t => {
+            if (t.personaId) {
+                const persona = DataManager.getById('personasData', t.personaId);
+                if (persona) {
+                    personasEnTransacciones.add(persona.nombre);
+                }
+            } else {
+                personasEnTransacciones.add('Sin persona');
+            }
+        });
+
+        // Limpiar select y agregar opciones
+        personSelect.innerHTML = '<option value="">Todas las personas</option>';
+
+                 [...personasEnTransacciones].sort().forEach(personName => {
+            const option = document.createElement('option');
+            option.value = personName;
+            option.textContent = personName;
+            personSelect.appendChild(option);
+        });
+    },
+
+    // Configurar eventos de filtrado
+    setupFilterEvents() {
+        // Búsqueda en tiempo real
+        const searchInput = document.getElementById('drill-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                this.applyFilters();
+            });
+        }
+
+        // Filtros automáticos al cambiar
+        const tipoSelect = document.getElementById('drill-filter-tipo');
+        if (tipoSelect) {
+            tipoSelect.addEventListener('change', () => {
+                this.applyFilters();
+            });
+        }
+
+        const personaSelect = document.getElementById('drill-filter-persona');
+        if (personaSelect) {
+            personaSelect.addEventListener('change', () => {
+                this.applyFilters();
+            });
+        }
+
+        const sortSelect = document.getElementById('drill-sort-monto');
+        if (sortSelect) {
+            sortSelect.addEventListener('change', () => {
+                this.applyFilters();
+            });
+        }
     },
 
     // Cambiar entre vistas
