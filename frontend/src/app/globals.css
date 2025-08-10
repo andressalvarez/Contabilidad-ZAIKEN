@@ -1,0 +1,2022 @@
+/* Estilos globales para el sistema de gestión */
+
+/* Importar Bootstrap Icons */
+@import url('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css');
+
+/* Layout principal responsive */
+.min-h-screen {
+    min-height: 100vh;
+}
+
+/* Contenedor principal con flexbox responsive */
+.flex {
+    display: flex;
+}
+
+/* Sidebar base */
+aside {
+    width: 16rem; /* w-64 */
+    background-color: #ffffff;
+    border-right: 1px solid #E5E7EB; /* gray-200 */
+    flex-shrink: 0; /* Evitar que se encoja */
+    transition: width 0.3s ease;
+}
+
+/* Contenido principal */
+main {
+    flex: 1;
+    min-width: 0; /* Permitir que se encoja */
+    overflow-x: auto; /* Scroll horizontal si es necesario */
+}
+
+/* Modo oscuro */
+.dark aside {
+    background-color: #111827; /* gray-900 */
+    border-color: #1F2937; /* gray-800 */
+}
+
+/* Responsive para tablets y móviles */
+@media (max-width: 1024px) {
+    aside {
+        width: 14rem; /* Reducir un poco en tablets */
+    }
+}
+
+@media (max-width: 768px) {
+    /* Layout en móviles */
+    .flex {
+        flex-direction: column;
+    }
+
+    aside {
+        width: 100%;
+        height: auto;
+        position: relative;
+        border-right: none;
+        border-bottom: 1px solid #E5E7EB;
+    }
+
+    main {
+        flex: 1;
+        padding: 1rem;
+    }
+
+    /* Sidebar colapsado en móviles */
+    aside.collapsed {
+        height: 60px;
+        overflow: hidden;
+    }
+
+    aside.collapsed nav {
+        display: none;
+    }
+
+    /* Botón para expandir/colapsar sidebar */
+    .sidebar-toggle {
+        display: block;
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        z-index: 10;
+    }
+
+    /* Mejoras para formularios en móviles */
+    .grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+
+    .grid-cols-1.md\\:grid-cols-2,
+    .grid-cols-1.md\\:grid-cols-3,
+    .grid-cols-1.md\\:grid-cols-4,
+    .grid-cols-1.md\\:grid-cols-5,
+    .grid-cols-1.md\\:grid-cols-6 {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Ajustes para cards y contenedores */
+    .card {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Mejoras para botones en móviles */
+    .btn {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    /* Ajustes para inputs y selects */
+    .form-input {
+        padding: 0.75rem;
+        font-size: 1rem; /* Evitar zoom en iOS */
+    }
+
+    /* Mejoras para tablas en móviles */
+    .tabulator {
+        font-size: 14px !important;
+    }
+
+    .tabulator-cell {
+        padding: 8px 6px !important;
+    }
+
+    .tabulator-col-title {
+        font-size: 13px !important;
+        padding: 10px 6px !important;
+    }
+
+    /* Ajustes para gráficos */
+    .h-64, .h-72 {
+        height: 200px !important;
+    }
+
+    /* Mejoras para estadísticas */
+    .text-2xl {
+        font-size: 1.5rem !important;
+    }
+
+    .text-3xl {
+        font-size: 1.875rem !important;
+    }
+}
+
+@media (max-width: 640px) {
+    main {
+        padding: 0.75rem;
+    }
+
+    .card {
+        padding: 0.75rem;
+    }
+
+    .grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem !important;
+    }
+
+    .grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-3,
+    .grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-4,
+    .grid-cols-1.md\\:grid-cols-3.lg\\:grid-cols-4 {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Ajustes para headers */
+    .text-2xl {
+        font-size: 1.25rem !important;
+    }
+
+    /* Mejoras para formularios complejos */
+    .space-y-6 > * + * {
+        margin-top: 1rem !important;
+    }
+
+    /* Ajustes para filtros */
+    .bg-blue-50, .bg-gray-50 {
+        padding: 0.75rem !important;
+    }
+
+    /* Mejoras para botones de acción */
+    .flex.space-x-2, .flex.space-x-3 {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .flex.space-x-2 > *, .flex.space-x-3 > * {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    /* Ajustes para búsquedas */
+    .w-64 {
+        width: 100% !important;
+    }
+}
+
+/* Mejoras específicas para vistas con templates */
+.space-y-6 {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .space-y-6 {
+        gap: 1rem;
+    }
+}
+
+/* Asegurar que los contenedores principales sean responsive */
+#main-content {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* ESTILOS DE NAVEGACIÓN - CON ALTA ESPECIFICIDAD */
+/* Grupo de navegación */
+aside nav .nav-group {
+    margin-bottom: 1.5rem !important;
+    padding: 0 0.75rem !important;
+}
+
+/* Título del grupo */
+aside nav .nav-group-title {
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    color: #9CA3AF !important;
+    letter-spacing: 0.05em !important;
+    margin: 1rem 0.75rem 0.5rem !important;
+    padding: 0 !important;
+}
+
+/* Enlaces de navegación */
+aside nav .nav-link {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    padding: 0.75rem 1rem !important;
+    color: #374151 !important;
+    font-weight: 500 !important;
+    font-size: 0.875rem !important;
+    border-radius: 0.5rem !important;
+    margin: 2px 0 !important;
+    transition: all 0.2s ease !important;
+    text-decoration: none !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Estado hover de los enlaces */
+aside nav .nav-link:hover {
+    background-color: #F3F4F6 !important;
+    color: #111827 !important;
+    text-decoration: none !important;
+}
+
+/* Iconos en los enlaces */
+aside nav .nav-link i {
+    font-size: 1.125rem !important;
+    color: #6B7280 !important;
+    width: 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+}
+
+/* Iconos en hover */
+aside nav .nav-link:hover i {
+    color: #4F46E5 !important;
+}
+
+/* Estado activo de los enlaces */
+aside nav .nav-link.active {
+    background-color: #EEF2FF !important;
+    color: #4F46E5 !important;
+    font-weight: 600 !important;
+}
+
+/* Iconos en estado activo */
+aside nav .nav-link.active i {
+    color: #4F46E5 !important;
+}
+
+/* Texto de los enlaces */
+aside nav .nav-link span {
+    display: block !important;
+    flex: 1 !important;
+}
+
+/* Listas de navegación */
+aside nav ul {
+    list-style: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+aside nav li {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Espaciado entre elementos */
+aside nav .space-y-1 > li + li {
+    margin-top: 0.25rem !important;
+}
+
+/* Modo oscuro para navegación */
+.dark aside nav .nav-link {
+    color: #D1D5DB !important;
+}
+
+.dark aside nav .nav-link:hover {
+    background-color: rgba(55, 65, 81, 0.5) !important;
+    color: #FFFFFF !important;
+}
+
+.dark aside nav .nav-link i {
+    color: #9CA3AF !important;
+}
+
+.dark aside nav .nav-link:hover i,
+.dark aside nav .nav-link.active i {
+    color: #C7D2FE !important;
+}
+
+.dark aside nav .nav-link.active {
+    background-color: rgba(79, 70, 229, 0.2) !important;
+    color: #C7D2FE !important;
+}
+
+.dark aside nav .nav-group-title {
+    color: #6B7280 !important;
+}
+
+/* Responsive específico para navegación */
+@media (max-width: 768px) {
+    aside nav .nav-link {
+        justify-content: flex-start !important;
+        padding: 0.875rem 1rem !important;
+        min-height: 48px !important;
+    }
+
+    aside nav .nav-link span,
+    aside nav .nav-group-title {
+        display: block !important;
+    }
+
+    aside nav .nav-group {
+        padding: 0 0.5rem !important;
+    }
+
+    /* Sidebar colapsado */
+    aside.collapsed nav .nav-link span,
+    aside.collapsed nav .nav-group-title {
+        display: none !important;
+    }
+
+    aside.collapsed nav .nav-link {
+        justify-content: center !important;
+        padding: 0.75rem !important;
+    }
+}
+
+/* Asegurar que la navegación tenga el z-index correcto */
+aside nav {
+    position: relative !important;
+    z-index: 10 !important;
+}
+
+/* Mejoras para el modo oscuro en móviles */
+@media (max-width: 768px) {
+    .dark .card {
+        background-color: #1f2937;
+        border-color: #374151;
+    }
+
+    .dark .form-input {
+        background-color: #374151;
+        border-color: #4b5563;
+        color: #f9fafb;
+    }
+
+    .dark .form-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .dark .btn {
+        border-color: #4b5563;
+    }
+}
+
+/* Asegurar que los elementos interactivos sean accesibles en móviles */
+@media (max-width: 768px) {
+    .btn, .form-input, select, button {
+        min-height: 44px; /* Tamaño mínimo recomendado para touch */
+    }
+
+    .nav-link {
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+    }
+
+    /* Mejorar la accesibilidad de los botones */
+    .btn:focus {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
+    }
+
+    /* Mejorar la accesibilidad de los inputs */
+    .form-input:focus {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
+    }
+}
+
+/* Animaciones suaves para transiciones responsive */
+.flex, .grid, .card, .btn, .form-input {
+    transition: all 0.3s ease;
+}
+
+/* Mejoras para el scroll en móviles */
+@media (max-width: 768px) {
+    body {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .tabulator-tableHolder {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Mejorar el scroll del sidebar */
+    aside {
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Asegurar que las imágenes sean responsive */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Mejoras para el logo en el header */
+@media (max-width: 768px) {
+    .h-10.w-10 {
+        height: 2rem;
+        width: 2rem;
+    }
+
+    .text-2xl {
+        font-size: 1.25rem;
+    }
+}
+
+/* Asegurar que los contenedores no se desborden */
+* {
+    box-sizing: border-box;
+}
+
+/* Mejoras para el performance en móviles */
+@media (max-width: 768px) {
+    .tabulator-row {
+        will-change: transform;
+    }
+
+    .card {
+        will-change: transform;
+    }
+}
+
+/* Asegurar que los elementos ocultos no ocupen espacio */
+.hidden {
+    display: none !important;
+}
+
+/* Mejoras para el z-index en móviles */
+@media (max-width: 768px) {
+    .tabulator-edit-select-list {
+        z-index: 1002 !important;
+    }
+
+    .tabulator-tooltip {
+        z-index: 1003 !important;
+    }
+
+    #modal-edit-persona {
+        z-index: 1004 !important;
+    }
+}
+
+/* Estilos para el indicador de última vista */
+#lastViewIndicator {
+    transition: all 0.3s ease;
+    cursor: help;
+    user-select: none;
+}
+
+#lastViewIndicator:hover {
+    background-color: #e5e7eb;
+    transform: scale(1.05);
+}
+
+#lastViewIndicator i {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+/* Animación para el indicador cuando se actualiza */
+@keyframes lastViewUpdate {
+    0% {
+        transform: scale(1);
+        background-color: #f3f4f6;
+    }
+    50% {
+        transform: scale(1.1);
+        background-color: #dbeafe;
+    }
+    100% {
+        transform: scale(1);
+        background-color: #f3f4f6;
+    }
+}
+
+.lastViewUpdated {
+    animation: lastViewUpdate 0.5s ease;
+}
+
+/* Modo oscuro para el indicador */
+.dark #lastViewIndicator {
+    background-color: #374151;
+    color: #d1d5db;
+}
+
+.dark #lastViewIndicator:hover {
+    background-color: #4b5563;
+}
+
+.dark #lastViewIndicator i {
+    color: #9ca3af;
+}
+
+/* Responsive para el indicador */
+@media (max-width: 640px) {
+    #lastViewIndicator {
+        display: none !important;
+    }
+}
+
+/* Estilos para tooltips personalizados */
+[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #1f2937;
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    white-space: pre-line;
+    z-index: 1000;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    pointer-events: none;
+}
+
+/* Mejoras para el modo oscuro en tooltips */
+.dark [title]:hover::after {
+    background-color: #f9fafb;
+    color: #1f2937;
+    border: 1px solid #e5e7eb;
+}
+
+/* Estilos personalizados */
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem; /* 12px */
+    padding: 0.625rem 1rem; /* 10px 16px */
+    color: #374151; /* gray-700 */
+    font-weight: 500;
+    font-size: 0.875rem; /* text-sm */
+    border-radius: 0.5rem; /* rounded-lg */
+    margin: 2px 0;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.nav-link:hover {
+    background-color: #F9FAFB; /* gray-50 */
+    color: #111827; /* gray-900 */
+}
+
+.nav-link i {
+    font-size: 1rem; /* 16px */
+    color: #6B7280; /* gray-500 */
+    width: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nav-link:hover i {
+    color: #111827; /* gray-900 */
+}
+
+.nav-link.active {
+    background-color: #EEF2FF; /* indigo-50 */
+    color: #4F46E5; /* indigo-600 */
+    font-weight: 600;
+}
+
+.nav-link.active i {
+    color: #4F46E5; /* indigo-600 */
+}
+
+.nav-group-title {
+    font-size: 0.75rem; /* text-xs */
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #9CA3AF; /* gray-400 */
+    letter-spacing: 0.05em;
+    margin: 0.5rem 0.75rem 0.25rem;
+}
+
+.dark .nav-link {
+    color: #D1D5DB; /* gray-300 */
+}
+
+.dark .nav-link:hover {
+    background-color: rgba(55, 65, 81, 0.5); /* gray-700/50 */
+    color: #FFFFFF;
+}
+
+.dark .nav-link i {
+    color: #9CA3AF; /* gray-400 */
+}
+
+.dark .nav-link:hover i,
+.dark .nav-link.active i {
+    color: #C7D2FE; /* indigo-300 */
+}
+
+.dark .nav-link.active {
+    background-color: rgba(79, 70, 229, 0.2); /* indigo-600/20 */
+    color: #C7D2FE; /* indigo-300 */
+}
+
+.dark .nav-group-title {
+    color: #6B7280; /* gray-500 */
+}
+
+@media (max-width: 768px) {
+    aside {
+        width: 100%;
+        height: auto;
+        position: relative;
+    }
+
+    .nav-link {
+        justify-content: flex-start;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .nav-link span,
+    .nav-group-title {
+        display: block; /* Mostrar texto en móviles */
+    }
+
+    .nav-group {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+
+    /* Sidebar colapsado */
+    aside.collapsed {
+        height: 60px;
+        overflow: hidden;
+    }
+
+    aside.collapsed .nav-link span,
+    aside.collapsed .nav-group-title {
+        display: none;
+    }
+}
+
+.card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+}
+
+.form-group {
+    @apply mb-4;
+}
+
+.form-label {
+    @apply block text-sm font-medium text-gray-700 mb-2;
+}
+
+.form-input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+}
+
+.btn {
+    @apply px-4 py-2 rounded-md font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+}
+
+.btn-primary {
+    @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500;
+}
+
+.btn-secondary {
+    @apply bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500;
+}
+
+.btn-success {
+    @apply bg-green-600 text-white hover:bg-green-700 focus:ring-green-500;
+}
+
+.btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+}
+
+.btn-warning {
+    @apply bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-yellow-500;
+}
+
+.btn-info {
+    @apply bg-cyan-600 text-white hover:bg-cyan-700 focus:ring-cyan-500;
+}
+
+.btn-outline {
+    @apply border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500;
+}
+
+.btn-sm {
+    @apply px-3 py-1.5 text-sm;
+}
+
+/* Estilos para las tablas Tabulator */
+.tabulator {
+    @apply border border-gray-200 rounded-lg overflow-hidden;
+}
+
+.tabulator-header {
+    @apply bg-gray-50;
+}
+
+.tabulator-row:nth-child(even) {
+    @apply bg-gray-50;
+}
+
+.tabulator-row:hover {
+    @apply bg-blue-50;
+}
+
+/* Animaciones */
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Estilos globales para el sistema */
+:root {
+    --primary-color: #3b82f6;
+    --secondary-color: #64748b;
+    --success-color: #10b981;
+    --danger-color: #ef4444;
+    --warning-color: #f59e0b;
+    --info-color: #06b6d4;
+    --light-color: #f8fafc;
+    --dark-color: #1e293b;
+}
+
+/* Correcciones para Tabulator */
+.tabulator {
+    background-color: white !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+}
+
+.tabulator-table {
+    background-color: white !important;
+    width: 100% !important;
+}
+
+.tabulator-tableHolder {
+    background-color: white !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+}
+
+/* Eliminar cualquier pseudo-elemento que cause columnas negras */
+.tabulator::before,
+.tabulator::after,
+.tabulator-table::before,
+.tabulator-table::after,
+.tabulator-tableHolder::before,
+.tabulator-tableHolder::after {
+    display: none !important;
+    content: none !important;
+}
+
+/* Forzar fondo blanco en todas las filas y celdas */
+.tabulator-row {
+    background-color: white !important;
+    border-bottom: 1px solid #f3f4f6 !important;
+    transition: background-color 0.2s ease !important;
+}
+
+.tabulator-row:hover {
+    background-color: #f8fafc !important;
+}
+
+.tabulator-row.tabulator-row-even {
+    background-color: #fafbfc !important;
+}
+
+.tabulator-row.tabulator-row-odd {
+    background-color: white !important;
+}
+
+.tabulator-cell {
+    background-color: transparent !important;
+    border-right: 1px solid #f1f3f4 !important;
+    padding: 10px 12px !important;
+    vertical-align: middle !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* Header mejorado */
+.tabulator-header {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
+    border-bottom: 2px solid #cbd5e1 !important;
+    font-weight: 600 !important;
+}
+
+.tabulator-col {
+    background-color: transparent !important;
+    border-right: 1px solid #cbd5e1 !important;
+    position: relative !important;
+}
+
+.tabulator-col:last-child {
+    border-right: none !important;
+}
+
+.tabulator-col-title {
+    color: #1e293b !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    padding: 12px !important;
+}
+
+/* Responsive collapse mejorado */
+.tabulator-responsive-collapse {
+    background-color: #f8fafc !important;
+    border-top: 1px solid #e2e8f0 !important;
+    padding: 10px !important;
+}
+
+.tabulator-responsive-collapse-toggle {
+    background-color: #3b82f6 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 4px !important;
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+}
+
+/* Paginación mejorada */
+.tabulator-footer {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
+    border-top: 2px solid #cbd5e1 !important;
+    padding: 12px !important;
+    border-radius: 0 0 8px 8px !important;
+}
+
+.tabulator-page {
+    background-color: white !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #475569 !important;
+    margin: 0 2px !important;
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+}
+
+.tabulator-page:hover {
+    background-color: #f1f5f9 !important;
+    border-color: #3b82f6 !important;
+    transform: translateY(-1px) !important;
+}
+
+.tabulator-page.active {
+    background-color: #3b82f6 !important;
+    color: white !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3) !important;
+}
+
+.tabulator-paginator {
+    color: #64748b !important;
+    font-weight: 500 !important;
+}
+
+/* Selectores de tamaño de página */
+.tabulator-page-size {
+    background-color: white !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    padding: 6px 10px !important;
+    color: #475569 !important;
+    font-weight: 500 !important;
+}
+
+/* Eliminar scrollbars innecesarios que pueden causar espacios negros */
+.tabulator-tableHolder::-webkit-scrollbar {
+    height: 8px !important;
+    background-color: #f1f5f9 !important;
+}
+
+.tabulator-tableHolder::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1 !important;
+    border-radius: 4px !important;
+}
+
+.tabulator-tableHolder::-webkit-scrollbar-thumb:hover {
+    background-color: #94a3b8 !important;
+}
+
+/* Forzar que no haya espacios vacíos */
+.tabulator .tabulator-table {
+    min-width: 100% !important;
+}
+
+/* Corrección específica para evitar columnas fantasma */
+.tabulator-col:empty,
+.tabulator-cell:empty {
+    display: none !important;
+}
+
+/* Estilos para los badges de tipo */
+.tabulator .badge {
+    display: inline-block !important;
+    padding: 4px 8px !important;
+    border-radius: 12px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* Mejoras visuales para los datos */
+.tabulator-cell .text-gray-400 {
+    font-style: italic !important;
+    opacity: 0.7 !important;
+}
+
+.tabulator-cell .font-semibold {
+    font-weight: 600 !important;
+}
+
+.tabulator-cell .text-blue-600 {
+    color: #2563eb !important;
+}
+
+.tabulator-cell .text-purple-600 {
+    color: #9333ea !important;
+}
+
+/* Responsive breakpoints */
+@media (max-width: 768px) {
+    .tabulator {
+        font-size: 14px !important;
+    }
+
+    .tabulator-cell {
+        padding: 8px 6px !important;
+    }
+
+    .tabulator-col-title {
+        font-size: 13px !important;
+        padding: 10px 6px !important;
+    }
+}
+
+/* Animaciones suaves */
+.tabulator-row {
+    transition: all 0.2s ease !important;
+}
+
+.tabulator-cell {
+    transition: background-color 0.2s ease !important;
+}
+
+/* Loading state */
+.tabulator-loading {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.tabulator-loading-msg {
+    background-color: white !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 8px !important;
+    padding: 20px !important;
+    color: #374151 !important;
+    font-weight: 500 !important;
+}
+
+/* Estilos para los botones de acción */
+.d-flex {
+    display: flex;
+}
+
+.gap-1 {
+    gap: 0.25rem;
+}
+
+.me-1 {
+    margin-right: 0.25rem;
+}
+
+/* Tooltips mejorados */
+.tabulator-tooltip {
+    background-color: #1f2937 !important;
+    color: white !important;
+    border-radius: 6px !important;
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+    z-index: 1001 !important;
+}
+
+/* Editores de Tabulator mejorados */
+.tabulator-edit-select-list {
+    background-color: white !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 8px !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+    max-height: 200px !important;
+    overflow-y: auto !important;
+    z-index: 1000 !important;
+    margin-top: 2px !important;
+}
+
+.tabulator-edit-select-list-item {
+    background-color: white !important;
+    color: #374151 !important;
+    padding: 10px 14px !important;
+    border-bottom: 1px solid #f3f4f6 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    font-size: 14px !important;
+}
+
+.tabulator-edit-select-list-item:hover {
+    background-color: #f8fafc !important;
+    color: #1f2937 !important;
+}
+
+.tabulator-edit-select-list-item.active {
+    background-color: #3b82f6 !important;
+    color: white !important;
+}
+
+.tabulator-edit-select-list-item:last-child {
+    border-bottom: none !important;
+}
+
+.tabulator-editor {
+    background-color: white !important;
+    border: 2px solid #d1d5db !important;
+    border-radius: 6px !important;
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+    color: #374151 !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.2s ease !important;
+}
+
+.tabulator-editor:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+    outline: none !important;
+}
+
+.tabulator-editor[type="date"] {
+    cursor: pointer !important;
+}
+
+.tabulator-editor[type="number"] {
+    text-align: right !important;
+}
+
+/* Mejoras específicas para selects editables */
+.tabulator-edit-select-list {
+    min-width: 150px !important;
+    width: auto !important;
+}
+
+.tabulator-edit-select-list-item {
+    white-space: nowrap !important;
+    min-height: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.tabulator-edit-select-list-item:empty {
+    display: none !important;
+}
+
+/* Asegurar que los selects mantengan su valor */
+.tabulator-cell[tabulator-field="personaId"] .tabulator-editor,
+.tabulator-cell[tabulator-field="campanaId"] .tabulator-editor {
+    min-width: 120px !important;
+}
+
+/* Prevenir que los selects se colapsen */
+.tabulator-editor select {
+    width: 100% !important;
+    min-width: 100px !important;
+}
+
+/* Mejorar la apariencia de los selects */
+.tabulator-editor select option {
+    padding: 8px 12px !important;
+    background-color: white !important;
+    color: #374151 !important;
+}
+
+.tabulator-editor select option:hover {
+    background-color: #f3f4f6 !important;
+}
+
+/* Evitar que se muestren opciones vacías problemáticas */
+.tabulator-edit-select-list-item[data-value=""] {
+    color: #9ca3af !important;
+    font-style: italic !important;
+}
+
+/* Estilo para cuando está seleccionada una opción válida */
+.tabulator-cell[tabulator-field="personaId"]:not(:empty),
+.tabulator-cell[tabulator-field="campanaId"]:not(:empty) {
+    font-weight: 500 !important;
+}
+
+/* Estilos para filas modificadas */
+.tabulator-row[style*="background-color: rgb(254, 243, 199)"] {
+    border-left: 4px solid #f59e0b !important;
+    position: relative !important;
+}
+
+.tabulator-row[style*="background-color: rgb(254, 243, 199)"]:before {
+    content: "✏️ Modificado - Presiona ✅ para guardar o ↩️ para descartar";
+    position: absolute;
+    bottom: -20px;
+    left: 0;
+    background-color: #f59e0b;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 0 0 4px 4px;
+    font-size: 11px;
+    font-weight: 500;
+    z-index: 10;
+    white-space: nowrap;
+}
+
+/* Botones de acción mejorados */
+.btn-success.btn-sm {
+    background-color: #10b981 !important;
+    border-color: #10b981 !important;
+}
+
+.btn-success.btn-sm:hover {
+    background-color: #059669 !important;
+    border-color: #059669 !important;
+    transform: scale(1.05) !important;
+}
+
+.btn-warning.btn-sm {
+    background-color: #f59e0b !important;
+    border-color: #f59e0b !important;
+}
+
+.btn-warning.btn-sm:hover {
+    background-color: #d97706 !important;
+    border-color: #d97706 !important;
+    transform: scale(1.05) !important;
+}
+
+.btn-danger.btn-sm:hover {
+    transform: scale(1.05) !important;
+}
+
+/* Transiciones suaves para botones */
+.btn-sm {
+    transition: all 0.2s ease !important;
+}
+
+/* Tooltip mejorado para botones */
+.btn[title]:hover:after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #1f2937;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+}
+
+/* Navegación y grupos */
+nav {
+    @apply py-4;
+}
+
+/* Espaciado y estructura */
+ul.space-y-1 > li {
+    margin-bottom: 2px;
+}
+
+/* Scroll horizontal siempre visible para Tabulator */
+.tabulator,
+.tabulator-tableHolder {
+    overflow-x: auto !important;
+    min-width: 100% !important;
+    scrollbar-color: #a3a3a3 #f3f4f6;
+    scrollbar-width: thin;
+}
+
+/* Sombra en el borde derecho para indicar scroll */
+.tabulator-tableHolder::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 24px;
+    height: 100%;
+    pointer-events: none;
+    background: linear-gradient(to left, rgba(0,0,0,0.08), transparent);
+    z-index: 2;
+    display: block;
+}
+
+/* Mejorar visibilidad del scroll en móviles */
+@media (max-width: 768px) {
+    .tabulator,
+    .tabulator-tableHolder {
+        min-width: 600px !important;
+        font-size: 13px !important;
+    }
+    .tabulator-tableHolder::after {
+        width: 32px;
+    }
+}
+
+/* Scrollbar personalizado para webkit */
+.tabulator-tableHolder::-webkit-scrollbar {
+    height: 8px;
+    background: #f3f4f6;
+}
+.tabulator-tableHolder::-webkit-scrollbar-thumb {
+    background: #a3a3a3;
+    border-radius: 4px;
+}
+.tabulator-tableHolder::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+}
+
+/* Mejoras para que los canvas de gráficas no se salgan del cuadro y sean responsivos */
+.relative.w-full.h-72,
+.relative.w-full.h-80,
+.bg-white.shadow.rounded-lg.p-4.overflow-hidden,
+.bg-white.shadow.rounded-lg.p-6 {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+canvas {
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 300px !important;
+    display: block;
+    margin: 0 auto;
+}
+
+/* Canvas específico para VS de Categorías - CON LÍMITE */
+#estadisticas-vs-categorias-chart {
+    min-height: 350px !important;
+    max-height: 60vh !important;  /* ← LÍMITE CRUCIAL */
+    height: auto !important;
+    width: 100% !important;
+}
+
+/* Ajuste para el VS de Categorías */
+#estadisticas-vs-categorias-chart {
+    max-width: 100% !important;
+    min-height: 300px !important;
+    height: auto !important;
+    margin: 0 auto;
+    display: block;
+}
+
+/* Ajuste para los contenedores de gráficas VS */
+.bg-white.shadow.rounded-lg.p-6.mt-8 {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    padding-bottom: 2rem;
+    min-height: 500px;
+    height: auto;
+}
+
+/* ===== MEJORAS PARA VS DE CATEGORÍAS ===== */
+
+/* Contenedor principal de VS de Categorías */
+.vs-categorias-container {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.vs-categorias-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="80" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    pointer-events: none;
+    opacity: 0.3;
+}
+
+.vs-categorias-header {
+    position: relative;
+    z-index: 1;
+}
+
+/* Secciones de gestión */
+.vs-gestion-section {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    color: #374151;
+    transition: all 0.3s ease;
+}
+
+.vs-gestion-section:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.vs-gestion-section h3 {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Grid para filtros avanzados */
+.vs-filtros-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.vs-filtro-item {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    border: 2px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+
+.vs-filtro-item:focus-within {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    transform: translateY(-1px);
+}
+
+.vs-filtro-item label {
+    display: block;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.vs-filtro-item select,
+.vs-filtro-item input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    background: white;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.vs-filtro-item select:focus,
+.vs-filtro-item input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Gestión de grupos y carpetas */
+.vs-grupos-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.vs-grupo-card {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.vs-grupo-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(to bottom, #667eea, #764ba2);
+    transition: width 0.3s ease;
+}
+
+.vs-grupo-card:hover {
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+}
+
+.vs-grupo-card:hover::before {
+    width: 6px;
+}
+
+.vs-grupo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.vs-grupo-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.vs-grupo-color {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.vs-grupo-name {
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+.vs-grupo-meta {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin: 0;
+}
+
+.vs-grupo-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.vs-grupo-actions button {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.875rem;
+}
+
+.vs-grupo-actions button:hover {
+    background: #f3f4f6;
+    transform: scale(1.1);
+}
+
+.vs-grupo-actions .text-blue-500:hover {
+    color: #2563eb;
+    background: #dbeafe;
+}
+
+.vs-grupo-actions .text-red-500:hover {
+    color: #dc2626;
+    background: #fef2f2;
+}
+
+/* Tags de categorías */
+.vs-categoria-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    background: #f3f4f6;
+    color: #374151;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin: 0.125rem;
+    transition: all 0.3s ease;
+}
+
+.vs-categoria-tag:hover {
+    background: #e5e7eb;
+    transform: scale(1.05);
+}
+
+/* Contenedor del chart mejorado */
+.vs-chart-container {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-top: 2rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: visible;
+    min-height: 500px;
+    height: auto;
+}
+
+.vs-chart-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+}
+
+.vs-chart-wrapper {
+    position: relative;
+    min-height: 400px;
+    height: auto;
+    margin-top: 1rem;
+    padding-bottom: 2rem;
+}
+
+/* Estados vacíos mejorados */
+.vs-empty-state {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 1rem;
+    border: 2px dashed #cbd5e1;
+    margin: 1rem 0;
+}
+
+.vs-empty-icon {
+    font-size: 3rem;
+    color: #cbd5e1;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.vs-empty-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0.5rem;
+}
+
+.vs-empty-description {
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+/* Animaciones */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.vs-animate-in {
+    animation: slideInUp 0.5s ease-out;
+}
+
+/* Responsive para VS de Categorías */
+@media (max-width: 768px) {
+    .vs-categorias-container {
+        padding: 1.5rem;
+        margin: 1rem;
+    }
+
+    .vs-filtros-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .vs-grupos-container {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .vs-gestion-section {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .vs-chart-container {
+        padding: 1rem;
+        margin: 1rem;
+    }
+
+    .vs-chart-wrapper {
+        min-height: 350px;
+        height: auto;
+        padding-bottom: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .vs-grupo-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .vs-grupo-actions {
+        align-self: flex-end;
+    }
+
+    .vs-filtro-item {
+        padding: 0.75rem;
+    }
+}
+
+/* ===== AJUSTES ADICIONALES PARA ALTURA DINÁMICA ===== */
+
+/* Asegurar que todos los contenedores principales permitan altura dinámica */
+main, .container, .content-wrapper {
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+}
+
+/* Contenedores específicos de estadísticas */
+#estadisticas-content,
+#vs-categorias-section,
+.estadisticas-wrapper {
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    flex: 1;
+}
+
+/* Asegurar que el footer se mantenga al final - simplificado */
+body {
+    min-height: 100vh;
+}
+
+main {
+    min-height: calc(100vh - 60px);
+}
+
+/* Chart.js responsive adjustments */
+.chartjs-render-monitor {
+    height: auto !important;
+    min-height: 400px !important;
+}
+
+/* Contenedores con flex para adaptarse */
+.chart-section {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    height: auto;
+    min-height: 500px;
+}
+
+.chart-section .chart-container {
+    flex: 1;
+    height: auto;
+    min-height: 400px;
+}
+
+/* ===== ESTILOS ESPECÍFICOS PARA CONTENEDOR VS CATEGORÍAS ===== */
+
+/* Contenedor principal del chart - dinámico PERO controlado */
+#vs-categorias-chart-container {
+    position: relative;
+    width: 100%;
+    height: auto;
+    min-height: 400px;
+    max-height: 70vh;  /* ← LÍMITE MÁXIMO bonito */
+    padding: 1rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
+    overflow: hidden;  /* ← Controlar desbordamiento */
+}
+
+/* Contenedor interno del chart - como setupChartContainer PERO controlado */
+#vs-categorias-chart-container .relative {
+    position: relative;
+    height: auto;
+    min-height: 400px;
+    max-height: 65vh;  /* ← Un poco menos que el padre */
+    width: 100%;
+    margin-top: 1rem;
+    overflow: hidden;  /* ← Controlar canvas desbordado */
+}
+
+/* Canvas específico - responsive PERO limitado para que se vea chevere */
+#vs-categorias-chart-container canvas {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 350px !important;
+    max-height: 60vh !important;  /* ← LÍMITE CRUCIAL para evitar infinito */
+    display: block;
+    margin: 0 auto;
+}
+
+/* Override para el template */
+.h-auto.min-h-96 {
+    height: auto !important;
+    min-height: 24rem !important;
+}
+
+/* Responsive específico para el contenedor del chart */
+@media (max-width: 768px) {
+    #vs-categorias-chart-container {
+        min-height: 350px;
+        padding: 0.75rem;
+        max-height: none !important; /* <- quitar límite para móviles */
+        overflow: visible !important; /* <- permitir que crezca */
+    }
+
+    #vs-categorias-chart-container .relative {
+        min-height: 320px;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    #vs-categorias-chart-container canvas,
+    #estadisticas-vs-categorias-chart {
+        min-height: 300px !important;
+        max-height: none !important; /* <- sin límite en móviles */
+    }
+}
+
+@media (max-width: 480px) {
+    #vs-categorias-chart-container {
+        min-height: 300px;
+        max-height: 60vh;  /* ← Ajustado para móviles pequeños */
+        padding: 0.5rem;
+    }
+
+    #vs-categorias-chart-container .relative {
+        min-height: 280px;
+        max-height: 55vh;  /* ← Con límite */
+    }
+
+    #vs-categorias-chart-container canvas {
+        min-height: 250px !important;
+        max-height: 50vh !important;  /* ← Con límite */
+    }
+
+    #estadisticas-vs-categorias-chart {
+        min-height: 250px !important;
+        max-height: 50vh !important;  /* ← Con límite */
+    }
+}
+
+/* ===== FORZAR LÍMITES ESPECÍFICOS PARA CHART.JS ===== */
+
+/* Forzar que Chart.js respete los límites en VS categorías */
+.chartjs-render-monitor#estadisticas-vs-categorias-chart {
+    max-height: 60vh !important;
+    min-height: 350px !important;
+    width: 100% !important;
+}
+
+/* Controlar el contenedor Canvas específicamente */
+canvas#estadisticas-vs-categorias-chart {
+    max-height: 60vh !important;
+    min-height: 350px !important;
+    width: 100% !important;
+    height: auto !important;
+}
+
+/* Prevenir que Chart.js haga el canvas gigante */
+#vs-categorias-chart-container canvas[height] {
+    max-height: 60vh !important;
+    height: auto !important;
+}
+
+/* Estilo para que se vea chevere como las de arriba */
+#vs-categorias-chart-container {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Override cualquier altura loca que Chart.js pueda asignar */
+#estadisticas-vs-categorias-chart[style*="height"] {
+    height: auto !important;
+    max-height: 60vh !important;
+}
+
+/* Ajuste: permitir que el contenedor VS crezca en desktop */
+@media (min-width: 1024px) {
+    #vs-categorias-chart-container {
+        max-height: none !important; /* Sin límite en pantallas grandes */
+    }
+
+    #vs-categorias-chart-container .relative {
+        max-height: none !important;
+    }
+
+    #vs-categorias-chart-container canvas,
+    #estadisticas-vs-categorias-chart {
+        max-height: none !important;
+    }
+}
+
+/* ===== ESTILOS PARA DRILL-DOWN EXPANDIBLE ===== */
+
+/* Contenedor principal del drill-down */
+.drill-down-container {
+    transition: all 0.3s ease-out;
+    will-change: transform, opacity;
+    margin-top: 24px;
+}
+
+.drill-down-container.entering {
+    opacity: 0;
+    transform: translateY(-20px);
+}
+
+.drill-down-container.entered {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Pestañas del drill-down */
+.drill-tab-btn {
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.drill-tab-btn:hover {
+    transform: translateY(-1px);
+}
+
+.drill-tab-btn.active {
+    border-bottom-width: 3px !important;
+    font-weight: 600;
+}
+
+/* Animaciones para las filas de transacciones */
+.drill-down-container tbody tr {
+    transition: all 0.2s ease;
+}
+
+.drill-down-container tbody tr:hover {
+    background-color: #f8fafc !important;
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos para estadísticas rápidas */
+.drill-down-container .grid > div {
+    transition: all 0.2s ease;
+}
+
+.drill-down-container .grid > div:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Cursor pointer para gráficos clickeables */
+#vs-categorias-chart-container canvas {
+    cursor: pointer !important;
+}
+
+#vs-categorias-chart-container:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.2s ease;
+}
+
+/* Animación de pulsación para indicar clickeable */
+@keyframes pulseChart {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+.chart-clickable-hint {
+    animation: pulseChart 2s ease-in-out infinite;
+}
+
+/* Estilos para el tip de funcionalidad */
+.drill-down-tip {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border-left: 4px solid #3b82f6;
+}
+
+/* Estados de loading para drill-down */
+.drill-loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.drill-loading::after {
+    content: '';
+    width: 16px;
+    height: 16px;
+    border: 2px solid #e5e7eb;
+    border-top: 2px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive específico para drill-down */
+@media (max-width: 1024px) {
+    .drill-down-container .grid-cols-2 {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .drill-down-container .grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .drill-down-container .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .drill-down-container .overflow-x-auto {
+        border-radius: 8px;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .drill-down-container tbody tr:hover {
+        transform: none; /* Remover transform en móviles */
+    }
+}
+
+@media (max-width: 480px) {
+    .drill-down-container {
+        margin-top: 16px;
+    }
+
+    .drill-down-container .text-2xl {
+        font-size: 1.25rem !important;
+    }
+
+    .drill-down-container .grid-cols-5 {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+    }
+}

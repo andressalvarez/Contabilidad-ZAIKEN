@@ -1,0 +1,238 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Rol {
+  id          Int         @id @default(autoincrement())
+  nombreRol   String      @unique
+  importancia Int         @default(0)
+  descripcion String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  personas    Persona[]
+  valorHoras  ValorHora[]
+
+  @@map("roles")
+}
+
+model Persona {
+  id                  Int                   @id @default(autoincrement())
+  nombre              String                @unique
+  rolId               Int
+  horasTotales        Int                   @default(0)
+  aportesTotales      Float                 @default(0)
+  valorHora           Float                 @default(0)
+  inversionHoras      Float                 @default(0)
+  inversionTotal      Float                 @default(0)
+  participacionPorc   Float                 @default(0)
+  notas               String?
+  activo              Boolean               @default(true)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  email               String?
+  distribucionDetalle DistribucionDetalle[]
+  rol                 Rol                   @relation(fields: [rolId], references: [id])
+  registroHoras       RegistroHoras[]
+  transacciones       Transaccion[]
+  valorHoras          ValorHora[]
+
+  @@map("personas")
+}
+
+model ValorHora {
+  id          Int       @id @default(autoincrement())
+  personaId   Int
+  rolId       Int
+  valor       Float
+  notas       String?
+  fechaInicio DateTime  @default(now())
+  fechaFin    DateTime?
+  activo      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  rol         Rol       @relation(fields: [rolId], references: [id])
+  persona     Persona   @relation(fields: [personaId], references: [id])
+
+  @@map("valor_horas")
+}
+
+model RegistroHoras {
+  id          Int      @id @default(autoincrement())
+  personaId   Int
+  campanaId   Int?
+  fecha       DateTime
+  horas       Float
+  descripcion String?
+  aprobado    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  campana     Campana? @relation(fields: [campanaId], references: [id])
+  persona     Persona  @relation(fields: [personaId], references: [id])
+
+  @@map("registro_horas")
+}
+
+model Categoria {
+  id            Int           @id @default(autoincrement())
+  nombre        String        @unique
+  descripcion   String?
+  color         String?
+  activo        Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  transacciones Transaccion[]
+  vsGrupoCategorias VSGrupoCategoria[]
+
+  @@map("categorias")
+}
+
+model Campana {
+  id            Int             @id @default(autoincrement())
+  nombre        String
+  descripcion   String?
+  fechaInicio   DateTime
+  fechaFin      DateTime?
+  presupuesto   Float?
+  ingresoTotal  Float           @default(0)
+  gastoTotal    Float           @default(0)
+  utilidad      Float           @default(0)
+  activo        Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  registroHoras RegistroHoras[]
+  transacciones Transaccion[]
+
+  @@map("campanas")
+}
+
+model TipoTransaccion {
+  id            Int           @id @default(autoincrement())
+  nombre        String        @unique
+  descripcion   String?
+  activo        Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  transacciones Transaccion[]
+
+  @@map("tipos_transaccion")
+}
+
+model Transaccion {
+  id          Int             @id @default(autoincrement())
+  tipoId      Int
+  monto       Float
+  concepto    String
+  fecha       DateTime
+  categoriaId Int?
+  personaId   Int?
+  campanaId   Int?
+  moneda      String          @default("COP")
+  notas       String?
+  comprobante String?
+  aprobado    Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  campana     Campana?        @relation(fields: [campanaId], references: [id])
+  persona     Persona?        @relation(fields: [personaId], references: [id])
+  tipo        TipoTransaccion @relation(fields: [tipoId], references: [id])
+  categoria   Categoria?      @relation(fields: [categoriaId], references: [id])
+
+  @@map("transacciones")
+}
+
+model DistribucionUtilidades {
+  id            Int                   @id @default(autoincrement())
+  periodo       String
+  fecha         DateTime              @default(now())
+  utilidadTotal Float
+  estado        String                @default("Pendiente")
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  detalles      DistribucionDetalle[]
+
+  @@map("distribucion_utilidades")
+}
+
+model DistribucionDetalle {
+  id                      Int                    @id @default(autoincrement())
+  distribucionId          Int
+  personaId               Int
+  porcentajeParticipacion Float
+  montoDistribuido        Float
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @updatedAt
+  persona                 Persona                @relation(fields: [personaId], references: [id])
+  distribucion            DistribucionUtilidades @relation(fields: [distribucionId], references: [id])
+
+  @@map("distribucion_detalles")
+}
+
+model Usuario {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  nombre    String
+  rol       String   @default("USER")
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("usuarios")
+}
+
+// Modelos para VS Categorías - Sistema Avanzado
+model VSCarpeta {
+  id          Int       @id @default(autoincrement())
+  nombre      String
+  color       String
+  visible     Boolean   @default(true)
+  orden       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  grupos      VSGrupo[]
+
+  @@map("vs_carpetas")
+}
+
+model VSGrupo {
+  id          Int       @id @default(autoincrement())
+  nombre      String
+  color       String
+  visible     Boolean   @default(true)
+  orden       Int       @default(0)
+  carpetaId   Int?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  carpeta     VSCarpeta? @relation(fields: [carpetaId], references: [id])
+  categorias  VSGrupoCategoria[]
+
+  @@map("vs_grupos")
+}
+
+model VSGrupoCategoria {
+  id          Int       @id @default(autoincrement())
+  grupoId     Int
+  categoriaId Int
+  createdAt   DateTime  @default(now())
+  grupo       VSGrupo   @relation(fields: [grupoId], references: [id])
+  categoria   Categoria @relation(fields: [categoriaId], references: [id])
+
+  @@unique([grupoId, categoriaId])
+  @@map("vs_grupo_categorias")
+}
+
+model VSConfiguracion {
+  id                    Int      @id @default(autoincrement())
+  nombre                String   @unique
+  configuracion         Json     // Almacena toda la configuración como JSON
+  activo                Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("vs_configuraciones")
+}

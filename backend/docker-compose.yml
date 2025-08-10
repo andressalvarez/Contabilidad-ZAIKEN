@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: zaiken_postgres
+    environment:
+      POSTGRES_DB: zaiken_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  pgweb:
+    image: sosedoff/pgweb:latest
+    container_name: zaiken_pgweb
+    environment:
+      DATABASE_URL: postgres://postgres:password@postgres:5432/zaiken_db?sslmode=disable
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

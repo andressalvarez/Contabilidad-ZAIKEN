@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema de Gestión Completo - Modular</title>
+
+    <!-- Bootstrap (para tooltips e íconos) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Tabulator CSS y JS -->
+    <link href="https://cdn.jsdelivr.net/npm/tabulator-tables@5.4.4/dist/css/tabulator.min.css" rel="stylesheet" />
+
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* Estilos específicos para la navegación */
+        aside {
+            width: 16rem;
+            background-color: #ffffff;
+            border-right: 1px solid #E5E7EB;
+            flex-shrink: 0;
+            transition: width 0.3s ease;
+        }
+
+        .nav-group {
+            margin-bottom: 1.5rem;
+            padding: 0 0.75rem;
+        }
+
+        .nav-group-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #9CA3AF;
+            letter-spacing: 0.05em;
+            margin: 1rem 0.75rem 0.5rem;
+            padding: 0;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: #374151;
+            font-weight: 500;
+            font-size: 0.875rem;
+            border-radius: 0.5rem;
+            margin: 2px 0;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .nav-link:hover {
+            background-color: #F3F4F6;
+            color: #111827;
+            text-decoration: none;
+        }
+
+        .nav-link i {
+            font-size: 1.125rem;
+            color: #6B7280;
+            width: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .nav-link:hover i {
+            color: #4F46E5;
+        }
+
+        .nav-link.active {
+            background-color: #EEF2FF;
+            color: #4F46E5;
+            font-weight: 600;
+        }
+
+        .nav-link.active i {
+            color: #4F46E5;
+        }
+
+        .nav-link span {
+            display: block;
+            flex: 1;
+        }
+
+        aside nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        aside nav li {
+            margin: 0;
+            padding: 0;
+        }
+
+        .space-y-1 > li + li {
+            margin-top: 0.25rem;
+        }
+
+        @media (max-width: 768px) {
+            aside {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid #E5E7EB;
+            }
+
+            aside.collapsed {
+                height: 60px;
+                overflow: hidden;
+            }
+
+            aside.collapsed nav {
+                display: none;
+            }
+
+            .nav-link {
+                justify-content: flex-start;
+                padding: 0.875rem 1rem;
+                min-height: 48px;
+            }
+
+            .nav-group {
+                padding: 0 0.5rem;
+            }
+        }
+
+        /* Asegurar que el contenido principal tenga el ancho correcto */
+        main {
+            flex: 1;
+            min-width: 0;
+            overflow-x: auto;
+        }
+
+        /* Estilos para las cards de métricas */
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .space-y-6 > * + * {
+            margin-top: 1.5rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-4">
+                    <div class="flex items-center gap-3">
+                        <img src="./zaiken.png" alt="Logo" class="h-10 w-10 rounded-full shadow" />
+                        <h1 class="text-2xl font-bold text-gray-900">Sistema de Gestión: ZAIKEN</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <!-- Botón para colapsar sidebar en móviles -->
+                        <button id="sidebarToggle" class="lg:hidden p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
+                            <i class="bi bi-list"></i>
+                        </button>
+                        <!-- Indicador de última vista -->
+                        <div class="hidden sm:flex items-center text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-lg">
+                            <i class="bi bi-clock-history mr-2"></i>
+                            <span>Última vista guardada</span>
+                        </div>
+                        <button id="darkModeToggle" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
+                            <i class="bi bi-moon-fill"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex">
+            <!-- Sidebar -->
+            <aside id="sidebar" class="h-screen sticky top-0 overflow-y-auto">
+                <nav>
+                    <div class="nav-group">
+                        <h3 class="nav-group-title">Principal</h3>
+                        <ul class="space-y-1">
+                            <li><a href="#" data-tab="dashboard" class="nav-link active">
+                                <i class="bi bi-grid-1x2-fill"></i>
+                                <span>Dashboard</span>
+                            </a></li>
+                            <li><a href="#" data-tab="estadisticas" class="nav-link">
+                                <i class="bi bi-bar-chart-fill"></i>
+                                <span>Estadísticas</span>
+                            </a></li>
+                        </ul>
+                    </div>
+
+                    <div class="nav-group">
+                        <h3 class="nav-group-title">Gestión de Personal</h3>
+                        <ul class="space-y-1">
+                            <li><a href="#" data-tab="personas" class="nav-link">
+                                <i class="bi bi-people-fill"></i>
+                                <span>Personas</span>
+                            </a></li>
+                            <li><a href="#" data-tab="roles" class="nav-link">
+                                <i class="bi bi-person-badge-fill"></i>
+                                <span>Roles</span>
+                            </a></li>
+                            <li><a href="#" data-tab="valorHora" class="nav-link">
+                                <i class="bi bi-clock-fill"></i>
+                                <span>Valor Hora</span>
+                            </a></li>
+                            <li><a href="#" data-tab="registroHoras" class="nav-link">
+                                <i class="bi bi-calendar2-check-fill"></i>
+                                <span>Registro Horas</span>
+                            </a></li>
+                        </ul>
+                    </div>
+
+                    <div class="nav-group">
+                        <h3 class="nav-group-title">Operaciones</h3>
+                        <ul class="space-y-1">
+                            <li><a href="#" data-tab="campanas" class="nav-link">
+                                <i class="bi bi-receipt"></i>
+                                <span>Gastos</span>
+                            </a></li>
+                            <li><a href="#" data-tab="transacciones" class="nav-link">
+                                <i class="bi bi-wallet2"></i>
+                                <span>Transacciones</span>
+                            </a></li>
+                            <li><a href="#" data-tab="categorias" class="nav-link">
+                                <i class="bi bi-tags-fill"></i>
+                                <span>Categorías</span>
+                            </a></li>
+                        </ul>
+                    </div>
+
+                    <div class="nav-group">
+                        <h3 class="nav-group-title">Distribución</h3>
+                        <ul class="space-y-1">
+                            <li><a href="#" data-tab="distribucionUtilidades" class="nav-link">
+                                <i class="bi bi-pie-chart-fill"></i>
+                                <span>Distribución Utilidades</span>
+                            </a></li>
+                            <li><a href="#" data-tab="distribucionDetalle" class="nav-link">
+                                <i class="bi bi-list-check"></i>
+                                <span>Distribución Detalle</span>
+                            </a></li>
+                        </ul>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="flex-1 p-6">
+                <div id="main-content">
+                    <!-- Dashboard completo -->
+                    <div class="space-y-6">
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-2xl font-bold text-gray-900">Dashboard - Sistema Zaiken</h2>
+                            <div class="text-sm text-gray-500">
+                                <i class="bi bi-clock mr-1"></i>
+                                Última actualización: <span id="lastUpdate">18 Jul 2025, 21:30</span>
+                            </div>
+                        </div>
+
+                        <!-- Métricas principales -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg shadow-lg p-6">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3 class="text-blue-100 text-sm font-medium mb-1">Total Personas</h3>
+                                        <p class="text-3xl font-bold">5</p>
+                                        <p class="text-blue-100 text-xs mt-2">
+                                            <i class="bi bi-people-fill mr-1"></i>
+                                            Personal activo
+                                        </p>
+                                    </div>
+                                    <div class="text-blue-200 text-4xl">
+                                        <i class="bi bi-people-fill"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg shadow-lg p-6">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3 class="text-green-100 text-sm font-medium mb-1">Transacciones</h3>
+                                        <p class="text-3xl font-bold">93</p>
+                                        <p class="text-green-100 text-xs mt-2">
+                                            <i class="bi bi-arrow-up-circle mr-1"></i>
+                                            Total registradas
+                                        </p>
+                                    </div>
+                                    <div class="text-green-200 text-4xl">
+                                        <i class="bi bi-wallet2"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg shadow-lg p-6">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3 class="text-purple-100 text-sm font-medium mb-1">Categorías</h3>
+                                        <p class="text-3xl font-bold">7</p>
+                                        <p class="text-purple-100 text-xs mt-2">
+                                            <i class="bi bi-tags-fill mr-1"></i>
+                                            Categorías activas
+                                        </p>
+                                    </div>
+                                    <div class="text-purple-200 text-4xl">
+                                        <i class="bi bi-tags-fill"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg shadow-lg p-6">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3 class="text-orange-100 text-sm font-medium mb-1">Campañas</h3>
+                                        <p class="text-3xl font-bold">81</p>
+                                        <p class="text-orange-100 text-xs mt-2">
+                                            <i class="bi bi-briefcase mr-1"></i>
+                                            Proyectos activos
+                                        </p>
+                                    </div>
+                                    <div class="text-orange-200 text-4xl">
+                                        <i class="bi bi-briefcase"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gráficos y estadísticas -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Gráfico de transacciones -->
+                            <div class="bg-white rounded-lg shadow p-6">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                    <i class="bi bi-graph-up mr-2"></i>
+                                    Transacciones por Mes
+                                </h3>
+                                <div class="h-64 flex items-center justify-center bg-gray-50 rounded">
+                                    <canvas id="transaccionesChart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Distribución por categorías -->
+                            <div class="bg-white rounded-lg shadow p-6">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                    <i class="bi bi-pie-chart mr-2"></i>
+                                    Gastos por Categoría
+                                </h3>
+                                <div class="h-64 flex items-center justify-center bg-gray-50 rounded">
+                                    <canvas id="categoriasChart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actividad reciente -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Transacciones recientes -->
+                            <div class="bg-white rounded-lg shadow">
+                                <div class="p-6 border-b border-gray-200">
+                                    <h3 class="text-lg font-semibold text-gray-900">
+                                        <i class="bi bi-clock-history mr-2"></i>
+                                        Transacciones Recientes
+                                    </h3>
+                                </div>
+                                <div class="p-6">
+                                    <div class="space-y-4">
+                                        <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                                            <div class="flex items-center">
+                                                <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-3">
+                                                    <i class="bi bi-arrow-up text-white text-sm"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="font-medium text-gray-900">Ingreso por servicios</p>
+                                                    <p class="text-sm text-gray-500">Hace 2 horas</p>
+                                                </div>
+                                            </div>
+                                            <span class="font-bold text-green-600">+$2,500</span>
+                                        </div>
+
+                                        <div class="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                                            <div class="flex items-center">
+                                                <div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center mr-3">
+                                                    <i class="bi bi-arrow-down text-white text-sm"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="font-medium text-gray-900">Gastos de oficina</p>
+                                                    <p class="text-sm text-gray-500">Hace 4 horas</p>
+                                                </div>
+                                            </div>
+                                            <span class="font-bold text-red-600">-$350</span>
+                                        </div>
+
+                                        <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                                            <div class="flex items-center">
+                                                <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3">
+                                                    <i class="bi bi-arrow-up text-white text-sm"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="font-medium text-gray-900">Consultoría</p>
+                                                    <p class="text-sm text-gray-500">Ayer</p>
+                                                </div>
+                                            </div>
+                                            <span class="font-bold text-blue-600">+$1,200</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Resumen del equipo -->
+                            <div class="bg-white rounded-lg shadow">
+                                <div class="p-6 border-b border-gray-200">
+                                    <h3 class="text-lg font-semibold text-gray-900">
+                                        <i class="bi bi-people mr-2"></i>
+                                        Resumen del Equipo
+                                    </h3>
+                                </div>
+                                <div class="p-6">
+                                    <div class="space-y-4">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mr-3">
+                                                    <span class="text-white font-semibold">JD</span>
+                                                </div>
+                                                <div>
+                                                    <p class="font-medium text-gray-900">John Doe</p>
+                                                    <p class="text-sm text-gray-500">Desarrollador Senior</p>
+                                                </div>
+                                            </div>
+                                            <div class="text-right">
+                                                <p class="text-sm font-medium text-gray-900">40h</p>
+                                                <p class="text-xs text-gray-500">Esta semana</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-3">
+                                                    <span class="text-white font-semibold">MS</span>
+                                                </div>
+                                                <div>
+                                                    <p class="font-medium text-gray-900">María Silva</p>
+                                                    <p class="text-sm text-gray-500">Diseñadora UX</p>
+                                                </div>
+                                            </div>
+                                            <div class="text-right">
+                                                <p class="text-sm font-medium text-gray-900">38h</p>
+                                                <p class="text-xs text-gray-500">Esta semana</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <div class="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center mr-3">
+                                                    <span class="text-white font-semibold">CP</span>
+                                                </div>
+                                                <div>
+                                                    <p class="font-medium text-gray-900">Carlos Pérez</p>
+                                                    <p class="text-sm text-gray-500">Project Manager</p>
+                                                </div>
+                                            </div>
+                                            <div class="text-right">
+                                                <p class="text-sm font-medium text-gray-900">42h</p>
+                                                <p class="text-xs text-gray-500">Esta semana</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Acciones rápidas -->
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                <i class="bi bi-lightning mr-2"></i>
+                                Acciones Rápidas
+                            </h3>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <button class="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors">
+                                    <i class="bi bi-plus-circle text-2xl text-blue-500 mb-2"></i>
+                                    <span class="text-sm font-medium text-gray-700">Nueva Transacción</span>
+                                </button>
+                                <button class="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors">
+                                    <i class="bi bi-person-plus text-2xl text-green-500 mb-2"></i>
+                                    <span class="text-sm font-medium text-gray-700">Agregar Persona</span>
+                                </button>
+                                <button class="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors">
+                                    <i class="bi bi-tag text-2xl text-purple-500 mb-2"></i>
+                                    <span class="text-sm font-medium text-gray-700">Nueva Categoría</span>
+                                </button>
+                                <button class="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-colors">
+                                    <i class="bi bi-graph-up text-2xl text-orange-500 mb-2"></i>
+                                    <span class="text-sm font-medium text-gray-700">Ver Reportes</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts externos -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tabulator-tables@5.4.4/dist/js/tabulator.min.js"></script>
+
+    <!-- Script para manejo responsive del sidebar y gráficos -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('sidebar');
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            if (sidebarToggle && sidebar) {
+                sidebarToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('collapsed');
+
+                    // Cambiar ícono
+                    const icon = sidebarToggle.querySelector('i');
+                    if (sidebar.classList.contains('collapsed')) {
+                        icon.className = 'bi bi-x-lg';
+                    } else {
+                        icon.className = 'bi bi-list';
+                    }
+                });
+            }
+
+            // Manejar clics en enlaces de navegación
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+
+                    // Remover clase active de todos los enlaces
+                    navLinks.forEach(l => l.classList.remove('active'));
+
+                    // Agregar clase active al enlace clickeado
+                    this.classList.add('active');
+
+                    // Cerrar sidebar en móviles
+                    if (window.innerWidth <= 768) {
+                        sidebar.classList.add('collapsed');
+                        const icon = sidebarToggle.querySelector('i');
+                        icon.className = 'bi bi-list';
+                    }
+                });
+            });
+
+            // Manejar resize de ventana
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 768) {
+                    sidebar.classList.remove('collapsed');
+                    const icon = sidebarToggle.querySelector('i');
+                    icon.className = 'bi bi-list';
+                }
+            });
+
+            // Crear gráficos
+            createCharts();
+        });
+
+        function createCharts() {
+            // Gráfico de transacciones
+            const transaccionesCtx = document.getElementById('transaccionesChart');
+            if (transaccionesCtx) {
+                new Chart(transaccionesCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'Ingresos',
+                            data: [12000, 19000, 3000, 5000, 20000, 30000],
+                            borderColor: 'rgb(34, 197, 94)',
+                            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                            tension: 0.1
+                        }, {
+                            label: 'Gastos',
+                            data: [8000, 15000, 2000, 3000, 12000, 18000],
+                            borderColor: 'rgb(239, 68, 68)',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Gráfico de categorías
+            const categoriasCtx = document.getElementById('categoriasChart');
+            if (categoriasCtx) {
+                new Chart(categoriasCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Oficina', 'Marketing', 'Desarrollo', 'Recursos Humanos', 'Otros'],
+                        datasets: [{
+                            data: [30, 25, 20, 15, 10],
+                            backgroundColor: [
+                                'rgb(59, 130, 246)',
+                                'rgb(34, 197, 94)',
+                                'rgb(168, 85, 247)',
+                                'rgb(249, 115, 22)',
+                                'rgb(107, 114, 128)'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>
