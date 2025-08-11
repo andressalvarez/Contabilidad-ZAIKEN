@@ -1,0 +1,75 @@
+# ===========================================
+# DOCKERFILE ROBUSTO - ZAIKEN SYSTEM FRONTEND
+# ===========================================
+# Stack: Node.js 18, Next.js 14, React
+# ===========================================
+
+# Etapa de construcción
+FROM node:18-alpine AS builder
+
+# Instalar dependencias del sistema
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/cache/apk/*
+
+# Establecer directorio de trabajo
+WORKDIR /app
+
+# Copiar archivos de dependencias
+COPY package*.json ./
+
+# Instalar dependencias
+RUN npm ci --only=production && npm cache clean --force
+
+# Copiar código fuente
+COPY . .
+
+# Construir aplicación
+RUN npm run build
+
+# Etapa de producción
+FROM node:18-alpine AS production
+
+# Instalar dependencias del sistema para producción
+RUN apk add --no-cache \
+    curl \
+    && rm -rf /var/cache/apk/*
+
+# Crear usuario no-root para seguridad
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nextjs -u 1001
+
+# Establecer directorio de trabajo
+WORKDIR /app
+
+# Copiar archivos de dependencias
+COPY package*.json ./
+
+# Instalar solo dependencias de producción
+RUN npm ci --only=production && npm cache clean --force
+
+# Copiar archivos construidos desde la etapa anterior
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+
+# Cambiar propiedad de archivos
+RUN chown -R nextjs:nodejs /app
+
+# Cambiar a usuario no-root
+USER nextjs
+
+# Exponer puerto
+EXPOSE 3000
+
+# Variables de entorno por defecto
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:3000/api/health || exit 1
+
+# Comando de inicio
+CMD ["npm", "start"]

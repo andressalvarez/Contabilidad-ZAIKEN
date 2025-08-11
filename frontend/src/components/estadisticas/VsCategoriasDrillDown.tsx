@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle, useMemo } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { createRoot } from 'react-dom/client';
 import { useTransacciones, useResumenPorCategorias } from '@/hooks/useTransacciones';
 import { usePersonas } from '@/hooks/usePersonas';
 import { useCategorias } from '@/hooks/useCategorias';
 import { VSCategoriasService, type VSCarpeta, type VSGrupo, type DatosGrafico } from '@/services/vs-categorias.service';
-import { Transaccion } from '@/types';
+import { Transaccion, Persona } from '@/types';
 import { toast } from 'sonner';
 import {
   BarChart3,
@@ -55,9 +55,23 @@ import {
   Legend,
   Filler
 } from 'chart.js';
+
 import { Chart } from 'chart.js';
 
 // Registrar componentes de Chart.js
+// Plugin para fondo blanco en exportación
+const WhiteBg = {
+  id: 'whiteBg',
+  beforeDraw(chart: any, _args: any, opts: any) {
+    const { ctx, chartArea } = chart;
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-over';
+    ctx.fillStyle = opts?.color ?? '#ffffff';
+    ctx.fillRect(chartArea.left, chartArea.top, chartArea.right - chartArea.left, chartArea.bottom - chartArea.top);
+    ctx.restore();
+  }
+};
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -68,7 +82,8 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
+  WhiteBg
 );
 
 // Interfaces
@@ -83,13 +98,42 @@ interface VsCategoriasDrillDownRef {
   collapseDetails: () => void;
 }
 
-interface Grupo {
+// ===== NORMALIZACIÓN DE TIPOS =====
+type TipoTx = 'GASTO' | 'INGRESO' | 'APORTE' | ''; // '' = sin filtro
+
+const normalizeTipo = (v?: string): TipoTx => {
+  const k = (v || '').toLowerCase();
+  if (k === 'gasto') return 'GASTO';
+  if (k === 'ingreso') return 'INGRESO';
+  if (k === 'aporte') return 'APORTE';
+  return '';
+};
+
+type SegmentKind = 'group' | 'category';
+interface SegmentMeta {
+  kind: SegmentKind;
+  id: number;
+  label: string;
+  color: string;
+  value: number;
+}
+
+interface ChartQuery {
+  tipo: TipoTx;
+  fechaDesde?: string;
+  fechaHasta?: string;
+  groupIds?: number[];
+  categoryIds?: number[];
+}
+
+interface GrupoNorm {
   id: number;
   nombre: string;
   color: string;
-  categorias: string[];
   visible: boolean;
   carpetaId?: number;
+  categoriaIds: number[];       // ✅ nuevo: fuente de verdad
+  categoriaNames?: string[];    // (opcional) sólo para UI/retrocompat
 }
 
 interface Carpeta {
@@ -101,19 +145,21 @@ interface Carpeta {
 }
 
 interface VSConfig {
-  grupos: Record<number, Grupo>;
+  grupos: Record<number, GrupoNorm>;
   carpetas: Record<number, Carpeta>;
-  colores: Record<string, string>;
+  colores: Record<number /*categoryId*/, string>;
   filtros: {
-    categorias: string[];
-    tipo: string;
+    tipo: TipoTx;
     fechaDesde: string;
     fechaHasta: string;
-    chartType: string;
-    gruposSeleccionados: number[];
-    carpetasSeleccionadas: number[];
+    chartType: 'bar' | 'line' | 'pie' | 'doughnut';
+    gruposSeleccionados: number[];      // ✅ IDs
+    carpetasSeleccionadas: number[];    // ✅ IDs
   };
+  version?: '2';
 }
+
+// Usar la interfaz del servicio en lugar de redefinir
 
 // Wrapper interno que verifica el QueryClient
 const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCategoriasDrillDownProps>(
@@ -130,13 +176,20 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
     const [expandedSegment, setExpandedSegment] = useState<string | null>(null);
     const [currentTransactions, setCurrentTransactions] = useState<Transaccion[]>([]);
     const [currentView, setCurrentView] = useState<'list' | 'chart'>('list');
+
+    // Estado del segmento actual para DetailContent
+    const [currentSegmentInfo, setCurrentSegmentInfo] = useState<{
+      label: string;
+      value: number;
+      color: string;
+    } | null>(null);
     const [showGroupsModal, setShowGroupsModal] = useState(false);
     const [showCarpetasModal, setShowCarpetasModal] = useState(false);
     const [showManageModal, setShowManageModal] = useState(false);
   const [showEditCarpetaModal, setShowEditCarpetaModal] = useState(false);
   const [showEditGrupoModal, setShowEditGrupoModal] = useState(false);
-  const [editingCarpeta, setEditingCarpeta] = useState<{id: string, carpeta: Carpeta} | null>(null);
-  const [editingGrupo, setEditingGrupo] = useState<{id: string, grupo: Grupo} | null>(null);
+  const [editingCarpeta, setEditingCarpeta] = useState<{id: number, carpeta: Carpeta} | null>(null);
+  const [editingGrupo, setEditingGrupo] = useState<{id: number, grupo: GrupoNorm} | null>(null);
 
     // Estados para VS Categorías avanzado
     const [vsConfig, setVsConfig] = useState<VSConfig>({
@@ -144,14 +197,14 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       carpetas: {},
       colores: {},
       filtros: {
-        categorias: [],
-        tipo: 'Gasto',
+        tipo: 'GASTO',
         fechaDesde: '',
         fechaHasta: '',
         chartType: 'bar',
         gruposSeleccionados: [],
         carpetasSeleccionadas: []
-      }
+      },
+      version: '2'
     });
 
     const [detailFilters, setDetailFilters] = useState({
@@ -165,12 +218,204 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
     // Referencias
     const chartRef = useRef<Chart | null>(null);
     const detailsContainerRef = useRef<HTMLDivElement>(null);
+    const chartMetaRef = useRef<SegmentMeta[]>([]);
+    const lastReq = useRef(0);
+
+
 
     // Hooks de datos
     const { data: resumenCategorias = [] } = useResumenPorCategorias(filters);
     const { data: personas = [] } = usePersonas();
     const { data: categorias = [] } = useCategorias();
     const { data: transacciones = [] } = useTransacciones(filters);
+
+    // Mapas de categorías (para resolver nombres↔IDs)
+    const byCatId = useMemo(() => new Map(categorias.map(c => [c.id, c.nombre])), [categorias]);
+    const catIdByName = useMemo(() => new Map(categorias.map(c => [c.nombre, c.id])), [categorias]);
+
+    // MIGRACIÓN al cargar configuración guardada
+    const migrateConfigV1toV2 = (oldCfg: any): VSConfig => {
+      const grupos: Record<number, GrupoNorm> = {};
+      Object.entries(oldCfg.grupos || {}).forEach(([id, g]: any) => {
+        const categoriaIds = (g.categoriaIds || []).filter(Boolean);
+        grupos[+id] = {
+          id: +id,
+          nombre: g.nombre,
+          color: g.color,
+          visible: g.visible !== false,
+          carpetaId: g.carpetaId,
+          categoriaIds,
+          categoriaNames: g.categoriaNames, // opcional
+        };
+      });
+      return { ...oldCfg, grupos, version: '2' };
+    };
+
+    // ===== SELECTORES DERIVADOS =====
+    const selectVisibleFolderIds = (s: VSConfig) =>
+      Object.entries(s.carpetas).filter(([_, c]) => c.visible !== false).map(([id]) => +id);
+
+    const selectVisibleGroupIds = (s: VSConfig) => {
+      const visibleFolders = new Set(selectVisibleFolderIds(s));
+      return Object.entries(s.grupos)
+        .filter(([_, g]) => g.visible !== false && (!g.carpetaId || visibleFolders.has(g.carpetaId)))
+        .map(([id]) => +id);
+    };
+
+    const selectEffectiveGroupIds = (s: VSConfig) => {
+      const visibles = new Set(selectVisibleGroupIds(s));
+      return (s.filtros.gruposSeleccionados || []).filter(id => visibles.has(id));
+    };
+
+    const selectCategoryIdsFromGroupIds = (s: VSConfig, groupIds: number[]) => {
+      const out = new Set<number>();
+      groupIds.forEach(id => s.grupos[id]?.categoriaIds.forEach(cid => out.add(cid)));
+      return [...out];
+    };
+
+    // ===== QUERY BUILDER =====
+    const buildChartQuery = (s: VSConfig): ChartQuery => {
+      const selectedTipo = normalizeTipo(s.filtros.tipo as any);
+      const q: ChartQuery = {
+        // Si el usuario no escogió tipo, no mandamos tipo para que el backend sume todo
+        tipo: selectedTipo || undefined as any,
+        fechaDesde: s.filtros.fechaDesde || undefined,
+        fechaHasta: s.filtros.fechaHasta || undefined
+      } as any;
+      const effGroups = selectEffectiveGroupIds(s);
+      if (effGroups.length) {
+        q.groupIds = effGroups;
+      } else {
+        q.categoryIds = undefined; // backend decide por categorías
+      }
+      return q;
+    };
+
+    const buildSegmentQuery = (s: VSConfig, seg: SegmentMeta): any => {
+      const selectedTipo = normalizeTipo(s.filtros.tipo as any);
+      const base: any = {
+        fechaInicio: s.filtros.fechaDesde || undefined,
+        fechaFin: s.filtros.fechaHasta || undefined,
+      };
+      if (selectedTipo) base.tipo = selectedTipo;
+
+      if (seg.kind === 'group') {
+        const catIds = s.grupos[seg.id]?.categoriaIds ?? [];
+        return { ...base, categoriasIds: catIds };
+      } else {
+        return { ...base, categoriaId: seg.id };
+      }
+    };
+
+    // ===== CHART MODEL CON METADATOS =====
+    const buildChartModel = (s: VSConfig, resumenCategorias: any[], datosBackend: {datos: Record<string, number>, esGrupo: boolean}) => {
+      const labels: string[] = [];
+      const values: number[] = [];
+      const meta: SegmentMeta[] = [];
+      const colors: string[] = [];
+
+      if (datosBackend.esGrupo) {
+        // resultado agregado por grupo
+        Object.entries(datosBackend.datos).forEach(([groupName, value]) => {
+          const group = Object.values(s.grupos).find(g => g.nombre === groupName);
+          if (!group) return;
+          labels.push(group.nombre);
+          values.push(value as number);
+          meta.push({ kind: 'group', id: group.id, label: group.nombre, color: group.color, value: value as number });
+          colors.push(group.color);
+        });
+      } else {
+        // agregado por categoría - Fix #2: Usar IDs para colores
+        Object.entries(datosBackend.datos).forEach(([catName, value], idx) => {
+          const catId = catIdByName.get(catName);
+          if (!catId) return;
+          labels.push(catName);
+          values.push(value as number);
+          const existing = s.colores[catId];
+          const colorAsignado = existing || coloresBase[idx % coloresBase.length];
+          if (!existing && catId) {
+            setVsConfig(prev => ({
+              ...prev,
+              colores: { ...prev.colores, [catId]: colorAsignado } // 👈 Fix #2: llave numérica
+            }));
+          }
+          meta.push({ kind: 'category', id: catId, label: catName, color: colorAsignado, value: value as number });
+          colors.push(colorAsignado);
+        });
+      }
+
+      chartMetaRef.current = meta; // ✅ guarda metadatos para clicks
+      return { labels, values, colors, meta };
+    };
+
+    // ===== FETCH CON CONTROL DE CONCURRENCIA =====
+    const fetchSegmentTransactions = async (seg: SegmentMeta) => {
+      const payload = buildSegmentQuery(vsConfig, seg);
+      try {
+        const res = await VSCategoriasService.getTransaccionesPorSegmento(payload);
+        // adapta: res.data?.data || res.data || res
+        const arr = Array.isArray(res?.data?.data) ? res.data.data :
+                    Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+        return transformApiTransactions(arr); // tu mapper a Transaccion
+      } catch {
+        return fallbackLocalTransactions(seg); // usa IDs, no nombres
+      }
+    };
+
+    const transformApiTransactions = (apiData: any[]): Transaccion[] => {
+      return apiData.map((t: any) => {
+        let personaId = null;
+        let personaNombre = '';
+        if (t.persona) {
+          personaId = t.persona.id || t.personaId;
+          personaNombre = t.persona.nombre || t.persona.name || '';
+        } else if (t.personaId) {
+          personaId = t.personaId;
+        }
+
+        return {
+          id: t.id,
+          tipoId: t.tipoId || 0,
+          monto: t.monto || 0,
+          concepto: t.concepto || 'Sin concepto',
+          fecha: t.fecha ? new Date(t.fecha).toISOString().split('T')[0] : '',
+          categoriaId: t.categoriaId,
+          categoria: t.categoria?.nombre ? t.categoria : (t.categoria ? { nombre: t.categoria } as any : undefined),
+          personaId: personaId,
+          persona: t.persona || (personaId ? { id: personaId, nombre: personaNombre } as any : undefined),
+          campanaId: t.campanaId,
+          campana: t.campana,
+          moneda: t.moneda || 'COP',
+          notas: t.notas || '',
+          comprobante: t.comprobante,
+          aprobado: t.aprobado || false,
+          createdAt: t.createdAt || new Date().toISOString(),
+          updatedAt: t.updatedAt || new Date().toISOString(),
+          tipo: t.tipo?.nombre ? t.tipo : (t.tipo ? { nombre: t.tipo } as any : undefined)
+        };
+      });
+    };
+
+    const fallbackLocalTransactions = (seg: SegmentMeta): Transaccion[] => {
+      let rows = [...transacciones];
+
+      // tipo
+      const tipo = vsConfig.filtros.tipo;
+      if (tipo) {
+        rows = rows.filter(t => (typeof t.tipo === 'string' ? t.tipo : t.tipo?.nombre) === tipo);
+      }
+
+      // fechas
+      if (vsConfig.filtros.fechaDesde) rows = rows.filter(t => t.fecha >= vsConfig.filtros.fechaDesde);
+      if (vsConfig.filtros.fechaHasta) rows = rows.filter(t => t.fecha <= vsConfig.filtros.fechaHasta);
+
+      if (seg.kind === 'group') {
+        const catIds = vsConfig.grupos[seg.id]?.categoriaIds ?? [];
+        return rows.filter(t => (t.categoriaId && catIds.includes(t.categoriaId)));
+      } else {
+        return rows.filter(t => t.categoriaId === seg.id);
+      }
+    };
 
     // Colores base para el sistema - Paleta con máxima distinción visual
     const coloresBase = [
@@ -209,6 +454,16 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
         saveConfig();
       }
     }, [vsConfig]);
+
+    // Debug: Monitorear cambios en currentView
+    useEffect(() => {
+      console.log('🔄 useEffect: currentView cambió a:', currentView);
+    }, [currentView]);
+
+    // Debug: Monitorear cambios en currentSegmentInfo
+    useEffect(() => {
+      console.log('🔄 useEffect: currentSegmentInfo cambió a:', currentSegmentInfo);
+    }, [currentSegmentInfo]);
 
     // Cargar datos iniciales de VS Categorías desde el backend
     useEffect(() => {
@@ -255,7 +510,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
               id: grupo.id,
               nombre: grupo.nombre,
               color: grupo.color,
-              categorias: grupo.categorias.map(cat => cat.categoria.nombre),
+              categoriaIds: grupo.categoriaIds || [],
               visible: estadoGuardado?.visible !== undefined ? estadoGuardado.visible : grupo.visible,
               carpetaId: grupo.carpetaId || undefined
             };
@@ -338,29 +593,27 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
         // Actualizar filtros con valores actuales del formulario
         updateFiltrosFromForm();
 
-        // Crear configuración completa y validada
-        const config = {
+        // Crear configuración completa y validada - Fix #7: versión y normalización
+        const config: VSConfig = {
           // Filtros básicos
           filtros: {
-            categorias: Array.isArray(vsConfig.filtros.categorias) ? vsConfig.filtros.categorias : [],
-            tipo: vsConfig.filtros.tipo || 'Gasto',
+            // categorias removido - usar categoriaIds en su lugar
+            tipo: normalizeTipo(vsConfig.filtros.tipo as any), // 👈 Fix #7: Normalizar tipo
             fechaDesde: vsConfig.filtros.fechaDesde || '',
             fechaHasta: vsConfig.filtros.fechaHasta || '',
             chartType: vsConfig.filtros.chartType || 'bar',
             gruposSeleccionados: Array.isArray(vsConfig.filtros.gruposSeleccionados) ? vsConfig.filtros.gruposSeleccionados : [],
             carpetasSeleccionadas: Array.isArray(vsConfig.filtros.carpetasSeleccionadas) ? vsConfig.filtros.carpetasSeleccionadas : [],
           },
+          // Metadatos - Fix #7: versión correcta
+          version: '2',
 
-          // Configuraciones de colores
+          // Configuraciones de colores - Fix #2: usar IDs
           colores: vsConfig.colores || {},
 
           // Estructuras de organización
           grupos: vsConfig.grupos || {},
           carpetas: vsConfig.carpetas || {},
-
-          // Metadatos
-          timestamp: new Date().toISOString(),
-          version: '2.0'
         };
 
         // Guardar en localStorage con validación
@@ -376,7 +629,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       }
     };
 
-    // Aplicar configuración guardada
+    // Aplicar configuración guardada - Fix #7: normalización al cargar
     const applySavedConfig = () => {
       try {
         // Cargar configuración desde localStorage
@@ -389,35 +642,18 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
         const savedConfig = JSON.parse(savedConfigStr);
         console.log('Configuración cargada:', savedConfig);
 
-        // Restaurar estructuras de organización si existen
-        if (savedConfig.grupos && typeof savedConfig.grupos === 'object') {
-          setVsConfig(prev => ({ ...prev, grupos: { ...prev.grupos, ...savedConfig.grupos } }));
+        // Migrar si es necesario
+        const v2 = savedConfig.version === '2' ? savedConfig : migrateConfigV1toV2(savedConfig);
+
+        // Fix #7: Normalizar tipo al cargar
+        if (v2.filtros?.tipo) {
+          v2.filtros.tipo = normalizeTipo(v2.filtros.tipo as any);
         }
 
-        if (savedConfig.carpetas && typeof savedConfig.carpetas === 'object') {
-          setVsConfig(prev => ({ ...prev, carpetas: { ...prev.carpetas, ...savedConfig.carpetas } }));
-        }
+        console.log('Configuración migrada:', v2);
 
-        if (savedConfig.colores && typeof savedConfig.colores === 'object') {
-          setVsConfig(prev => ({ ...prev, colores: { ...prev.colores, ...savedConfig.colores } }));
-        }
-
-        // Restaurar filtros
-        if (savedConfig.filtros) {
-          setVsConfig(prev => ({
-            ...prev,
-            filtros: {
-              ...prev.filtros,
-              tipo: savedConfig.filtros.tipo || prev.filtros.tipo,
-              fechaDesde: savedConfig.filtros.fechaDesde || prev.filtros.fechaDesde,
-              fechaHasta: savedConfig.filtros.fechaHasta || prev.filtros.fechaHasta,
-              chartType: savedConfig.filtros.chartType || prev.filtros.chartType,
-              categorias: Array.isArray(savedConfig.filtros.categorias) ? savedConfig.filtros.categorias : prev.filtros.categorias,
-              gruposSeleccionados: Array.isArray(savedConfig.filtros.gruposSeleccionados) ? savedConfig.filtros.gruposSeleccionados : [],
-              carpetasSeleccionadas: Array.isArray(savedConfig.filtros.carpetasSeleccionadas) ? savedConfig.filtros.carpetasSeleccionadas : [],
-            }
-          }));
-        }
+        // Aplicar configuración migrada
+        setVsConfig(prev => ({ ...prev, ...v2 }));
 
         // Notificar éxito
         toast.success('✅ Configuración cargada correctamente');
@@ -494,82 +730,69 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
 
         // Función para obtener datos filtrados desde el backend
     const getDatosFiltrados = async (): Promise<DatosGrafico> => {
+      console.log('🔍 Obteniendo datos filtrados para VS Categorías...');
+      console.log('📊 Configuración actual:', vsConfig);
+
       try {
-        console.log('🔍 getDatosFiltrados iniciando...');
-        console.log('📊 Estado actual vsConfig:', vsConfig);
+        // Usar query builder para construir el payload
+        const effGroups = selectEffectiveGroupIds(vsConfig);
+        console.log('👥 Grupos efectivos:', effGroups);
 
-        // 1. Determinar grupos VISIBLES (ojito activado)
-        const gruposVisibles = Object.entries(vsConfig.grupos).filter(([id, grupo]) => {
-          // El grupo debe estar visible
-          if (grupo.visible === false) {
-            console.log(`❌ Grupo ${grupo.nombre} no visible`);
-            return false;
-          }
-
-          // Si el grupo está en una carpeta, la carpeta también debe estar visible
-          if (grupo.carpetaId) {
-            const carpeta = vsConfig.carpetas[grupo.carpetaId];
-            if (carpeta && carpeta.visible === false) {
-              console.log(`❌ Grupo ${grupo.nombre} en carpeta no visible`);
-              return false;
-            }
-          }
-
-          console.log(`✅ Grupo ${grupo.nombre} es visible`);
-          return true;
-        });
-
-        console.log(`👥 Grupos visibles encontrados: ${gruposVisibles.length}`, gruposVisibles.map(([id, g]) => g.nombre));
-
-        // 2. Determinar grupos A USAR
-        let gruposAUsar: number[] = [];
-        const gruposSeleccionadosNumericos = vsConfig.filtros.gruposSeleccionados
-          .filter(id => typeof id === 'number' && !isNaN(id))
-          .map(id => +id);
-
-        if (gruposVisibles.length > 0) {
-          if (gruposSeleccionadosNumericos.length > 0) {
-            // Hay selección específica: usar solo grupos seleccionados QUE SEAN VISIBLES
-            gruposAUsar = gruposSeleccionadosNumericos.filter(id =>
-              gruposVisibles.some(([grupoId]) => +grupoId === id)
-            );
-            console.log(`🎯 Usando grupos seleccionados visibles: ${gruposAUsar.length}`, gruposAUsar);
-          } else {
-            // No hay selección específica: usar TODOS los grupos visibles
-            gruposAUsar = gruposVisibles.map(([id]) => +id);
-            console.log(`🌟 Usando todos los grupos visibles: ${gruposAUsar.length}`, gruposAUsar);
-          }
-        }
-
-        console.log('📋 Grupos finales a usar:', gruposAUsar);
-
-        // 3. Hacer llamada al backend
-        if (gruposAUsar.length > 0) {
-          // Usar grupos (visibles o seleccionados visibles)
-          const resultado = await VSCategoriasService.getDatosParaGrafico({
-            tipo: vsConfig.filtros.tipo,
+        const payload = effGroups.length
+          ? {
+            tipo: normalizeTipo(vsConfig.filtros.tipo as any),
             fechaDesde: vsConfig.filtros.fechaDesde,
             fechaHasta: vsConfig.filtros.fechaHasta,
-            gruposSeleccionados: gruposAUsar,
-          });
-          console.log('✅ Resultado con grupos:', resultado);
-          return resultado;
-        } else {
-          // Fallback a categorías individuales
-          console.log('📂 Fallback a categorías individuales');
-        const resultado = await VSCategoriasService.getDatosParaGrafico({
-          tipo: vsConfig.filtros.tipo,
+              groupIds: effGroups
+        }
+          : {
+            tipo: normalizeTipo(vsConfig.filtros.tipo as any),
           fechaDesde: vsConfig.filtros.fechaDesde,
-          fechaHasta: vsConfig.filtros.fechaHasta,
-            gruposSeleccionados: undefined,
-        });
-          console.log('✅ Resultado con categorías:', resultado);
-        return resultado;
+              fechaHasta: vsConfig.filtros.fechaHasta
+            };
+
+        console.log('📤 Payload para backend:', payload);
+
+        // Llamar al backend con el payload
+        const resultado = await VSCategoriasService.getDatosParaGrafico(payload);
+        console.log('📥 Respuesta del backend:', resultado);
+
+        // Guardar metadatos de segmento para cada label
+        const segmentMeta = new Map<string, { kind: 'group'|'category', id: number }>();
+
+        if (resultado.esGrupo && resultado.grupos) {
+          for (const g of resultado.grupos) {
+            segmentMeta.set(g.nombre, { kind: 'group', id: g.id });
+          }
+        } else {
+          for (const label of Object.keys(resultado.datos)) {
+            const id = catIdByName.get(label);
+            if (id) {
+              segmentMeta.set(label, { kind: 'category', id });
+            }
+          }
         }
 
+        // Guardar metadatos para uso en clicks
+        chartMetaRef.current = Array.from(segmentMeta.entries()).map(([label, meta]) => ({
+          kind: meta.kind,
+          id: meta.id,
+          label,
+          color: resultado.esGrupo ?
+            vsConfig.grupos[meta.id]?.color || coloresBase[0] :
+            vsConfig.colores[meta.id] || coloresBase[0],
+          value: resultado.datos[label] || 0
+        }));
+
+        return resultado;
+
       } catch (error) {
-        console.error('❌ Error al obtener datos del backend:', error);
-        return { datos: {}, esGrupo: false };
+        console.error('❌ Error al obtener datos filtrados:', error);
+        toast.error('Error al obtener datos para el gráfico');
+        return {
+          datos: {},
+          esGrupo: false
+        };
       }
     };
 
@@ -594,17 +817,33 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       if (labels.length === 0 || values.every(v => v === 0)) {
         const container = document.getElementById('vsCategoriasContainer');
         if (container) {
-          container.innerHTML = '<div class="text-center text-gray-400 py-8">No hay datos para mostrar para las categorías seleccionadas.</div>';
+          // Quitar canvas si existe, pero no borrar el resto del contenido
+          const existingCanvas = container.querySelector('canvas');
+          if (existingCanvas) existingCanvas.remove();
+
+          // Crear/actualizar placeholder interno de "sin datos"
+          let noData = container.querySelector('.vs-no-data');
+          if (!noData) {
+            noData = document.createElement('div');
+            noData.className = 'vs-no-data text-center text-gray-400 py-8';
+            container.appendChild(noData);
+          }
+          noData.textContent = 'No hay datos para mostrar para las categorías seleccionadas.';
         }
-        return;
+        return; // ✅ sin afectar otros elementos (botonera Gestionar permanece)
       }
 
-      // Recrear el canvas si fue removido
+      // Recrear el canvas si fue removido y limpiar placeholder de "sin datos"
       const container = document.getElementById('vsCategoriasContainer');
       if (container) {
+        const noData = container.querySelector('.vs-no-data');
+        if (noData) noData.remove();
         const existingCanvas = container.querySelector('canvas');
         if (!existingCanvas) {
-          container.innerHTML = '<canvas id="vsCategoriasChart" class="w-full h-auto min-h-96"></canvas>';
+          const newCanvas = document.createElement('canvas');
+          newCanvas.id = 'vsCategoriasChart';
+          newCanvas.height = 300;
+          container.prepend(newCanvas);
         }
       }
 
@@ -627,25 +866,20 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
         borderColor = backgroundColor;
       } else {
         // Modo categorías por defecto: asignar colores distintos automáticamente
-        backgroundColor = labels.map((cat, index) => {
-          // Si ya tiene color asignado, usarlo, sino asignar uno de la paleta
-          if (vsConfig.colores[cat]) {
-            return vsConfig.colores[cat];
-          }
+        backgroundColor = labels.map((catLabel, index) => {
+          const catId = catIdByName.get(catLabel);
+          const existing = catId ? vsConfig.colores[catId] : undefined;
+          if (existing) return existing;
 
-          // Asignar color de la paleta basado en el índice
           const colorAsignado = coloresBase[index % coloresBase.length];
-
-          // Guardar el color asignado para futuras referencias
+          if (catId) {
           setVsConfig(prev => ({
             ...prev,
-            colores: {
-              ...prev.colores,
-              [cat]: colorAsignado
-            }
+              colores: { ...prev.colores, [catId]: colorAsignado }
           }));
+          }
 
-          console.log(`🎨 Color auto-asignado a categoría ${cat}: ${colorAsignado}`);
+          console.log(`🎨 Color auto-asignado a categoría ${catLabel} (ID: ${catId}): ${colorAsignado}`);
           return colorAsignado;
         });
         borderColor = backgroundColor;
@@ -653,9 +887,32 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
 
       // Crear leyenda externa antes del gráfico
       if (container) {
-        const existingLegend = container.querySelector('.vs-categorias-legend');
-        if (existingLegend) existingLegend.remove();
-        createVsCategoriasLegend(container, labels, values, backgroundColor, total);
+        // Eliminar CUALQUIER leyenda previa
+        const existingLegends = container.querySelectorAll('.vs-categorias-legend');
+        existingLegends.forEach((el) => el.remove());
+
+        // Crear elementos para la leyenda
+        const legendItems = labels.map((label, index) => ({
+          label,
+          value: values[index] || 0,
+          color: backgroundColor[index] || coloresBase[0]
+        }));
+
+        const legendContainer = document.createElement('div');
+        legendContainer.className = 'vs-categorias-legend'; // ✅ clave para no duplicar
+        container.appendChild(legendContainer);
+        const root = createRoot(legendContainer);
+        root.render(
+          <Legend
+            items={legendItems}
+            onClick={(label) => {
+              const meta = chartMetaRef.current.find(m => m.label === label);
+              if (meta) {
+                handleSegmentClick(meta);
+              }
+            }}
+          />
+        );
       }
 
       const chartOptions = {
@@ -681,21 +938,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
               }
             }
           },
-          datalabels: {
-            display: true,
-            color: function(context: any) {
-              return ['pie', 'doughnut'].includes(context.chart.config.type) ? 'white' : '#374151';
-            },
-            font: { weight: 'bold', size: 12 },
-            formatter: function(value: number, context: any) {
-              const porcentaje = ((value / total) * 100).toFixed(1);
-              if (['pie', 'doughnut'].includes(context.chart.config.type)) {
-                return porcentaje > 3 ? porcentaje + '%' : ''; // Solo mostrar si es > 3%
-              } else {
-                return value > 0 ? `$${value.toLocaleString()}` : '';
-              }
-            }
-          }
+
         },
         scales: ['pie', 'doughnut'].includes(vsConfig.filtros.chartType) ? {} : {
           y: {
@@ -728,55 +971,47 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
 
       chartRef.current = chart;
 
-      // Configurar altura final del chart
-      setTimeout(() => {
-        if (chart) {
-          chart.resize();
+      // Ajuste asíncrono de tamaño del gráfico tras montar
+      requestAnimationFrame(() => {
+        const current = chartRef.current;
+        try {
+          if (current && (current as any).canvas && (current as any).ctx) {
+            current.resize();
+          }
+        } catch (e) {
+          console.warn('Skip resize: chart not ready/detached');
         }
-      }, 50);
+      });
     };
 
-    // Crear leyenda externa
-    const createVsCategoriasLegend = (container: HTMLElement, labels: string[], values: number[], colors: string[], total: number) => {
-      const legendContainer = document.createElement('div');
-      legendContainer.className = 'vs-categorias-legend mb-6';
-
-      legendContainer.innerHTML = `
-        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 mb-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <h4 class="font-semibold text-blue-900 text-lg">Resumen Total</h4>
-              <p class="text-blue-700 text-sm">${labels.length} elemento${labels.length > 1 ? 's' : ''} analizados</p>
+    // Componente Legend en React
+    const Legend = ({ items, onClick }: {
+      items: { label: string; value: number; color: string }[];
+      onClick: (label: string) => void
+    }) => {
+      return (
+        <div className="flex flex-wrap gap-2 mt-4">
+          {items.map((item, index) => (
+                <button
+              key={index}
+              onClick={() => {
+                const meta = chartMetaRef.current.find(m => m.label === item.label);
+                if (meta) handleSegmentClick(meta); // 👈 Fix #8: usar meta
+              }}
+              className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all text-sm font-medium shadow-sm"
+                >
+                  <div
+                className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: item.color }}
+                  />
+              <span className="text-gray-700">{item.label}</span>
+              <span className="text-gray-500 font-normal">
+                ${item.value.toLocaleString()}
+              </span>
+                </button>
+          ))}
         </div>
-            <div class="text-right">
-              <div class="text-2xl font-bold text-blue-900">$${total.toLocaleString()}</div>
-              <div class="text-blue-700 text-sm">Total acumulado</div>
-            </div>
-          </div>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          ${labels.map((label, index) => {
-            const value = values[index] ?? 0;
-            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-            return `
-              <div class="flex items-center space-x-3 p-3 bg-white rounded-lg shadow-sm border hover:shadow-md transition-all duration-200 cursor-pointer"
-                   onclick="window.handleSegmentClick('${label}', ${value}, '${colors[index]}', ${index})">
-                <div class="w-4 h-4 rounded-full flex-shrink-0 shadow-sm" style="background-color: ${colors[index]}"></div>
-                <div class="flex-1 min-w-0">
-                  <div class="text-sm font-semibold text-gray-900 truncate">${label}</div>
-                  <div class="text-xs text-gray-600">
-                    <span class="font-medium">${percentage}%</span> •
-                    <span class="text-green-600 font-medium">$${value.toLocaleString()}</span>
-                  </div>
-                </div>
-                <div class="text-lg font-bold text-gray-400">${percentage}%</div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      `;
-
-      container.appendChild(legendContainer);
+      );
     };
 
     // Renderizar chips de grupos y carpetas
@@ -854,8 +1089,9 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
     };
 
     // Componente Grupo en Carpeta
-    const GrupoEnCarpeta = ({ grupoId, grupo }: { grupoId: number; grupo: Grupo }) => {
+    const GrupoEnCarpeta = ({ grupoId, grupo }: { grupoId: number; grupo: GrupoNorm }) => {
       const isSelected = vsConfig.filtros.gruposSeleccionados.includes(grupoId);
+      const count = (grupo.categoriaIds || []).length;
 
       return (
         <div
@@ -869,7 +1105,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
               <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: grupo.color }}></div>
               <span className="text-sm font-medium text-gray-700 truncate">{grupo.nombre}</span>
               <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded-full">
-                {grupo.categorias.length}
+                {count}
               </span>
             </div>
             <button
@@ -888,8 +1124,9 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
     };
 
     // Componente Grupo Card
-    const GrupoCard = ({ grupoId, grupo }: { grupoId: number; grupo: Grupo }) => {
+    const GrupoCard = ({ grupoId, grupo }: { grupoId: number; grupo: GrupoNorm }) => {
       const isSelected = vsConfig.filtros.gruposSeleccionados.includes(grupoId);
+      const count = (grupo.categoriaIds || []).length;
 
       return (
         <div
@@ -906,7 +1143,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
                 <div className="text-xs text-gray-500 mt-1">
                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
                     <Tags className="mr-1" size={10} />
-                    {grupo.categorias.length} categorías
+                    {count} categorías
                   </span>
                 </div>
               </div>
@@ -1251,13 +1488,13 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       }
     };
 
-    // Crear nuevo grupo
+    // Crear nuevo grupo - Fix #5: enviar/guardar categoriaIds
         const crearGrupo = async (nombre: string, color: string, categoriasSeleccionadas: string[], carpetaId?: string) => {
       try {
         // Si no se proporciona color, asignar automáticamente
         const colorFinal = color || getNextAvailableColor('grupo');
 
-        // Obtener IDs de categorías
+        // Obtener IDs de categorías - Fix #5: usar IDs
         const categoriasIds = categorias
           .filter(cat => categoriasSeleccionadas.includes(cat.nombre))
           .map(cat => cat.id);
@@ -1283,10 +1520,17 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
               id: nuevoGrupo.id,
               nombre: nuevoGrupo.nombre,
               color: nuevoGrupo.color,
-              categorias: categoriasSeleccionadas,
               visible: nuevoGrupo.visible,
-              carpetaId: nuevoGrupo.carpetaId
+              carpetaId: nuevoGrupo.carpetaId,
+              categoriaIds: categoriasIds,              // 👈 Fix #5: fuente de verdad
+              categoriaNames: categoriasSeleccionadas,  // 👈 Fix #5: opcional para UI
             }
+          },
+          filtros: {
+            ...prev.filtros,
+            gruposSeleccionados: prev.filtros.gruposSeleccionados.includes(nuevoGrupo.id)
+              ? prev.filtros.gruposSeleccionados
+              : [...prev.filtros.gruposSeleccionados, nuevoGrupo.id]
           }
         }));
 
@@ -1509,9 +1753,16 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       }
     };
 
-    // Guardar edición de grupo
-    const guardarEdicionGrupo = (nombre: string, color: string, categoriasSeleccionadas: string[], carpetaId?: string) => {
+    // Guardar edición de grupo (persistente)
+    const guardarEdicionGrupo = async (nombre: string, color: string, categoriaIds: number[], carpetaId?: string) => {
       if (!editingGrupo) return;
+      try {
+        const updated = await VSCategoriasService.updateGrupo(editingGrupo.id, {
+          nombre,
+          color,
+          categorias: categoriaIds,
+          carpetaId: carpetaId ? +carpetaId : undefined
+        });
 
       setVsConfig(prev => ({
         ...prev,
@@ -1519,10 +1770,11 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
           ...prev.grupos,
           [editingGrupo.id]: {
             ...prev.grupos[editingGrupo.id],
-            nombre,
-            color,
-            categorias: categoriasSeleccionadas,
-            carpetaId
+              nombre: updated.nombre,
+              color: updated.color,
+              carpetaId: updated.carpetaId,
+              categoriaIds: categoriaIds,
+              categoriaNames: updated.categoriaNames || undefined
           }
         }
       }));
@@ -1530,12 +1782,16 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       setShowEditGrupoModal(false);
       setEditingGrupo(null);
       toast.success('Grupo actualizado exitosamente');
+      } catch (error) {
+        console.error('Error al actualizar grupo:', error);
+        toast.error('Error al actualizar grupo');
+      }
     };
 
     // Exportar imagen
     const exportImg = () => {
       if (!chartRef.current) return;
-      const url = chartRef.current.toBase64Image('image/png', 1.0, '#ffffff');
+              const url = chartRef.current.toBase64Image('image/png');
       const a = document.createElement('a');
       a.href = url;
       a.download = 'vs-categorias.png';
@@ -1543,28 +1799,16 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       toast.success('Imagen exportada');
     };
 
-    // Exportar CSV
+    // Exportar CSV - Fix #9: desde lo que está en pantalla
     const exportCsv = () => {
-      const gruposActivos = Object.entries(vsConfig.grupos).filter(([id, grupo]) =>
-        grupo.visible && vsConfig.filtros.gruposSeleccionados.includes(id)
-      );
-
-      let csvData;
-      if (gruposActivos.length > 0) {
-        csvData = gruposActivos.map(([id, grupo]) => {
-          const totalGastos = grupo.categorias.reduce((sum, categoria) => {
-            const categoriaData = resumenCategorias.find(r => r.categoria === categoria);
-            return sum + (categoriaData?.totalGastos || 0);
-          }, 0);
-          return `${grupo.nombre},${totalGastos}`;
-        });
-      } else {
-        csvData = resumenCategorias.slice(0, 10).map(item =>
-          `${item.categoria},${item.totalGastos}`
-        );
+      // Usa chartMetaRef + labels visibles
+      if (!chartMetaRef.current || chartMetaRef.current.length === 0) {
+        toast.error('No hay datos para exportar');
+        return;
       }
 
-      const csv = 'Categoría,Monto\n' + csvData.join('\n');
+      const rows = chartMetaRef.current.map(m => [m.label, m.value]);
+      const csv = 'Etiqueta,Monto\n' + rows.map(r => `${r[0]},${r[1]}`).join('\n');
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1575,302 +1819,49 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       toast.success('CSV exportado');
     };
 
-        // Manejar clic en segmento (con llamada asíncrona al backend y timeout)
-    const handleSegmentClick = async (segmentLabel: string, segmentValue: number, segmentColor: string, segmentIndex: number) => {
-      if (expandedSegment === segmentLabel) {
+        // Manejar clic en segmento con metadatos
+    const handleSegmentClick = async (seg: SegmentMeta) => {
+      if (expandedSegment === seg.label) {
         collapseDetails();
         return;
       }
 
-      console.log(`🎯 Iniciando obtención de transacciones para: ${segmentLabel}`);
-      setExpandedSegment(segmentLabel);
+      console.log('🎯 Iniciando obtención de transacciones para:', seg.label);
+      setExpandedSegment(seg.label);
+      setCurrentTransactions([]); // loading
+      setCurrentSegmentInfo({ label: seg.label, value: seg.value, color: seg.color });
 
-            // Mostrar loading state
-      setCurrentTransactions([]);
+      const reqId = ++lastReq.current;
+      const data = await fetchSegmentTransactions(seg);
+      if (reqId !== lastReq.current) return; // llegó tarde, descarta
 
-      // Mostrar vista de loading inmediatamente
-      showDetails(segmentLabel, segmentValue, segmentColor, []);
+      setCurrentTransactions(data);
+      setCurrentView('list'); // o recuerda la última vista del usuario
+      console.log('✅ handleSegmentClick completado exitosamente');
+    };
 
-      // Crear un timeout para evitar loading infinito
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout: La solicitud tardó más de 10 segundos')), 10000);
+    // Fix #6: Eliminar funciones legacy por label (ya no necesarias)
+    // Las funciones getSegmentTransactions y getSegmentTransactionsLocal por segmentLabel
+    // han sido reemplazadas por fetchSegmentTransactions y fallbackLocalTransactions
+    // que usan SegmentMeta con IDs en lugar de labels
+
+    // Componente DetailContent reutilizable
+    const DetailContent = ({ segmentLabel, segmentValue, segmentColor, transactions, forceView }: {
+      segmentLabel: string;
+      segmentValue: number;
+      segmentColor: string;
+      transactions?: Transaccion[];
+      forceView?: 'list' | 'chart';
+    }) => {
+      // Usar transacciones pasadas como parámetro o currentTransactions como fallback
+      const transactionsToShow = transactions || currentTransactions;
+
+      console.log('🎨 DetailContent renderizando con:', {
+        transactionsLength: transactionsToShow.length,
+        isArray: Array.isArray(transactionsToShow),
+        currentView,
+        usingPassedTransactions: !!transactions
       });
-
-      try {
-        // Obtener transacciones del backend con timeout
-        console.log('⏳ Llamando getSegmentTransactions con timeout de 10s...');
-        const segmentTransactions = await Promise.race([
-          getSegmentTransactions(segmentLabel),
-          timeoutPromise
-        ]) as Transaccion[];
-
-        console.log(`📊 Transacciones obtenidas: ${segmentTransactions.length}`);
-        console.log('📋 Estructura de transacciones recibidas:', segmentTransactions);
-
-        // Validar que las transacciones son un array válido
-        if (!Array.isArray(segmentTransactions)) {
-          console.error('⚠️ Las transacciones recibidas no son un array:', typeof segmentTransactions);
-          throw new Error('Formato de datos inválido recibido del servidor');
-        }
-
-                console.log('⚡ Actualizando estado setCurrentTransactions...');
-        console.log('📊 Transacciones a establecer:', {
-          length: segmentTransactions.length,
-          isArray: Array.isArray(segmentTransactions),
-          sample: segmentTransactions.slice(0, 2)
-        });
-
-        // Actualizar estado y forzar re-render
-      setCurrentTransactions(segmentTransactions);
-
-        // Forzar re-render inmediatamente con las nuevas transacciones
-        console.log('🎨 Llamando showDetails con transacciones actualizadas...');
-        showDetails(segmentLabel, segmentValue, segmentColor, segmentTransactions);
-
-        console.log('✅ handleSegmentClick completado exitosamente');
-      } catch (error) {
-        console.error('❌ Error al obtener transacciones:', error);
-        console.error('📊 Stack trace:', error.stack);
-
-        // En caso de error, usar fallback local
-        console.log('🔄 Intentando fallback con datos locales...');
-        try {
-          const fallbackTransactions = getSegmentTransactionsLocal(segmentLabel);
-          console.log(`🔄 Fallback: ${fallbackTransactions.length} transacciones locales encontradas`);
-          setCurrentTransactions(fallbackTransactions);
-        } catch (fallbackError) {
-          console.error('❌ Error en fallback:', fallbackError);
-          setCurrentTransactions([]);
-        }
-
-        // Mostrar error en la vista
-        setTimeout(() => {
-          showDetails(segmentLabel, segmentValue, segmentColor, fallbackTransactions);
-        }, 100);
-      }
-    };
-
-            // Obtener transacciones del segmento usando API del backend
-    const getSegmentTransactions = async (segmentLabel: string): Promise<Transaccion[]> => {
-      console.log(`🔍 🌐 Obteniendo transacciones del backend para segmento: ${segmentLabel}`);
-
-      try {
-        // Determinar si es grupo o categoría individual
-        const grupos = Object.values(vsConfig.grupos);
-        const esGrupo = grupos.some(g => g.visible && g.nombre === segmentLabel);
-
-        let filtros: any = {
-          fechaInicio: vsConfig.filtros.fechaDesde,
-          fechaFin: vsConfig.filtros.fechaHasta,
-          tipo: vsConfig.filtros.tipo
-        };
-
-        if (esGrupo) {
-          console.log(`👥 Es un grupo: ${segmentLabel}`);
-          const grupo = grupos.find(g => g.nombre === segmentLabel);
-      if (grupo) {
-            console.log(`🏷️ Categorías del grupo:`, grupo.categorias);
-            filtros.categorias = grupo.categorias;
-          }
-      } else {
-          console.log(`📁 Es una categoría individual: ${segmentLabel}`);
-          filtros.categoria = segmentLabel;
-        }
-
-        console.log('🌐 Llamando API con filtros:', filtros);
-
-                // Llamar al endpoint de transacciones
-        const response = await VSCategoriasService.getTransaccionesPorSegmento(filtros);
-        console.log('🌐 Respuesta completa del API:', response);
-        console.log('🔍 Estructura detallada:', {
-          responseType: typeof response,
-          isResponseObject: response && typeof response === 'object',
-          responseKeys: response ? Object.keys(response) : 'no response',
-          hasData: !!(response && response.data),
-          dataType: response?.data ? typeof response.data : 'no data',
-          dataKeys: response?.data ? Object.keys(response.data) : 'no data keys',
-          dataIsArray: Array.isArray(response?.data),
-          dataDataIsArray: Array.isArray(response?.data?.data)
-        });
-
-        // Extraer datos de la respuesta (pueden estar en response.data.data o response.data)
-        let transaccionesAPI = [];
-
-        console.log('🔍 Analizando estructura de response:', {
-          hasResponseData: !!response.data,
-          responseDataType: typeof response.data,
-          responseDataKeys: response.data ? Object.keys(response.data) : 'no data',
-          hasDataProperty: !!(response.data && response.data.data),
-          dataLength: response.data?.data?.length || 'N/A',
-          fullResponse: JSON.stringify(response, null, 2)
-        });
-
-        // Extraer datos de manera más robusta
-        if (response && response.data) {
-          if (response.data.data && Array.isArray(response.data.data)) {
-            // Formato: { success: true, message: "...", data: [...] }
-            transaccionesAPI = response.data.data;
-            console.log('✅ Usando response.data.data');
-          } else if (Array.isArray(response.data)) {
-            // Formato directo: [...]
-            transaccionesAPI = response.data;
-            console.log('✅ Usando response.data (array directo)');
-          } else {
-            console.error('❌ response.data existe pero no es un array:', typeof response.data);
-            transaccionesAPI = [];
-          }
-        } else if (Array.isArray(response)) {
-          // Fallback: response es directamente un array
-          transaccionesAPI = response;
-          console.log('✅ Usando response (array directo)');
-        } else {
-          console.error('❌ Formato de respuesta no reconocido:', {
-            responseType: typeof response,
-            hasData: !!(response && response.data),
-            responseKeys: response ? Object.keys(response) : 'no response'
-          });
-          transaccionesAPI = [];
-        }
-
-        console.log(`✅ Transacciones obtenidas del backend: ${transaccionesAPI.length}`);
-        console.log('📊 Estructura de datos recibida:', {
-          responseKeys: Object.keys(response),
-          dataKeys: response.data ? Object.keys(response.data) : 'no data',
-          firstTransaction: transaccionesAPI[0]
-        });
-
-        if (transaccionesAPI.length > 0) {
-          console.log('📄 Primeras 3 transacciones del API:', transaccionesAPI.slice(0, 3).map((t: any) => ({
-            id: t.id,
-            concepto: t.concepto,
-            monto: t.monto,
-            categoria: t.categoria?.nombre || t.categoria,
-            tipo: t.tipo?.nombre || t.tipo,
-            fecha: t.fecha
-          })));
-        }
-
-        // Transformar datos del API al formato esperado
-        const transaccionesTransformadas = transaccionesAPI.map((t: any) => {
-          // Extraer información de persona de manera más robusta
-          let personaId = null;
-          let personaNombre = '';
-
-          if (t.persona) {
-            // Si viene como objeto persona
-            personaId = t.persona.id || t.personaId;
-            personaNombre = t.persona.nombre || t.persona.name || '';
-          } else if (t.personaId) {
-            // Si viene como ID directo
-            personaId = t.personaId;
-          }
-
-          const transformed: Transaccion = {
-            id: t.id,
-            tipoId: t.tipoId || 0,
-            monto: t.monto || 0,
-            concepto: t.concepto || 'Sin concepto',
-            fecha: t.fecha ? new Date(t.fecha).toISOString().split('T')[0] : '',
-            categoriaId: t.categoriaId,
-            categoria: t.categoria,
-            personaId: personaId,
-            persona: t.persona || (personaId ? { id: personaId, nombre: personaNombre } as Persona : undefined),
-            campanaId: t.campanaId,
-            campana: t.campana,
-            moneda: t.moneda || 'COP',
-            notas: t.notas || '',
-            comprobante: t.comprobante,
-            aprobado: t.aprobado || false,
-            createdAt: t.createdAt || new Date().toISOString(),
-            updatedAt: t.updatedAt || new Date().toISOString(),
-            tipo: t.tipo
-          };
-
-          console.log('🔄 Transformando transacción:', {
-            original: {
-              id: t.id,
-              persona: t.persona,
-              personaId: t.personaId,
-              categoria: t.categoria
-            },
-            transformed: {
-              id: transformed.id,
-              personaId: transformed.personaId,
-              personaNombre: transformed.personaNombre,
-              categoria: transformed.categoria
-            }
-          });
-
-          return transformed;
-        });
-
-        console.log('🎯 RETURN de getSegmentTransactions:', {
-          length: transaccionesTransformadas.length,
-          isArray: Array.isArray(transaccionesTransformadas),
-          sample: transaccionesTransformadas.slice(0, 2)
-        });
-
-        return transaccionesTransformadas;
-
-      } catch (error) {
-        console.error('❌ Error obteniendo transacciones del backend:', error);
-
-        // Fallback: usar lógica local si falla la API
-        console.log('🔄 Fallback: usando transacciones locales');
-        return getSegmentTransactionsLocal(segmentLabel);
-      }
-    };
-
-    // Función de fallback para usar datos locales
-    const getSegmentTransactionsLocal = (segmentLabel: string): Transaccion[] => {
-      console.log(`🔍 Fallback: buscando transacciones locales para: ${segmentLabel}`);
-
-      let allTransactions = [...transacciones];
-      const filtros = vsConfig.filtros;
-
-      // Aplicar filtros
-      if (filtros.tipo && filtros.tipo !== 'Todos') {
-        allTransactions = allTransactions.filter(t => t.tipo === filtros.tipo);
-      }
-      if (filtros.fechaDesde) {
-        allTransactions = allTransactions.filter(t => t.fecha >= filtros.fechaDesde);
-      }
-      if (filtros.fechaHasta) {
-        allTransactions = allTransactions.filter(t => t.fecha <= filtros.fechaHasta);
-      }
-
-      // Filtrar por segmento
-      const grupos = Object.values(vsConfig.grupos);
-      const esGrupo = grupos.some(g => g.visible && g.nombre === segmentLabel);
-
-      if (esGrupo) {
-        const grupo = grupos.find(g => g.nombre === segmentLabel);
-        if (grupo) {
-          return allTransactions.filter(t =>
-            grupo.categorias.includes(t.categoria || '')
-          );
-        }
-      } else {
-        return allTransactions.filter(t => t.categoria === segmentLabel);
-      }
-
-      return [];
-    };
-
-    // Mostrar detalles
-        const showDetails = (segmentLabel: string, segmentValue: number, segmentColor: string, transactions?: Transaccion[]) => {
-      if (!detailsContainerRef.current) return;
-
-      const DetailContent = () => {
-        // Usar transacciones pasadas como parámetro o currentTransactions como fallback
-        const transactionsToShow = transactions || currentTransactions;
-
-        console.log('🎨 DetailContent renderizando con:', {
-          transactionsLength: transactionsToShow.length,
-          isArray: Array.isArray(transactionsToShow),
-          currentView,
-          usingPassedTransactions: !!transactions
-        });
 
         return (
           <div className="bg-white rounded-xl shadow-sm border p-6 mt-6">
@@ -1893,7 +1884,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
                 <button
                 onClick={() => switchView('list')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                    currentView === 'list'
+                  (forceView || currentView) === 'list'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
@@ -1902,9 +1893,9 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
                 Lista
               </button>
                 <button
-                  onClick={() => switchView('chart')}
+                onClick={() => switchView('chart')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                    currentView === 'chart'
+                  (forceView || currentView) === 'chart'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
@@ -1952,30 +1943,46 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
           </div>
 
             <div>
-              {(() => {
-                console.log('🎨 Renderizando vista:', currentView, 'tipo:', typeof currentView);
-                console.log('🔍 Comparación currentView === "list":', currentView === 'list');
-                console.log('🔍 Comparación currentView === "chart":', currentView === 'chart');
-                return currentView === 'list' ? (
-                  <DrillDownListView transactions={transactionsToShow} personas={personas} />
-                ) : (
-                  <DrillDownChartView transactions={transactionsToShow} segmentColor={segmentColor} />
-                );
-              })()}
+            {(() => {
+              const viewToUse = forceView || currentView;
+              console.log('🎨 Renderizando vista:', viewToUse, 'tipo:', typeof viewToUse);
+              console.log('🔍 Comparación viewToUse === "list":', viewToUse === 'list');
+              console.log('🔍 Comparación viewToUse === "chart":', viewToUse === 'chart');
+              console.log('🔍 forceView:', forceView, 'currentView:', currentView);
+              return viewToUse === 'list' ? (
+                <DrillDownListView transactions={transactionsToShow} personas={personas} />
+              ) : (
+                <DrillDownChartView transactions={transactionsToShow} segmentColor={segmentColor} />
+              );
+            })()}
           </div>
         </div>
         );
       };
 
-      // Renderizar contenido usando React
-      detailsContainerRef.current.innerHTML = '';
-      const container = document.createElement('div');
-      detailsContainerRef.current.appendChild(container);
-      const root = createRoot(container);
-      root.render(<DetailContent />);
+    // Mostrar detalles
+    const showDetails = (segmentLabel: string, segmentValue: number, segmentColor: string, transactions?: Transaccion[]) => {
+      console.log('🎯 showDetails llamado con:', { segmentLabel, segmentValue, segmentColor, transactionsLength: transactions?.length });
 
-      // Scroll suave
+      // Guardar información del segmento actual
+      const segmentInfo = {
+        label: segmentLabel,
+        value: segmentValue,
+        color: segmentColor
+      };
+      setCurrentSegmentInfo(segmentInfo);
+      console.log('💾 currentSegmentInfo guardado:', segmentInfo);
+
+      // Actualizar transacciones si se proporcionan
+      if (transactions && transactions.length > 0) {
+        setCurrentTransactions(transactions);
+        console.log('💾 currentTransactions actualizado:', { length: transactions.length });
+      }
+
+      // Scroll suave al contenedor de detalles
+      if (detailsContainerRef.current) {
       detailsContainerRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
     };
 
     // Obtener transacciones filtradas para drill-down
@@ -2016,19 +2023,15 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
     const switchView = (viewType: 'list' | 'chart') => {
       console.log('🔄 Cambiando vista a:', viewType);
       console.log('📊 Estado actual currentView antes del cambio:', currentView);
+      console.log('📋 currentSegmentInfo actual:', currentSegmentInfo);
+      console.log('📊 currentTransactions antes del cambio:', {
+        length: currentTransactions.length,
+        isArray: Array.isArray(currentTransactions),
+        sample: currentTransactions.slice(0, 2)
+      });
+
       setCurrentView(viewType);
       console.log('✅ setCurrentView ejecutado, nuevo valor:', viewType);
-
-      // Forzar re-renderizado del componente
-      if (detailsContainerRef.current) {
-        console.log('🔄 Forzando re-renderizado...');
-        const container = detailsContainerRef.current;
-        container.innerHTML = '';
-        const newContainer = document.createElement('div');
-        container.appendChild(newContainer);
-        const root = createRoot(newContainer);
-        root.render(<DetailContent />);
-      }
     };
 
     // Renderizar gráficos de detalles
@@ -2174,6 +2177,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
     const collapseDetails = () => {
       setExpandedSegment(null);
       setCurrentTransactions([]);
+      setCurrentSegmentInfo(null);
       if (detailsContainerRef.current) {
         detailsContainerRef.current.innerHTML = '';
       }
@@ -2228,6 +2232,12 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       };
     }, [detailFilters]);
 
+    // Exponer apertura del modal de gestión para debug rápido
+    useEffect(() => {
+      (window as any).__openManage = () => setShowManageModal(true);
+      return () => { delete (window as any).__openManage; };
+    }, []);
+
     return (
       <div className="space-y-6">
         {/* VS Categorías Principal */}
@@ -2276,7 +2286,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
             </div>
 
             {/* Botones de acción */}
-            <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
+            <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200 sticky top-0 bg-white z-20 py-3">
               <button
                 onClick={() => setShowCarpetasModal(true)}
                 className="btn-action bg-blue-600 text-white hover:bg-blue-700"
@@ -2374,8 +2384,8 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
                     toast.error('❌ Error al regenerar colores');
                   }
                 }}
-                className="btn-action bg-pink-600 text-white hover:bg-pink-700"
-                title="Regenerar todos los colores con la nueva paleta de alta distinción"
+                className="btn-action bg-rose-600 text-white hover:bg-rose-700"
+                title="Regenerar colores"
               >
                 <Palette size={16} />
                 Regenerar Colores
@@ -2401,14 +2411,14 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
                   value={vsConfig.filtros.tipo}
                   onChange={(e) => setVsConfig(prev => ({
                     ...prev,
-                    filtros: { ...prev.filtros, tipo: e.target.value }
+                    filtros: { ...prev.filtros, tipo: e.target.value as TipoTx }
                   }))}
                   className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all"
                 >
-                  <option value="Gasto">💸 Gastos</option>
-                  <option value="Ingreso">💰 Ingresos</option>
-                  <option value="Aporte">🤝 Aportes</option>
-                  <option value="Todos">📊 Todos</option>
+                  <option value="GASTO">💸 Gastos</option>
+                  <option value="INGRESO">💰 Ingresos</option>
+                  <option value="APORTE">🤝 Aportes</option>
+                  <option value="">📊 Todos</option>
                 </select>
               </div>
               <div className="space-y-2">
@@ -2518,8 +2528,19 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
           </div>
         </div>
 
-        {/* Contenedor de Detalles */}
+        {/* Contenedor para detalles del drill-down */}
         <div ref={detailsContainerRef}></div>
+
+        {/* Renderizado condicional del DetailContent */}
+        {currentSegmentInfo && (
+          <DetailContent
+            segmentLabel={currentSegmentInfo.label}
+            segmentValue={currentSegmentInfo.value}
+            segmentColor={currentSegmentInfo.color}
+            transactions={currentTransactions}
+            forceView={currentView}
+          />
+        )}
 
         {/* MODALES */}
 
@@ -2918,6 +2939,9 @@ const ManageModal = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'carpetas' | 'grupos'>('carpetas');
 
+  // Mapa local de categorias id->nombre para evitar ReferenceError
+  const byCatId = useMemo(() => new Map(categorias.map((c: any) => [c.id, c.nombre])), [categorias]);
+
   const eliminarCarpeta = async (carpetaId: number) => {
     const carpeta = vsConfig.carpetas[carpetaId];
     const gruposEnCarpeta = Object.entries(vsConfig.grupos).filter(([id, grupo]) => grupo.carpetaId === carpetaId);
@@ -3017,7 +3041,10 @@ const ManageModal = ({
           ) : (
             <div className="vs-grupos-container">
               {Object.entries(vsConfig.carpetas).map(([carpetaId, carpeta]) => {
-              const gruposEnCarpeta = Object.entries(vsConfig.grupos).filter(([id, grupo]) => grupo.carpetaId === carpetaId);
+                const carpetaIdNum = +carpetaId;
+                const gruposEnCarpeta = Object.entries(vsConfig.grupos)
+                  .filter(([id, grupo]) => grupo.carpetaId === carpetaIdNum);
+                console.debug('[ManageModal] Carpeta', carpeta.nombre, 'id=', carpetaIdNum, 'grupos=', gruposEnCarpeta.length);
 
               return (
                   <div key={carpetaId} className="vs-grupo-card vs-animate-in">
@@ -3034,14 +3061,14 @@ const ManageModal = ({
                     </div>
                       <div className="vs-grupo-actions">
                         <button
-                          onClick={() => editarCarpeta(carpetaId)}
+                          onClick={() => editarCarpeta(carpetaIdNum)}
                           className="text-blue-500 hover:text-blue-700 p-2 rounded hover:bg-blue-50 transition-colors"
                           title="Editar carpeta"
                         >
                           <Edit3 size={16} />
                         </button>
                       <button
-                        onClick={() => eliminarCarpeta(carpetaId)}
+                          onClick={() => eliminarCarpeta(carpetaIdNum)}
                           className="text-red-500 hover:text-red-700 p-2 rounded hover:bg-red-50 transition-colors"
                         title="Eliminar carpeta"
                       >
@@ -3093,7 +3120,7 @@ const ManageModal = ({
                           <h4 className="vs-grupo-name">{grupo.nombre}</h4>
                           <p className="vs-grupo-meta">
                             <FolderOpen className="inline mr-1" size={12} />
-                          {carpetaNombre} • {grupo.categorias.length} categorías
+                          {carpetaNombre} • {(grupo.categoriaIds || []).length} categorías
                         </p>
                       </div>
                     </div>
@@ -3118,9 +3145,9 @@ const ManageModal = ({
                   <div className="mt-3 pt-3 border-t border-gray-100">
                     <div className="text-xs font-medium text-gray-700 mb-2">Categorías:</div>
                     <div className="flex flex-wrap gap-1">
-                      {grupo.categorias.map(cat => (
-                          <span key={cat} className="vs-categoria-tag">
-                          {cat}
+                      {(grupo.categoriaIds || []).map(cid => (
+                          <span key={cid} className="vs-categoria-tag">
+                          {byCatId.get(cid) || `Cat ${cid}`}
                         </span>
                       ))}
                     </div>
@@ -3629,29 +3656,33 @@ const EditGrupoForm = ({
   onSubmit,
   onCancel
 }: {
-  grupo: Grupo;
+  grupo: GrupoNorm;
   categorias: any[];
   carpetas: Record<string, Carpeta>;
-  onSubmit: (nombre: string, color: string, categoriasSeleccionadas: string[], carpetaId?: string) => void;
+  onSubmit: (nombre: string, color: string, categoriaIds: number[], carpetaId?: string) => void;
   onCancel: () => void;
 }) => {
   const [nombre, setNombre] = useState(grupo.nombre);
   const [color, setColor] = useState(grupo.color);
-  const [carpetaId, setCarpetaId] = useState(grupo.carpetaId || '');
-  const [categoriasSeleccionadas, setCategoriasSeleccionadas] = useState<string[]>(grupo.categorias);
+  const [carpetaId, setCarpetaId] = useState(grupo.carpetaId ? String(grupo.carpetaId) : '');
+  const defaultSelectedIds = (grupo.categoriaIds && grupo.categoriaIds.length > 0)
+    ? grupo.categoriaIds
+    : (grupo.categoriaNames || [])
+        .map((nm) => categorias.find((c: any) => c.nombre === nm)?.id)
+        .filter(Boolean) as number[];
+  const [selectedIds, setSelectedIds] = useState<number[]>(defaultSelectedIds);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (nombre.trim() && categoriasSeleccionadas.length > 0) {
-      onSubmit(nombre.trim(), color, categoriasSeleccionadas, carpetaId || undefined);
+    if (nombre.trim() && selectedIds.length > 0) {
+      onSubmit(nombre.trim(), color, selectedIds, carpetaId || undefined);
     }
   };
 
-  const toggleCategoria = (categoriaNombre: string) => {
-    setCategoriasSeleccionadas(prev =>
-      prev.includes(categoriaNombre)
-        ? prev.filter(c => c !== categoriaNombre)
-        : [...prev, categoriaNombre]
+  const toggleCategoria = (categoriaId: number) => {
+    setSelectedIds(prev => prev.includes(categoriaId)
+      ? prev.filter(id => id !== categoriaId)
+      : [...prev, categoriaId]
     );
   };
 
@@ -3697,7 +3728,7 @@ const EditGrupoForm = ({
 
       <div>
         <label className="block text-sm font-semibold text-gray-700 mb-3">
-          Categorías del grupo ({categoriasSeleccionadas.length} seleccionadas)
+          Categorías del grupo ({selectedIds.length} seleccionadas)
         </label>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-3">
           {categorias.map((categoria) => (
@@ -3707,8 +3738,8 @@ const EditGrupoForm = ({
             >
               <input
                 type="checkbox"
-                checked={categoriasSeleccionadas.includes(categoria.nombre)}
-                onChange={() => toggleCategoria(categoria.nombre)}
+                checked={selectedIds.includes(categoria.id)}
+                onChange={() => toggleCategoria(categoria.id)}
                 className="rounded"
               />
               <span className="text-sm">{categoria.nombre}</span>
@@ -3727,7 +3758,7 @@ const EditGrupoForm = ({
         </button>
         <button
           type="submit"
-          disabled={!nombre.trim() || categoriasSeleccionadas.length === 0}
+          disabled={!nombre.trim() || selectedIds.length === 0}
           className="px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Guardar Cambios

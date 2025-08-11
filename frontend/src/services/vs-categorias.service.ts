@@ -22,6 +22,8 @@ export interface VSGrupo {
   updatedAt: string;
   carpeta?: VSCarpeta;
   categorias?: VSGrupoCategoria[];
+  categoriaIds?: number[];       // ✅ nuevo: IDs de categorías
+  categoriaNames?: string[];     // ✅ nuevo: nombres de categorías
 }
 
 export interface VSGrupoCategoria {
@@ -160,15 +162,15 @@ export class VSCategoriasService {
     tipo?: string;
     fechaDesde?: string;
     fechaHasta?: string;
-    gruposSeleccionados?: number[];
+    groupIds?: number[];
   }) {
     const params = new URLSearchParams();
 
     if (filtros.tipo) params.append('tipo', filtros.tipo);
     if (filtros.fechaDesde) params.append('fechaDesde', filtros.fechaDesde);
     if (filtros.fechaHasta) params.append('fechaHasta', filtros.fechaHasta);
-    if (filtros.gruposSeleccionados && filtros.gruposSeleccionados.length > 0) {
-      params.append('gruposSeleccionados', filtros.gruposSeleccionados.join(','));
+    if (filtros.groupIds && filtros.groupIds.length > 0) {
+      filtros.groupIds.forEach(id => params.append('groupIds', id.toString()));
     }
 
     const response = await api.get(`/vs-categorias/datos-grafico?${params.toString()}`);
@@ -177,9 +179,8 @@ export class VSCategoriasService {
 
   // ===== TRANSACCIONES POR SEGMENTO =====
   static async getTransaccionesPorSegmento(filtros: {
-    categoria?: string;
-    grupoId?: number;
-    categorias?: string[];
+    categoriaId?: number;
+    categoriasIds?: number[];
     fechaInicio?: string;
     fechaFin?: string;
     tipo?: string;
@@ -187,22 +188,20 @@ export class VSCategoriasService {
     const params = new URLSearchParams();
 
     // Si es una categoría específica
-    if (filtros.categoria) {
-      params.append('categoria', filtros.categoria);
+    if (filtros.categoriaId) {
+      params.append('categoriaId', filtros.categoriaId.toString());
     }
 
-    // Si son múltiples categorías (grupo), hacer múltiples llamadas o usar otro endpoint
-    if (filtros.categorias && filtros.categorias.length > 0) {
-      // Por ahora, usar la primera categoría como filtro principal
-      // TODO: Mejorar esto para soportar múltiples categorías en una sola llamada
-      params.append('categoria', filtros.categorias[0]);
-      console.log('⚠️ Nota: Solo filtrando por la primera categoría del grupo:', filtros.categorias[0]);
-      console.log('📋 Categorías completas del grupo:', filtros.categorias);
+    // Si son múltiples categorías (grupo)
+    if (filtros.categoriasIds && filtros.categoriasIds.length > 0) {
+      filtros.categoriasIds.forEach(id => params.append('categoriasIds', id.toString()));
     }
 
     // Filtros adicionales
     if (filtros.fechaInicio) params.append('fechaInicio', filtros.fechaInicio);
     if (filtros.fechaFin) params.append('fechaFin', filtros.fechaFin);
+
+    // Lógica mejorada para el filtro de tipo
     if (filtros.tipo && filtros.tipo !== 'Todos') {
       // Mapear tipo a tipoId si es necesario
       const tipoMapping: Record<string, number> = {
@@ -213,6 +212,9 @@ export class VSCategoriasService {
       const tipoId = tipoMapping[filtros.tipo];
       if (tipoId) {
         params.append('tipoId', tipoId.toString());
+        // Agregar ignorarTipo=true para permitir que el backend ignore el tipo
+        // si no hay transacciones que coincidan con el tipo específico
+        params.append('ignorarTipo', 'true');
       }
     }
 
