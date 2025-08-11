@@ -61,11 +61,12 @@ COPY --from=builder /app/package*.json ./
 # Copiar node_modules resultantes (ya sin devDeps) y el build
 COPY --from=builder /app/node_modules ./node_modules
 
-# Copiar archivos construidos desde la etapa anterior
+# Copiar artefactos construidos desde la etapa anterior
 COPY --from=builder /app/dist ./dist
-# Healthcheck script
 COPY --from=builder /app/healthcheck.js ./healthcheck.js
 COPY --from=builder /app/package*.json ./
+# IMPORTANTE: incluir el schema de Prisma para migraciones en runtime
+COPY --from=builder /app/prisma ./prisma
 
 # Copiar entrypoint para migraciones/importe único
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
@@ -75,8 +76,9 @@ RUN chmod +x ./docker-entrypoint.sh
 RUN echo "Contenido de /app:" && ls -la /app && \
     echo "Contenido de /app/dist:" && ls -la /app/dist
 
-# Cambiar propiedad de archivos
-RUN chown -R nestjs:nodejs /app
+# Instalar Prisma CLI globalmente para poder ejecutar migrate en runtime
+RUN npm i -g prisma@6.12.0 && \
+    chown -R nestjs:nodejs /app
 
 # Cambiar a usuario no-root
 USER nestjs
@@ -92,26 +94,6 @@ ENV PORT=3004
 HEALTHCHECK --interval=30s --timeout=5s --start-period=25s --retries=3 \
     CMD node healthcheck.js
 
-# Comando de inicio (entrypoint aplica migraciones e importa una sola vez)
+# Comando de inicio (entrypoint aplica migraciones e importación única)
 ENV IMPORT_ON_BOOT=true
 ENTRYPOINT ["./docker-entrypoint.sh"]
-
-ENV NODE_ENV=production
-ENV PORT=3004
-
-# Health check (relaja tiempos para evitar falsos negativos en arranque)
-HEALTHCHECK --interval=30s --timeout=5s --start-period=25s --retries=3 \
-    CMD node healthcheck.js
-
-# Comando de inicio (evitar npm para que no intercepte señales)
-CMD ["node", "dist/src/main.js"]
-
-ENV NODE_ENV=production
-ENV PORT=3004
-
-# Health check (relaja tiempos para evitar falsos negativos en arranque)
-HEALTHCHECK --interval=30s --timeout=5s --start-period=25s --retries=3 \
-    CMD node healthcheck.js
-
-# Comando de inicio (evitar npm para que no intercepte señales)
-CMD ["node", "dist/src/main.js"]

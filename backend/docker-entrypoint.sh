@@ -2,7 +2,12 @@
 set -e
 
 echo "[entrypoint] Applying Prisma migrations..."
-npx prisma migrate deploy
+# Si existe el schema en /app/prisma/schema.prisma lo usamos explícitamente
+if [ -f "/app/prisma/schema.prisma" ]; then
+  prisma migrate deploy --schema=/app/prisma/schema.prisma || true
+else
+  prisma migrate deploy || true
+fi
 
 # Control flag (default true)
 IMPORT_ON_BOOT=${IMPORT_ON_BOOT:-true}
@@ -12,7 +17,7 @@ BACKUP_FILE=${BACKUP_FILE:-/app/backup.json}
 
 if [ "$IMPORT_ON_BOOT" = "true" ]; then
   echo "[entrypoint] Checking if import is needed..."
-  node -e "(async()=>{const {PrismaClient}=require('@prisma/client');const p=new PrismaClient();const c=await p.transaccion.count();console.log('[entrypoint] transacciones:',c);process.exit(c===0?42:0)})().catch(e=>{console.error('[entrypoint] check failed:',e.message);process.exit(0)})"
+  node -e "(async()=>{const {PrismaClient}=require('@prisma/client');const p=new PrismaClient();try{const c=await p.transaccion.count();console.log('[entrypoint] transacciones:',c);process.exit(c===0?42:0)}catch(e){console.error('[entrypoint] prisma count failed:',e.message);process.exit(42)}})()"
   NEED_IMPORT=$?
   if [ "$NEED_IMPORT" = "42" ]; then
     echo "[entrypoint] No transacciones found. Importing backup..."
