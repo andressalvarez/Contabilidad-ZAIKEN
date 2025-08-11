@@ -8,7 +8,10 @@ export class AuthService {
   constructor(private prisma: PrismaService, private jwt: JwtService) {}
 
   async register(params: { email: string; password: string; nombre: string; rol?: string }) {
-    const { email, password, nombre, rol = 'ADMIN' } = params;
+    const { email, password, nombre } = params;
+    // El primero registrado será ADMIN; los siguientes, USER
+    const totalUsuarios = await this.prisma.usuario.count();
+    const rol = totalUsuarios === 0 ? 'ADMIN' : 'USER';
     const existing = await this.prisma.usuario.findUnique({ where: { email } });
     if (existing) throw new ConflictException('Email ya registrado');
     const passwordHash = await bcrypt.hash(password, 10);

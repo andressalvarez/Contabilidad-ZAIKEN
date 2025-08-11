@@ -24,6 +24,7 @@ model Persona {
   id                  Int                   @id @default(autoincrement())
   nombre              String                @unique
   rolId               Int
+  usuarioId           Int?
   horasTotales        Int                   @default(0)
   aportesTotales      Float                 @default(0)
   valorHora           Float                 @default(0)
@@ -40,6 +41,7 @@ model Persona {
   registroHoras       RegistroHoras[]
   transacciones       Transaccion[]
   valorHoras          ValorHora[]
+  usuario             Usuario?              @relation(fields: [usuarioId], references: [id])
 
   @@map("personas")
 }
@@ -80,6 +82,7 @@ model RegistroHoras {
 model Categoria {
   id            Int           @id @default(autoincrement())
   nombre        String        @unique
+  usuarioId     Int?
   descripcion   String?
   color         String?
   activo        Boolean       @default(true)
@@ -87,6 +90,7 @@ model Categoria {
   updatedAt     DateTime      @updatedAt
   transacciones Transaccion[]
   vsGrupoCategorias VSGrupoCategoria[]
+  usuario       Usuario?      @relation(fields: [usuarioId], references: [id])
 
   @@map("categorias")
 }
@@ -94,6 +98,7 @@ model Categoria {
 model Campana {
   id            Int             @id @default(autoincrement())
   nombre        String
+  usuarioId     Int?
   descripcion   String?
   fechaInicio   DateTime
   fechaFin      DateTime?
@@ -106,6 +111,7 @@ model Campana {
   updatedAt     DateTime        @updatedAt
   registroHoras RegistroHoras[]
   transacciones Transaccion[]
+  usuario       Usuario?        @relation(fields: [usuarioId], references: [id])
 
   @@map("campanas")
 }
@@ -125,6 +131,7 @@ model TipoTransaccion {
 model Transaccion {
   id          Int             @id @default(autoincrement())
   tipoId      Int
+  usuarioId   Int?
   monto       Float
   concepto    String
   fecha       DateTime
@@ -141,6 +148,7 @@ model Transaccion {
   persona     Persona?        @relation(fields: [personaId], references: [id])
   tipo        TipoTransaccion @relation(fields: [tipoId], references: [id])
   categoria   Categoria?      @relation(fields: [categoriaId], references: [id])
+  usuario     Usuario?        @relation(fields: [usuarioId], references: [id])
 
   @@map("transacciones")
 }
