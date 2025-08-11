@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -14,6 +15,8 @@ import { CampanasModule } from './campanas/campanas.module';
 import { DistribucionUtilidadesModule } from './distribucion-utilidades/distribucion-utilidades.module';
 import { DistribucionDetalleModule } from './distribucion-detalle/distribucion-detalle.module';
 import { VSCategoriasModule } from './vs-categorias/vs-categorias.module';
+import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -36,8 +39,15 @@ import { VSCategoriasModule } from './vs-categorias/vs-categorias.module';
     DistribucionUtilidadesModule,
     DistribucionDetalleModule,
     VSCategoriasModule,
+    AuthModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+  ],
 })
 export class AppModule {}
