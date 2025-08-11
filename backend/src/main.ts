@@ -29,6 +29,18 @@ async function bootstrap() {
   // Prefijo global para las APIs
   app.setGlobalPrefix('api/v1');
 
+  // Exponer rutas de salud sin prefijo para orquestadores que chequean '/'
+  // (Easy Panel hace health-check al root por defecto)
+  const httpServer: any = app.getHttpAdapter().getInstance();
+  if (httpServer && typeof httpServer.get === 'function') {
+    httpServer.get('/', (_req, res) => {
+      res.status(200).send('OK');
+    });
+    httpServer.get('/healthz', (_req, res) => {
+      res.status(200).json({ status: 'ok', service: 'zaiken-backend' });
+    });
+  }
+
   const port = process.env.PORT || 3004;
   await app.listen(port);
 
