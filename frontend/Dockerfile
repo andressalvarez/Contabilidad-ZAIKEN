@@ -68,9 +68,10 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:3000/api/health || exit 1
+# Health check (Next.js no expone /api/health por defecto).
+# Validamos la raíz y salimos 0 si responde 200.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3000/',res=>process.exit(res.statusCode===200?0:1)).on('error',()=>process.exit(1))"
 
 # Comando de inicio
 CMD ["npm", "start"]
