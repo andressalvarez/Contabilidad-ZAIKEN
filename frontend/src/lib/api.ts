@@ -40,6 +40,7 @@ export const api = axios.create({
   validateStatus: (status) => {
     return status >= 200 && status < 300; // Solo aceptar 2xx
   },
+  withCredentials: false,
 });
 
 console.log('🚀 API Instance created with baseURL:', API_BASE_URL);
