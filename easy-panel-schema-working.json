@@ -1,0 +1,146 @@
+{
+  "name": "zaiken-system",
+  "title": "Zaiken System - Gestión Financiera",
+  "description": "Sistema completo de gestión financiera y de proyectos",
+  "category": "Business",
+  "homepage": "https://github.com/andressalvarez/Contabilidad-ZAIKEN",
+  "repository": "https://github.com/andressalvarez/Contabilidad-ZAIKEN",
+  "author": "Andres Alvarez",
+  "license": "MIT",
+  "icon": "https://raw.githubusercontent.com/andressalvarez/Contabilidad-ZAIKEN/main/assets/zaiken.png",
+  "screenshots": [
+    "https://raw.githubusercontent.com/andressalvarez/Contabilidad-ZAIKEN/main/assets/zaiken.png"
+  ],
+  "env": [
+    {
+      "name": "NODE_ENV",
+      "label": "Node Environment",
+      "default": "production",
+      "type": "select",
+      "options": [
+        {
+          "label": "Production",
+          "value": "production"
+        },
+        {
+          "label": "Development",
+          "value": "development"
+        }
+      ]
+    },
+    {
+      "name": "DOMAIN_URL",
+      "label": "Domain URL",
+      "default": "https://panel.secujack.com",
+      "type": "text",
+      "description": "URL completa de tu dominio"
+    },
+    {
+      "name": "JWT_SECRET",
+      "label": "JWT Secret",
+      "default": "zaiken_jwt_secret_very_secure_2024",
+      "type": "text",
+      "description": "Clave secreta para JWT (cambiar en producción)"
+    },
+    {
+      "name": "POSTGRES_PASSWORD",
+      "label": "PostgreSQL Password",
+      "default": "zaiken_password_secure_2024",
+      "type": "text",
+      "description": "Contraseña para la base de datos PostgreSQL"
+    }
+  ],
+  "services": [
+    {
+      "name": "postgres",
+      "image": "postgres:15-alpine",
+      "container_name": "zaiken-postgres",
+      "restart": "unless-stopped",
+      "environment": [
+        "POSTGRES_DB=zaiken_db",
+        "POSTGRES_USER=zaiken_user",
+        "POSTGRES_PASSWORD={{POSTGRES_PASSWORD}}"
+      ],
+      "volumes": [
+        "postgres_data:/var/lib/postgresql/data"
+      ]
+    },
+    {
+      "name": "backend",
+      "build": {
+        "context": "https://github.com/andressalvarez/Contabilidad-ZAIKEN.git#main:backend",
+        "dockerfile": "Dockerfile"
+      },
+      "container_name": "zaiken-backend",
+      "restart": "unless-stopped",
+      "environment": [
+        "NODE_ENV={{NODE_ENV}}",
+        "PORT=3004",
+        "DATABASE_URL=postgresql://zaiken_user:{{POSTGRES_PASSWORD}}@postgres:5432/zaiken_db",
+        "JWT_SECRET={{JWT_SECRET}}",
+        "CORS_ORIGIN={{DOMAIN_URL}}"
+      ],
+      "depends_on": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "frontend",
+      "build": {
+        "context": "https://github.com/andressalvarez/Contabilidad-ZAIKEN.git#main:frontend",
+        "dockerfile": "Dockerfile"
+      },
+      "container_name": "zaiken-frontend",
+      "restart": "unless-stopped",
+      "environment": [
+        "NODE_ENV={{NODE_ENV}}",
+        "NEXT_PUBLIC_API_URL={{DOMAIN_URL}}/api/v1",
+        "NEXT_PUBLIC_APP_URL={{DOMAIN_URL}}"
+      ],
+      "depends_on": [
+        "backend"
+      ]
+    },
+    {
+      "name": "nginx",
+      "image": "nginx:alpine",
+      "container_name": "zaiken-nginx",
+      "restart": "unless-stopped",
+      "ports": [
+        "80:80"
+      ],
+      "volumes": [
+        "./nginx.conf:/etc/nginx/nginx.conf:ro"
+      ],
+      "depends_on": [
+        "backend",
+        "frontend"
+      ]
+    }
+  ],
+  "volumes": [
+    {
+      "name": "postgres_data",
+      "driver": "local"
+    }
+  ],
+  "files": [
+    {
+      "name": "nginx.conf",
+      "content": "events {\n    worker_connections 1024;\n}\n\nhttp {\n    include /etc/nginx/mime.types;\n    default_type application/octet-stream;\n    \n    upstream backend {\n        server backend:3004;\n    }\n    \n    upstream frontend {\n        server frontend:3000;\n    }\n    \n    server {\n        listen 80;\n        server_name _;\n        \n        location / {\n            proxy_pass http://frontend;\n            proxy_http_version 1.1;\n            proxy_set_header Upgrade $http_upgrade;\n            proxy_set_header Connection 'upgrade';\n            proxy_set_header Host $host;\n            proxy_set_header X-Real-IP $remote_addr;\n            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n            proxy_set_header X-Forwarded-Proto $scheme;\n        }\n        \n        location /api/ {\n            proxy_pass http://backend/api/;\n            proxy_http_version 1.1;\n            proxy_set_header Upgrade $http_upgrade;\n            proxy_set_header Connection 'upgrade';\n            proxy_set_header Host $host;\n            proxy_set_header X-Real-IP $remote_addr;\n            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n            proxy_set_header X-Forwarded-Proto $scheme;\n        }\n        \n        location /health {\n            proxy_pass http://backend/api/v1/health;\n        }\n    }\n}"
+    }
+  ],
+  "instructions": {
+    "start": "Zaiken System se está desplegando. Este proceso puede tomar 5-10 minutos para construir todas las imágenes.",
+    "end": "¡Zaiken System ha sido desplegado exitosamente! Puedes acceder a la aplicación en la URL proporcionada."
+  },
+  "tags": [
+    "finance",
+    "business",
+    "nestjs",
+    "nextjs",
+    "postgresql",
+    "docker",
+    "typescript"
+  ]
+}
