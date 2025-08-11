@@ -36,35 +36,35 @@ error() {
 # Función para verificar dependencias
 check_dependencies() {
     log "Verificando dependencias..."
-    
+
     if ! command -v docker &> /dev/null; then
         error "Docker no está instalado"
         exit 1
     fi
-    
+
     if ! command -v docker-compose &> /dev/null; then
         error "Docker Compose no está instalado"
         exit 1
     fi
-    
+
     success "Dependencias verificadas"
 }
 
 # Función para crear directorios necesarios
 create_directories() {
     log "Creando directorios necesarios..."
-    
+
     mkdir -p data/postgres
     mkdir -p backend/logs
     mkdir -p nginx/ssl
-    
+
     success "Directorios creados"
 }
 
 # Función para configurar variables de entorno
 setup_environment() {
     log "Configurando variables de entorno..."
-    
+
     if [ ! -f .env ]; then
         cat > .env << EOF
 # ===========================================
@@ -95,29 +95,29 @@ EOF
 # Función para construir imágenes
 build_images() {
     log "Construyendo imágenes Docker..."
-    
+
     docker-compose build --no-cache
-    
+
     success "Imágenes construidas"
 }
 
 # Función para iniciar servicios
 start_services() {
     log "Iniciando servicios..."
-    
+
     docker-compose up -d
-    
+
     success "Servicios iniciados"
 }
 
 # Función para verificar salud de servicios
 check_health() {
     log "Verificando salud de servicios..."
-    
+
     # Esperar a que PostgreSQL esté listo
     log "Esperando PostgreSQL..."
     sleep 30
-    
+
     # Verificar PostgreSQL
     if docker-compose exec -T postgres pg_isready -U zaiken_user -d zaiken_db; then
         success "PostgreSQL está saludable"
@@ -125,22 +125,22 @@ check_health() {
         error "PostgreSQL no está saludable"
         exit 1
     fi
-    
+
     # Verificar Backend
     log "Verificando Backend..."
     sleep 10
-    
+
     if curl -f http://localhost:3004/api/v1/health > /dev/null 2>&1; then
         success "Backend está saludable"
     else
         error "Backend no está saludable"
         exit 1
     fi
-    
+
     # Verificar Frontend
     log "Verificando Frontend..."
     sleep 10
-    
+
     if curl -f http://localhost:3000 > /dev/null 2>&1; then
         success "Frontend está saludable"
     else
@@ -180,7 +180,7 @@ main() {
     echo "🚀 DESPLIEGUE ZAIKEN SYSTEM"
     echo "==========================================="
     echo ""
-    
+
     check_dependencies
     create_directories
     setup_environment
