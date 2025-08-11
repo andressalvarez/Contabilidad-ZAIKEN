@@ -9,6 +9,12 @@ else
   prisma migrate deploy || true
 fi
 
+# Fallback: si el historial de migraciones está desalineado y faltan tablas,
+# empuja el schema directamente (solo crea/actualiza estructuras faltantes)
+if [ -f "/app/prisma/schema.prisma" ]; then
+  prisma db push --schema=/app/prisma/schema.prisma --accept-data-loss --skip-generate || true
+fi
+
 # Control flag (default true)
 IMPORT_ON_BOOT=${IMPORT_ON_BOOT:-true}
 BACKUP_URL_DEFAULT="https://raw.githubusercontent.com/andressalvarez/Contabilidad-ZAIKEN/main/backup_2025-07-15.json"
@@ -22,6 +28,10 @@ if [ "$IMPORT_ON_BOOT" = "true" ]; then
   NEED_IMPORT=$?
   set -e
   if [ "$NEED_IMPORT" = "42" ]; then
+    echo "[entrypoint] Ensuring schema is present (db push)..."
+    if [ -f "/app/prisma/schema.prisma" ]; then
+      prisma db push --schema=/app/prisma/schema.prisma --accept-data-loss --skip-generate || true
+    fi
     echo "[entrypoint] No transacciones found. Importing backup..."
     # Descargar backup si no existe archivo local
     if [ ! -f "$BACKUP_FILE" ]; then
