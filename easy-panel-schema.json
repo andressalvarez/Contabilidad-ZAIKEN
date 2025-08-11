@@ -1,0 +1,239 @@
+{
+  "name": "zaiken-system",
+  "title": "Zaiken System - Gestión Financiera",
+  "description": "Sistema completo de gestión financiera y de proyectos con NestJS, Next.js y PostgreSQL",
+  "category": "Business",
+  "homepage": "https://github.com/andressalvarez/Contabilidad-ZAIKEN",
+  "repository": "https://github.com/andressalvarez/Contabilidad-ZAIKEN",
+  "author": "Andres Alvarez",
+  "license": "MIT",
+  "icon": "https://raw.githubusercontent.com/andressalvarez/Contabilidad-ZAIKEN/main/assets/zaiken.png",
+  "screenshots": [
+    "https://raw.githubusercontent.com/andressalvarez/Contabilidad-ZAIKEN/main/assets/zaiken.png"
+  ],
+  "env": [
+    {
+      "name": "NODE_ENV",
+      "label": "Node Environment",
+      "default": "production",
+      "type": "select",
+      "options": [
+        {
+          "label": "Production",
+          "value": "production"
+        },
+        {
+          "label": "Development",
+          "value": "development"
+        }
+      ]
+    },
+    {
+      "name": "DOMAIN_URL",
+      "label": "Domain URL",
+      "default": "https://panel.secujack.com",
+      "type": "text",
+      "description": "URL completa de tu dominio (ej: https://zaiken.panel.secujack.com)"
+    },
+    {
+      "name": "JWT_SECRET",
+      "label": "JWT Secret",
+      "default": "zaiken_jwt_secret_very_secure_2024",
+      "type": "text",
+      "description": "Clave secreta para JWT (cambiar en producción)"
+    },
+    {
+      "name": "POSTGRES_PASSWORD",
+      "label": "PostgreSQL Password",
+      "default": "zaiken_password_secure_2024",
+      "type": "text",
+      "description": "Contraseña para la base de datos PostgreSQL"
+    }
+  ],
+  "services": [
+    {
+      "name": "postgres",
+      "image": "postgres:15-alpine",
+      "container_name": "zaiken-postgres",
+      "restart": "unless-stopped",
+      "environment": [
+        "POSTGRES_DB=zaiken_db",
+        "POSTGRES_USER=zaiken_user",
+        "POSTGRES_PASSWORD={{POSTGRES_PASSWORD}}",
+        "POSTGRES_SHARED_BUFFERS=256MB",
+        "POSTGRES_EFFECTIVE_CACHE_SIZE=1GB",
+        "POSTGRES_WORK_MEM=4MB"
+      ],
+      "volumes": [
+        "postgres_data:/var/lib/postgresql/data"
+      ],
+      "networks": [
+        "zaiken-network"
+      ],
+      "healthcheck": {
+        "test": ["CMD-SHELL", "pg_isready -U zaiken_user -d zaiken_db"],
+        "interval": "10s",
+        "timeout": "5s",
+        "retries": 5,
+        "start_period": "30s"
+      }
+    },
+    {
+      "name": "backend",
+      "build": {
+        "context": "https://github.com/andressalvarez/Contabilidad-ZAIKEN.git#main:backend",
+        "dockerfile": "Dockerfile",
+        "target": "production"
+      },
+      "container_name": "zaiken-backend",
+      "restart": "unless-stopped",
+      "environment": [
+        "NODE_ENV={{NODE_ENV}}",
+        "PORT=3004",
+        "DATABASE_URL=postgresql://zaiken_user:{{POSTGRES_PASSWORD}}@postgres:5432/zaiken_db",
+        "JWT_SECRET={{JWT_SECRET}}",
+        "CORS_ORIGIN={{DOMAIN_URL}}"
+      ],
+      "depends_on": {
+        "postgres": {
+          "condition": "service_healthy"
+        }
+      },
+      "networks": [
+        "zaiken-network"
+      ],
+      "healthcheck": {
+        "test": ["CMD", "node", "healthcheck.js"],
+        "interval": "30s",
+        "timeout": "10s",
+        "retries": 3,
+        "start_period": "40s"
+      },
+      "volumes": [
+        "backend_logs:/app/logs"
+      ],
+      "deploy": {
+        "resources": {
+          "limits": {
+            "memory": "512M",
+            "cpus": "0.5"
+          },
+          "reservations": {
+            "memory": "256M",
+            "cpus": "0.25"
+          }
+        }
+      }
+    },
+    {
+      "name": "frontend",
+      "build": {
+        "context": "https://github.com/andressalvarez/Contabilidad-ZAIKEN.git#main:frontend",
+        "dockerfile": "Dockerfile"
+      },
+      "container_name": "zaiken-frontend",
+      "restart": "unless-stopped",
+      "environment": [
+        "NODE_ENV={{NODE_ENV}}",
+        "NEXT_PUBLIC_API_URL={{DOMAIN_URL}}/api/v1",
+        "NEXT_PUBLIC_APP_URL={{DOMAIN_URL}}"
+      ],
+      "depends_on": {
+        "backend": {
+          "condition": "service_healthy"
+        }
+      },
+      "networks": [
+        "zaiken-network"
+      ],
+      "healthcheck": {
+        "test": ["CMD", "curl", "-f", "http://localhost:3000/api/health"],
+        "interval": "30s",
+        "timeout": "10s",
+        "retries": 3,
+        "start_period": "40s"
+      },
+      "deploy": {
+        "resources": {
+          "limits": {
+            "memory": "512M",
+            "cpus": "0.5"
+          },
+          "reservations": {
+            "memory": "256M",
+            "cpus": "0.25"
+          }
+        }
+      }
+    },
+    {
+      "name": "nginx",
+      "image": "nginx:alpine",
+      "container_name": "zaiken-nginx",
+      "restart": "unless-stopped",
+      "ports": [
+        "80:80",
+        "443:443"
+      ],
+      "volumes": [
+        "./nginx.conf:/etc/nginx/nginx.conf:ro",
+        "./ssl:/etc/nginx/ssl:ro"
+      ],
+      "depends_on": [
+        "backend",
+        "frontend"
+      ],
+      "networks": [
+        "zaiken-network"
+      ],
+      "healthcheck": {
+        "test": ["CMD", "nginx", "-t"],
+        "interval": "30s",
+        "timeout": "10s",
+        "retries": 3
+      }
+    }
+  ],
+  "volumes": [
+    {
+      "name": "postgres_data",
+      "driver": "local"
+    },
+    {
+      "name": "backend_logs",
+      "driver": "local"
+    }
+  ],
+  "networks": [
+    {
+      "name": "zaiken-network",
+      "driver": "bridge",
+      "ipam": {
+        "config": [
+          {
+            "subnet": "172.20.0.0/16"
+          }
+        ]
+      }
+    }
+  ],
+  "files": [
+    {
+      "name": "nginx.conf",
+      "content": "events {\n    worker_connections 1024;\n}\n\nhttp {\n    include       /etc/nginx/mime.types;\n    default_type  application/octet-stream;\n    \n    # Logging\n    log_format main '$remote_addr - $remote_user [$time_local] \"$request\" '\n                    '$status $body_bytes_sent \"$http_referer\" '\n                    '\"$http_user_agent\" \"$http_x_forwarded_for\"';\n    \n    access_log /var/log/nginx/access.log main;\n    error_log /var/log/nginx/error.log;\n    \n    # Gzip compression\n    gzip on;\n    gzip_vary on;\n    gzip_min_length 1024;\n    gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json;\n    \n    # Upstream servers\n    upstream backend {\n        server backend:3004;\n    }\n    \n    upstream frontend {\n        server frontend:3000;\n    }\n    \n    # HTTP to HTTPS redirect\n    server {\n        listen 80;\n        server_name _;\n        return 301 https://$server_name$request_uri;\n    }\n    \n    # HTTPS server\n    server {\n        listen 443 ssl http2;\n        server_name _;\n        \n        # SSL Configuration (Easy Panel maneja esto automáticamente)\n        ssl_certificate /etc/nginx/ssl/cert.pem;\n        ssl_certificate_key /etc/nginx/ssl/key.pem;\n        ssl_protocols TLSv1.2 TLSv1.3;\n        ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384;\n        ssl_prefer_server_ciphers off;\n        ssl_session_cache shared:SSL:10m;\n        ssl_session_timeout 10m;\n        \n        # Security headers\n        add_header X-Frame-Options DENY;\n        add_header X-Content-Type-Options nosniff;\n        add_header X-XSS-Protection \"1; mode=block\";\n        add_header Strict-Transport-Security \"max-age=63072000; includeSubDomains; preload\";\n        add_header Referrer-Policy \"strict-origin-when-cross-origin\";\n        \n        # Frontend\n        location / {\n            proxy_pass http://frontend;\n            proxy_http_version 1.1;\n            proxy_set_header Upgrade $http_upgrade;\n            proxy_set_header Connection 'upgrade';\n            proxy_set_header Host $host;\n            proxy_set_header X-Real-IP $remote_addr;\n            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n            proxy_set_header X-Forwarded-Proto $scheme;\n            proxy_cache_bypass $http_upgrade;\n            proxy_read_timeout 86400;\n        }\n        \n        # Backend API\n        location /api/ {\n            proxy_pass http://backend/api/;\n            proxy_http_version 1.1;\n            proxy_set_header Upgrade $http_upgrade;\n            proxy_set_header Connection 'upgrade';\n            proxy_set_header Host $host;\n            proxy_set_header X-Real-IP $remote_addr;\n            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n            proxy_set_header X-Forwarded-Proto $scheme;\n            proxy_cache_bypass $http_upgrade;\n            proxy_read_timeout 86400;\n        }\n        \n        # Health checks\n        location /health {\n            proxy_pass http://backend/api/v1/health;\n            access_log off;\n        }\n        \n        # Static files cache\n        location ~* \\.(js|css|png|jpg|jpeg|gif|ico|svg)$ {\n            expires 1y;\n            add_header Cache-Control \"public, immutable\";\n        }\n    }\n}"
+    }
+  ],
+  "instructions": {
+    "start": "Zaiken System se está desplegando. Este proceso puede tomar 5-10 minutos para construir todas las imágenes.",
+    "end": "¡Zaiken System ha sido desplegado exitosamente! Puedes acceder a la aplicación en la URL proporcionada."
+  },
+  "tags": [
+    "finance",
+    "business",
+    "nestjs",
+    "nextjs",
+    "postgresql",
+    "docker",
+    "typescript"
+  ]
+}
