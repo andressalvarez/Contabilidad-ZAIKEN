@@ -104,7 +104,7 @@ DATABASE_URL="<tu_conexion_postgres>" npx --yes --prefix backend ts-node backend
 - **Existentes**: Se vinculan por nombre
 - **Nuevas**: Se crean automáticamente
 - **Sin categoría**: `categoriaId = null`
- 
+
 ### Reglas importantes del importador
 - Requiere `campanaId` o `companyId` en cada transacción; si no, se omite (se registrará como `MISSING_CAMPANA`).
 - Evita duplicados por `(fecha, concepto, monto)`.
@@ -236,6 +236,52 @@ class NuevoValidator extends BaseValidator<BackupNuevo> {
   }
 }
 ```
+
+## 📈 Estadísticas de Importación
+
+Al final de cada importación, se muestra:
+
+- ✅ **Registros importados** por tipo
+- ⚠️ **Registros omitidos** con razones
+- ❌ **Errores encontrados** con detalles
+- 📊 **Tiempo total** de procesamiento
+
+## 🤝 Contribución
+
+Para agregar nuevas funcionalidades:
+
+1. Extiende las interfaces base
+2. Implementa validadores específicos
+3. Crea importadores siguiendo el patrón
+4. Agrega al pipeline de importación
+5. Documenta los cambios
+
+---
+
+**Desarrollado siguiendo principios SOLID y Clean Architecture** 🏗️
+
+## 📈 Estadísticas de Importación
+
+Al final de cada importación, se muestra:
+
+- ✅ **Registros importados** por tipo
+- ⚠️ **Registros omitidos** con razones
+- ❌ **Errores encontrados** con detalles
+- 📊 **Tiempo total** de procesamiento
+
+## 🤝 Contribución
+
+Para agregar nuevas funcionalidades:
+
+1. Extiende las interfaces base
+2. Implementa validadores específicos
+3. Crea importadores siguiendo el patrón
+4. Agrega al pipeline de importación
+5. Documenta los cambios
+
+---
+
+**Desarrollado siguiendo principios SOLID y Clean Architecture** 🏗️
 
 ## 📈 Estadísticas de Importación
 

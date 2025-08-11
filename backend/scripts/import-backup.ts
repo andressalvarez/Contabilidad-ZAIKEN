@@ -468,13 +468,9 @@ class ImportService {
           const personaId = t.personaId ? this.personaIdMap.get(t.personaId) ?? null : null;
           const rawCampId = t.campanaId ?? t.companyId;
 
-          // NUEVO: Validar si falta campana
-          if (!rawCampId) {
-            markSkip('MISSING_CAMPANA', t);
-            continue;
-          }
-
-          const campanaId = this.campanaIdMap.get(rawCampId) ?? null;
+          // NUEVO: Si falta campana, asignar a campaña 1 por requerimiento
+          const rawOrDefaultCampId = rawCampId ?? 1;
+          const campanaId = this.campanaIdMap.get(rawOrDefaultCampId) ?? rawOrDefaultCampId;
 
           // 4) Categoría
           let categoriaId: number | null = null;

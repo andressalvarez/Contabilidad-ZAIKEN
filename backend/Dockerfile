@@ -89,3 +89,23 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=25s --retries=3 \
 
 # Comando de inicio (evitar npm para que no intercepte señales)
 CMD ["node", "dist/src/main.js"]
+
+ENV NODE_ENV=production
+ENV PORT=3004
+
+# Health check (relaja tiempos para evitar falsos negativos en arranque)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=25s --retries=3 \
+    CMD node healthcheck.js
+
+# Comando de inicio (evitar npm para que no intercepte señales)
+CMD ["node", "dist/src/main.js"]
+
+ENV NODE_ENV=production
+ENV PORT=3004
+
+# Health check (relaja tiempos para evitar falsos negativos en arranque)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=25s --retries=3 \
+    CMD node healthcheck.js
+
+# Comando de inicio (evitar npm para que no intercepte señales)
+CMD ["node", "dist/src/main.js"]

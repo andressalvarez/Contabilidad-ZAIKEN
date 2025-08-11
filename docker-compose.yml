@@ -146,3 +146,297 @@ volumes:
 networks:
   zaiken-network:
     driver: bridge
+
+# ===========================================
+# DOCKER COMPOSE ROBUSTO - ZAIKEN SYSTEM
+# ===========================================
+# Stack: Backend (NestJS), Frontend (Next.js), PostgreSQL
+# ===========================================
+
+services:
+  # ===========================================
+  # BASE DE DATOS POSTGRESQL
+  # ===========================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: zaiken-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: zaiken_db
+      POSTGRES_USER: zaiken_user
+      POSTGRES_PASSWORD: zaiken_password_secure_2024
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/prisma/migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - zaiken-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zaiken_user -d zaiken_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ===========================================
+  # BACKEND NESTJS
+  # ===========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: zaiken-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3004
+      DATABASE_URL: postgresql://zaiken_user:zaiken_password_secure_2024@postgres:5432/zaiken_db
+      JWT_SECRET: zaiken_jwt_secret_very_secure_2024
+      CORS_ORIGIN: http://localhost:3000,http://127.0.0.1:3000
+    ports:
+      - "3004:3004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - zaiken-network
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      - ./backend/logs:/app/logs
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # ===========================================
+  # FRONTEND NEXT.JS
+  # ===========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: zaiken-frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://localhost:3004/api/v1
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - zaiken-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # ===========================================
+  # NGINX REVERSE PROXY (OPCIONAL)
+  # ===========================================
+  nginx:
+    image: nginx:alpine
+    container_name: zaiken-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - zaiken-network
+    profiles:
+      - production
+
+# ===========================================
+# VOLUMENES
+# ===========================================
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/postgres
+
+# ===========================================
+# REDES
+# ===========================================
+networks:
+  zaiken-network:
+    driver: bridge
+
+# ===========================================
+# DOCKER COMPOSE ROBUSTO - ZAIKEN SYSTEM
+# ===========================================
+# Stack: Backend (NestJS), Frontend (Next.js), PostgreSQL
+# ===========================================
+
+services:
+  # ===========================================
+  # BASE DE DATOS POSTGRESQL
+  # ===========================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: zaiken-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: zaiken_db
+      POSTGRES_USER: zaiken_user
+      POSTGRES_PASSWORD: zaiken_password_secure_2024
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/prisma/migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - zaiken-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zaiken_user -d zaiken_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ===========================================
+  # BACKEND NESTJS
+  # ===========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: zaiken-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3004
+      DATABASE_URL: postgresql://zaiken_user:zaiken_password_secure_2024@postgres:5432/zaiken_db
+      JWT_SECRET: zaiken_jwt_secret_very_secure_2024
+      CORS_ORIGIN: http://localhost:3000,http://127.0.0.1:3000
+    ports:
+      - "3004:3004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - zaiken-network
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      - ./backend/logs:/app/logs
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # ===========================================
+  # FRONTEND NEXT.JS
+  # ===========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: zaiken-frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://localhost:3004/api/v1
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - zaiken-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # ===========================================
+  # NGINX REVERSE PROXY (OPCIONAL)
+  # ===========================================
+  nginx:
+    image: nginx:alpine
+    container_name: zaiken-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - zaiken-network
+    profiles:
+      - production
+
+# ===========================================
+# VOLUMENES
+# ===========================================
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/postgres
+
+# ===========================================
+# REDES
+# ===========================================
+networks:
+  zaiken-network:
+    driver: bridge

@@ -223,4 +223,4 @@ export class VSCategoriasService {
     return response.data;
   }
 }
- 
+

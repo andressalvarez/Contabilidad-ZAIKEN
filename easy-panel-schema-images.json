@@ -68,3 +68,141 @@
     }
   ]
 }
+  "services": [
+    {
+      "type": "postgres",
+      "data": {
+        "serviceName": "zaiken-postgres",
+        "image": "postgres:15-alpine",
+        "password": "zaiken_password_secure_2024",
+        "mounts": [
+          {
+            "type": "volume",
+            "name": "postgres_data",
+            "mountPath": "/var/lib/postgresql/data"
+          }
+        ]
+      }
+    },
+    {
+      "type": "app",
+      "data": {
+        "serviceName": "zaiken-backend",
+        "source": {
+          "type": "image",
+          "image": "ghcr.io/andressalvarez/zaiken-backend:latest"
+        },
+        "env": "NODE_ENV=production\nPORT=3004\nDATABASE_URL=postgresql://postgres:zaiken_password_secure_2024@zaiken-postgres:5432/postgres\nJWT_SECRET=zaiken_jwt_secret_very_secure_2024\nCORS_ORIGIN=https://$(EASYPANEL_DOMAIN)",
+        "domains": [
+          {
+            "host": "$(EASYPANEL_DOMAIN)",
+            "https": true,
+            "port": 3004,
+            "path": "/api"
+          }
+        ],
+        "deploy": {
+          "replicas": 1
+        },
+        "mounts": [
+          {
+            "type": "volume",
+            "name": "backend_logs",
+            "mountPath": "/app/logs"
+          }
+        ]
+      }
+    },
+    {
+      "type": "app",
+      "data": {
+        "serviceName": "zaiken-frontend",
+        "source": {
+          "type": "image",
+          "image": "ghcr.io/andressalvarez/zaiken-frontend:latest"
+        },
+        "env": "NODE_ENV=production\nNEXT_PUBLIC_API_URL=https://$(EASYPANEL_DOMAIN)/api/v1\nNEXT_PUBLIC_APP_URL=https://$(EASYPANEL_DOMAIN)",
+        "domains": [
+          {
+            "host": "$(EASYPANEL_DOMAIN)",
+            "https": true,
+            "port": 3000,
+            "path": "/"
+          }
+        ],
+        "deploy": {
+          "replicas": 1
+        }
+      }
+    }
+  ]
+}
+  "services": [
+    {
+      "type": "postgres",
+      "data": {
+        "serviceName": "zaiken-postgres",
+        "image": "postgres:15-alpine",
+        "password": "zaiken_password_secure_2024",
+        "mounts": [
+          {
+            "type": "volume",
+            "name": "postgres_data",
+            "mountPath": "/var/lib/postgresql/data"
+          }
+        ]
+      }
+    },
+    {
+      "type": "app",
+      "data": {
+        "serviceName": "zaiken-backend",
+        "source": {
+          "type": "image",
+          "image": "ghcr.io/andressalvarez/zaiken-backend:latest"
+        },
+        "env": "NODE_ENV=production\nPORT=3004\nDATABASE_URL=postgresql://postgres:zaiken_password_secure_2024@zaiken-postgres:5432/postgres\nJWT_SECRET=zaiken_jwt_secret_very_secure_2024\nCORS_ORIGIN=https://$(EASYPANEL_DOMAIN)",
+        "domains": [
+          {
+            "host": "$(EASYPANEL_DOMAIN)",
+            "https": true,
+            "port": 3004,
+            "path": "/api"
+          }
+        ],
+        "deploy": {
+          "replicas": 1
+        },
+        "mounts": [
+          {
+            "type": "volume",
+            "name": "backend_logs",
+            "mountPath": "/app/logs"
+          }
+        ]
+      }
+    },
+    {
+      "type": "app",
+      "data": {
+        "serviceName": "zaiken-frontend",
+        "source": {
+          "type": "image",
+          "image": "ghcr.io/andressalvarez/zaiken-frontend:latest"
+        },
+        "env": "NODE_ENV=production\nNEXT_PUBLIC_API_URL=https://$(EASYPANEL_DOMAIN)/api/v1\nNEXT_PUBLIC_APP_URL=https://$(EASYPANEL_DOMAIN)",
+        "domains": [
+          {
+            "host": "$(EASYPANEL_DOMAIN)",
+            "https": true,
+            "port": 3000,
+            "path": "/"
+          }
+        ],
+        "deploy": {
+          "replicas": 1
+        }
+      }
+    }
+  ]
+}
