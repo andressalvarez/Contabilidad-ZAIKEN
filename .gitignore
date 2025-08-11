@@ -86,6 +86,8 @@ dumps/
 backups/
 *.dump
 *.backup
+backup_*.json
+data/
 
 # Database configuration with credentials
 database.config.js
@@ -438,133 +440,6 @@ Thumbs.db
 !.husky/
 !.gitignore
 !.gitattributes
-
-# ===========================================
-# DOCKER & DEPLOYMENT
-# ===========================================
-
-# Docker volumes
-data/
-volumes/
-
-# Environment files (except examples)
-.env
-.env.local
-.env.production
-
-# Docker logs
-docker-compose.override.yml
-docker-compose.override.yaml
-
-# ===========================================
-# PRODUCTION FILES
-# ===========================================
-
-# Production builds
-dist/
-build/
-.next/
-out/
-
-# Production logs
-logs/
-*.log
-
-# Production cache
-.cache/
-.parcel-cache/
-
-# ===========================================
-# END OF GITIGNORE
-# ===========================================
-
-!.prettierrc.yaml
-
-# Keep Git hooks
-!.husky/
-!.gitignore
-!.gitattributes
-
-# ===========================================
-# DOCKER & DEPLOYMENT
-# ===========================================
-
-# Docker volumes
-data/
-volumes/
-
-# Environment files (except examples)
-.env
-.env.local
-.env.production
-
-# Docker logs
-docker-compose.override.yml
-docker-compose.override.yaml
-
-# ===========================================
-# PRODUCTION FILES
-# ===========================================
-
-# Production builds
-dist/
-build/
-.next/
-out/
-
-# Production logs
-logs/
-*.log
-
-# Production cache
-.cache/
-.parcel-cache/
-
-# ===========================================
-# END OF GITIGNORE
-# ===========================================
-
-!.prettierrc.yaml
-
-# Keep Git hooks
-!.husky/
-!.gitignore
-!.gitattributes
-
-# ===========================================
-# DOCKER & DEPLOYMENT
-# ===========================================
-
-# Docker volumes
-data/
-volumes/
-
-# Environment files (except examples)
-.env
-.env.local
-.env.production
-
-# Docker logs
-docker-compose.override.yml
-docker-compose.override.yaml
-
-# ===========================================
-# PRODUCTION FILES
-# ===========================================
-
-# Production builds
-dist/
-build/
-.next/
-out/
-
-# Production logs
-logs/
-*.log
-
-# Production cache
-.cache/
-.parcel-cache/
 
 # ===========================================
 # END OF GITIGNORE
