@@ -33,7 +33,8 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  // Excluir explícitamente /register del alcance del middleware para evitar 307
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|register).*)'],
 };
 
 
