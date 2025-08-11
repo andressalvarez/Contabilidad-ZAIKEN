@@ -1,11 +1,11 @@
 # ===========================================
 # DOCKERFILE ROBUSTO - ZAIKEN SYSTEM FRONTEND
 # ===========================================
-# Stack: Node.js 18, Next.js 14, React
+# Stack: Node.js 20, Next.js 15, React
 # ===========================================
 
 # Etapa de construcción
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 # Instalar dependencias del sistema
 RUN apk add --no-cache \
@@ -20,8 +20,8 @@ WORKDIR /app
 # Copiar archivos de dependencias
 COPY package*.json ./
 
-# Instalar dependencias
-RUN npm ci --only=production && npm cache clean --force
+# Instalar dependencias (incluye devDeps para compilar)
+RUN npm ci && npm cache clean --force
 
 # Copiar código fuente
 COPY . .
@@ -29,8 +29,11 @@ COPY . .
 # Construir aplicación
 RUN npm run build
 
+# Quitar dependencias de desarrollo
+RUN npm prune --omit=dev
+
 # Etapa de producción
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 
 # Instalar dependencias del sistema para producción
 RUN apk add --no-cache \
@@ -44,13 +47,11 @@ RUN adduser -S nextjs -u 1001
 # Establecer directorio de trabajo
 WORKDIR /app
 
-# Copiar archivos de dependencias
-COPY package*.json ./
+# Copiar metadata y node_modules resultantes (ya sin devDeps)
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
 
-# Instalar solo dependencias de producción
-RUN npm ci --only=production && npm cache clean --force
-
-# Copiar archivos construidos desde la etapa anterior
+# Copiar artefactos construidos desde la etapa anterior
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 
