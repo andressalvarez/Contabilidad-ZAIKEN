@@ -81,7 +81,7 @@ export class VSCategoriasService {
   }) {
     const { categorias, ...grupoData } = data;
 
-    return this.prisma.vSGrupo.create({
+    const grupo = await this.prisma.vSGrupo.create({
       data: {
         ...grupoData,
         visible: grupoData.visible ?? true,
@@ -101,10 +101,17 @@ export class VSCategoriasService {
         carpeta: true,
       },
     });
+
+    // Transformar la respuesta para incluir categoriaIds
+    return {
+      ...grupo,
+      categoriaIds: grupo.categorias.map(c => c.categoriaId),
+      categoriaNames: grupo.categorias.map(c => c.categoria.nombre),
+    };
   }
 
   async findAllGrupos() {
-    return this.prisma.vSGrupo.findMany({
+    const grupos = await this.prisma.vSGrupo.findMany({
       include: {
         categorias: {
           include: {
@@ -115,10 +122,17 @@ export class VSCategoriasService {
       },
       orderBy: { orden: 'asc' },
     });
+
+    // Transformar la respuesta para incluir categoriaIds
+    return grupos.map(grupo => ({
+      ...grupo,
+      categoriaIds: grupo.categorias.map(c => c.categoriaId),
+      categoriaNames: grupo.categorias.map(c => c.categoria.nombre),
+    }));
   }
 
   async findGrupoById(id: number) {
-    return this.prisma.vSGrupo.findUnique({
+    const grupo = await this.prisma.vSGrupo.findUnique({
       where: { id },
       include: {
         categorias: {
@@ -129,6 +143,15 @@ export class VSCategoriasService {
         carpeta: true,
       },
     });
+
+    if (!grupo) return null;
+
+    // Transformar la respuesta para incluir categoriaIds
+    return {
+      ...grupo,
+      categoriaIds: grupo.categorias.map(c => c.categoriaId),
+      categoriaNames: grupo.categorias.map(c => c.categoria.nombre),
+    };
   }
 
   async updateGrupo(id: number, data: {
@@ -159,7 +182,7 @@ export class VSCategoriasService {
       }
     }
 
-    return this.prisma.vSGrupo.update({
+    const grupo = await this.prisma.vSGrupo.update({
       where: { id },
       data: grupoData,
       include: {
@@ -171,6 +194,13 @@ export class VSCategoriasService {
         carpeta: true,
       },
     });
+
+    // Transformar la respuesta para incluir categoriaIds
+    return {
+      ...grupo,
+      categoriaIds: grupo.categorias.map(c => c.categoriaId),
+      categoriaNames: grupo.categorias.map(c => c.categoria.nombre),
+    };
   }
 
   async deleteGrupo(id: number) {
@@ -247,99 +277,139 @@ export class VSCategoriasService {
     tipo?: string;
     fechaDesde?: string;
     fechaHasta?: string;
-    gruposSeleccionados?: number[];
+    groupIds?: number[];
   }) {
-    // Obtener transacciones filtradas
-    let whereClause: any = {};
+    try {
+      // Obtener transacciones filtradas
+      let whereClause: any = {};
 
-    if (filtros.tipo && filtros.tipo !== 'Todos') {
-      // Mapear nombres de tipo a IDs
-      const tipoMapping: Record<string, number> = {
-        'GASTO': 1,
-        'APORTE': 2,
-        'INGRESO': 3
-      };
+      // Si hay grupos seleccionados, ignorar completamente el filtro de tipo
+      // porque los grupos ya definen qué categorías incluir
+      if (filtros.groupIds && filtros.groupIds.length > 0) {
+        console.log(`Grupos especificados (${filtros.groupIds.length}), ignorando filtro de tipo`);
+      } else if (filtros.tipo && filtros.tipo !== 'Todos') {
+        // Solo aplicar filtro de tipo si NO hay grupos especificados
+        const tipoMapping: Record<string, number> = {
+          'GASTO': 1,
+          'APORTE': 2,
+          'INGRESO': 3
+        };
 
-      const tipoId = tipoMapping[filtros.tipo];
-      if (tipoId) {
-        whereClause.tipoId = tipoId;
+        const tipoId = tipoMapping[filtros.tipo];
+        if (tipoId) {
+          // Primero intentar con el tipo específico
+          whereClause.tipoId = tipoId;
+
+          // Obtener transacciones con el tipo específico
+          let transaccionesConTipo = await this.prisma.transaccion.findMany({
+            where: whereClause,
+            include: { categoria: true, tipo: true },
+          });
+
+          // Si no hay transacciones con ese tipo, ignorar el filtro de tipo
+          if (transaccionesConTipo.length === 0) {
+            console.log(`No se encontraron transacciones con tipo ${filtros.tipo}, ignorando filtro de tipo`);
+            delete whereClause.tipoId;
+          }
+        }
       }
-    }
 
-    if (filtros.fechaDesde) {
-      whereClause.fecha = {
-        gte: new Date(filtros.fechaDesde),
+      // Validar fechas de forma segura para evitar Invalid Date
+      const parseSafeDate = (s?: string) => {
+        if (!s) return undefined;
+        const d = new Date(s);
+        return Number.isFinite(d.getTime()) ? d : undefined;
       };
-    }
 
-    if (filtros.fechaHasta) {
-      whereClause.fecha = {
-        ...whereClause.fecha,
-        lte: new Date(filtros.fechaHasta),
-      };
-    }
+      const dDesde = parseSafeDate(filtros.fechaDesde);
+      const dHasta = parseSafeDate(filtros.fechaHasta);
 
-    const transacciones = await this.prisma.transaccion.findMany({
-      where: whereClause,
-      include: {
-        categoria: true,
-        tipo: true,
-      },
-    });
+      if (dDesde) {
+        whereClause.fecha = {
+          ...(whereClause.fecha || {}),
+          gte: dDesde,
+        };
+      }
 
-    console.log(`Transacciones encontradas: ${transacciones.length}`);
+      if (dHasta) {
+        whereClause.fecha = {
+          ...(whereClause.fecha || {}),
+          lte: dHasta,
+        };
+      }
 
-    // Si hay grupos seleccionados, agrupar por grupos
-    if (filtros.gruposSeleccionados && filtros.gruposSeleccionados.length > 0) {
-      const grupos = await this.prisma.vSGrupo.findMany({
-        where: {
-          id: { in: filtros.gruposSeleccionados },
-          visible: true,
-        },
-        include: {
-          categorias: {
-            include: {
-              categoria: true,
+      const transacciones = await this.prisma.transaccion.findMany({
+        where: whereClause,
+        include: { categoria: true, tipo: true },
+      });
+
+      console.log(`Transacciones encontradas: ${transacciones.length}`);
+
+      // Si hay grupos seleccionados, agrupar por grupos
+      if (filtros.groupIds && filtros.groupIds.length > 0) {
+        const grupos = await this.prisma.vSGrupo.findMany({
+          where: {
+            id: { in: filtros.groupIds },
+            visible: true,
+          },
+          include: {
+            categorias: {
+              include: {
+                categoria: true,
+              },
             },
           },
-        },
-      });
-
-      console.log(`Grupos encontrados: ${grupos.length}`);
-
-      const datos: Record<string, number> = {};
-      grupos.forEach(grupo => {
-        datos[grupo.nombre] = 0;
-        grupo.categorias.forEach(gc => {
-          transacciones.forEach(t => {
-            if (t.categoriaId === gc.categoriaId) {
-              datos[grupo.nombre] += t.monto || 0;
-            }
-          });
         });
+
+        console.log(`Grupos encontrados: ${grupos.length}`);
+
+        const datos: Record<string, number> = {};
+        // Pre-indexar transacciones por categoriaId
+        const byCatId = new Map<number, number>();
+        for (const t of transacciones) {
+          if (t.categoriaId) {
+            byCatId.set(t.categoriaId, (byCatId.get(t.categoriaId) || 0) + (t.monto || 0));
+          }
+        }
+
+        for (const grupo of grupos) {
+          const catIds = new Set<number>(grupo.categorias.map(gc => gc.categoriaId));
+          let suma = 0;
+          for (const cid of catIds) {
+            suma += byCatId.get(cid) || 0;
+          }
+          datos[grupo.nombre] = suma;
+          console.log('[VS][DBG] Grupo', grupo.nombre, {
+            grupoId: grupo.id,
+            categoriaIds: Array.from(catIds),
+            suma,
+            matches: Array.from(catIds).filter(cid => byCatId.has(cid))
+          });
+        }
+
+        return { datos, esGrupo: true, grupos };
+      }
+
+      // Si no hay grupos, agrupar por categorías individuales
+      const datos: Record<string, number> = {};
+      transacciones.forEach(t => {
+        if (t.categoria) {
+          datos[t.categoria.nombre] = (datos[t.categoria.nombre] || 0) + (t.monto || 0);
+        }
       });
 
-      return {
-        datos,
-        esGrupo: true,
-        grupos,
-      };
+      console.log(`Categorías encontradas: ${Object.keys(datos).length}`);
+      console.log(`Datos por categoría:`, datos);
+
+      return { datos, esGrupo: false };
+    } catch (error) {
+      console.error('❌ Error en getDatosParaGrafico:', {
+        message: (error as any)?.message,
+        stack: (error as any)?.stack,
+        filtros,
+      });
+      // Nunca lanzar 500 crudo; devolver estructura vacía para no romper el frontend
+      return { datos: {}, esGrupo: !!(filtros.groupIds && filtros.groupIds.length) };
     }
-
-    // Si no hay grupos, agrupar por categorías individuales
-    const datos: Record<string, number> = {};
-    transacciones.forEach(t => {
-      if (t.categoria) {
-        datos[t.categoria.nombre] = (datos[t.categoria.nombre] || 0) + (t.monto || 0);
-      }
-    });
-
-    console.log(`Categorías encontradas: ${Object.keys(datos).length}`);
-    console.log(`Datos por categoría:`, datos);
-
-    return {
-      datos,
-      esGrupo: false,
-    };
   }
 }

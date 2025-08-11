@@ -123,17 +123,20 @@ export class VSCategoriasController {
     tipo?: string;
     fechaDesde?: string;
     fechaHasta?: string;
-    gruposSeleccionados?: string;
+    groupIds?: string[] | string;
   }) {
-    const gruposSeleccionados = filtros.gruposSeleccionados
-      ? filtros.gruposSeleccionados.split(',').map(id => +id)
-      : undefined;
+    // Normalizar groupIds: puede venir como string o array de strings
+    const raw = filtros.groupIds as any;
+    const arr: string[] = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+    const groupIds = arr
+      .map((id) => Number(id))
+      .filter((n) => Number.isFinite(n) && n > 0);
 
     return this.vsCategoriasService.getDatosParaGrafico({
       tipo: filtros.tipo,
       fechaDesde: filtros.fechaDesde,
       fechaHasta: filtros.fechaHasta,
-      gruposSeleccionados,
+      groupIds: groupIds.length ? groupIds : undefined,
     });
   }
 }

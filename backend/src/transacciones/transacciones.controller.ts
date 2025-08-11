@@ -35,15 +35,20 @@ export class TransaccionesController {
     @Query('fechaFin') fechaFin?: string,
     @Query('tipoId', new ParseIntPipe({ optional: true })) tipoId?: number,
     @Query('categoria') categoria?: string,
+    @Query('categoriaId', new ParseIntPipe({ optional: true })) categoriaId?: number,
+    @Query('categoriasIds') categoriasIds?: string,
     @Query('personaId', new ParseIntPipe({ optional: true })) personaId?: number,
     @Query('campanaId', new ParseIntPipe({ optional: true })) campanaId?: number,
     @Query('aprobado', new ParseBoolPipe({ optional: true })) aprobado?: boolean,
+    @Query('ignorarTipo', new ParseBoolPipe({ optional: true })) ignorarTipo?: boolean,
   ) {
     const filtros: FiltrosTransacciones = {
       fechaInicio,
       fechaFin,
-      tipoId,
+      tipoId: ignorarTipo ? undefined : tipoId, // Ignorar tipo si se especifica
       categoria,
+      categoriaId,
+      categoriasIds: categoriasIds ? categoriasIds.split(',').map(id => +id) : undefined,
       personaId,
       campanaId,
       aprobado,
@@ -62,6 +67,32 @@ export class TransaccionesController {
       success: true,
       message: 'Transacciones recientes obtenidas exitosamente',
       data: await this.transaccionesService.findRecent(limit),
+    };
+  }
+
+  @Get('por-categoria')
+  async findByCategoria(
+    @Query('categoriasIds') categoriasIds: string,
+    @Query('fechaInicio') fechaInicio?: string,
+    @Query('fechaFin') fechaFin?: string,
+    @Query('personaId', new ParseIntPipe({ optional: true })) personaId?: number,
+    @Query('campanaId', new ParseIntPipe({ optional: true })) campanaId?: number,
+    @Query('aprobado', new ParseBoolPipe({ optional: true })) aprobado?: boolean,
+  ) {
+    const filtros: FiltrosTransacciones = {
+      fechaInicio,
+      fechaFin,
+      categoriasIds: categoriasIds.split(',').map(id => +id),
+      personaId,
+      campanaId,
+      aprobado,
+      // No se especifica tipoId para buscar todos los tipos
+    };
+
+    return {
+      success: true,
+      message: 'Transacciones por categoría obtenidas exitosamente',
+      data: await this.transaccionesService.findAll(filtros),
     };
   }
 

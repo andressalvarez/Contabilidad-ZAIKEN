@@ -12,6 +12,7 @@ export interface FiltrosTransacciones {
   tipo?: string;
   categoria?: string;
   categoriaId?: number;
+  categoriasIds?: number[];
   personaId?: number;
   campanaId?: number;
   aprobado?: boolean;
@@ -108,6 +109,10 @@ export class TransaccionesService {
 
     if (filtros.categoriaId) {
       where.categoriaId = filtros.categoriaId;
+    }
+
+    if (filtros.categoriasIds && filtros.categoriasIds.length > 0) {
+      where.categoriaId = { in: filtros.categoriasIds };
     }
 
     if (filtros.personaId) {
