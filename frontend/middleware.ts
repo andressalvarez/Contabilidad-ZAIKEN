@@ -11,7 +11,15 @@ const PUBLIC_PATHS = [
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
+  // Normalizar removiendo trailing slash
+  const path = pathname.replace(/\/+$/, '') || '/';
+
+  // Bypass explícito para login/register (evita cualquier edge-case en prod)
+  if (path === '/login' || path === '/register') {
+    return NextResponse.next();
+  }
+
+  const isPublic = PUBLIC_PATHS.some((p) => path === p || path.startsWith(p + '/'));
   if (isPublic) return NextResponse.next();
 
   const token = req.cookies.get('auth_token')?.value;
