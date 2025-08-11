@@ -75,6 +75,7 @@ keys/
 
 # MySQL
 *.sql
+!backend/prisma/migrations/**/migration.sql
 *.sqlite
 *.sqlite3
 *.db
