@@ -337,6 +337,17 @@ zaiken-system/backend/logs/
 zaiken-system/backend/temp/
 zaiken-system/backend/cache/
 
+# Backend specific files to ignore
+zaiken-system/backend/backup_*.json
+zaiken-system/backend/pgweb*
+zaiken-system/backend/check-data.ts
+zaiken-system/backend/clear-config.js
+zaiken-system/backend/migrar-categorias.js
+zaiken-system/backend/test-*.ts
+zaiken-system/backend/start-pgweb.bat
+zaiken-system/backend/dist/
+zaiken-system/backend/node_modules/
+
 # Frontend specific
 zaiken-system/frontend/.next/
 zaiken-system/frontend/out/
