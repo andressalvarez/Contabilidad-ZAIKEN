@@ -43,10 +43,11 @@ FROM node:20-alpine AS production
 # Instalar dependencias del sistema para producción
 RUN apk add --no-cache \
     openssl \
+    curl \
     && rm -rf /var/cache/apk/*
 
 # Forzar rebuild de imagen cuando cambie este label (cache-bust)
-LABEL zaiken.build="2025-08-11-0540"
+LABEL zaiken.build="2025-08-11-1350"
 
 # Crear usuario no-root para seguridad
 RUN addgroup -g 1001 -S nodejs
