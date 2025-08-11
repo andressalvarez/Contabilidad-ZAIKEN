@@ -45,6 +45,9 @@ RUN apk add --no-cache \
     openssl \
     && rm -rf /var/cache/apk/*
 
+# Forzar rebuild de imagen cuando cambie este label (cache-bust)
+LABEL zaiken.build="2025-08-11-0540"
+
 # Crear usuario no-root para seguridad
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nestjs -u 1001
@@ -62,6 +65,10 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 # Healthcheck script
 COPY --from=builder /app/healthcheck.js ./healthcheck.js
+
+# Verificación en build: asegurar que el directorio dist exista
+RUN echo "Contenido de /app:" && ls -la /app && \
+    echo "Contenido de /app/dist:" && ls -la /app/dist
 
 # Cambiar propiedad de archivos
 RUN chown -R nestjs:nodejs /app
