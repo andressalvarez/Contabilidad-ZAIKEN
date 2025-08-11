@@ -17,8 +17,10 @@ BACKUP_FILE=${BACKUP_FILE:-/app/backup.json}
 
 if [ "$IMPORT_ON_BOOT" = "true" ]; then
   echo "[entrypoint] Checking if import is needed..."
+  set +e
   node -e "(async()=>{const {PrismaClient}=require('@prisma/client');const p=new PrismaClient();try{const c=await p.transaccion.count();console.log('[entrypoint] transacciones:',c);process.exit(c===0?42:0)}catch(e){console.error('[entrypoint] prisma count failed:',e.message);process.exit(42)}})()"
   NEED_IMPORT=$?
+  set -e
   if [ "$NEED_IMPORT" = "42" ]; then
     echo "[entrypoint] No transacciones found. Importing backup..."
     # Descargar backup si no existe archivo local
