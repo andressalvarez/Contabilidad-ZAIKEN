@@ -48,6 +48,9 @@ export default function LoginPage() {
           <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white rounded py-2 hover:bg-blue-700 disabled:opacity-50">
             {loading ? 'Ingresando...' : 'Ingresar'}
           </button>
+          <div className="text-center text-sm">
+            <a href="/register" className="text-blue-600 hover:underline">Crear cuenta</a>
+          </div>
         </form>
       </div>
     </MainLayout>
