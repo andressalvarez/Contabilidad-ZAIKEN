@@ -1,88 +1,31 @@
+/*
+  Healthcheck interno del contenedor. Sale con código 0 si el backend
+  responde 200 en /healthz o /api/v1/health. De lo contrario, código 1.
+*/
 const http = require('http');
 
-const options = {
-  host: 'localhost',
-  port: process.env.PORT || 3004,
-  path: '/api/v1/health',
-  timeout: 2000
-};
+function check(url) {
+  return new Promise((resolve) => {
+    const req = http.get(url, (res) => {
+      res.resume();
+      resolve(res.statusCode === 200);
+    });
+    req.on('error', () => resolve(false));
+    req.setTimeout(4000, () => {
+      req.destroy();
+      resolve(false);
+    });
+  });
+}
 
-const request = http.request(options, (res) => {
-  console.log(`Health check status: ${res.statusCode}`);
-  if (res.statusCode === 200) {
-    process.exit(0);
-  } else {
-    process.exit(1);
+(async () => {
+  const base = `http://localhost:${process.env.PORT || 3004}`;
+  const urls = [`${base}/healthz`, `${base}/api/v1/health`, `${base}/`];
+  for (const url of urls) {
+    // eslint-disable-next-line no-await-in-loop
+    if (await check(url)) process.exit(0);
   }
-});
-
-request.on('error', (err) => {
-  console.error('Health check failed:', err.message);
   process.exit(1);
-});
+})();
 
-request.on('timeout', () => {
-  console.error('Health check timeout');
-  request.destroy();
-  process.exit(1);
-});
 
-request.end();
-
-const options = {
-  host: 'localhost',
-  port: process.env.PORT || 3004,
-  path: '/api/v1/health',
-  timeout: 2000
-};
-
-const request = http.request(options, (res) => {
-  console.log(`Health check status: ${res.statusCode}`);
-  if (res.statusCode === 200) {
-    process.exit(0);
-  } else {
-    process.exit(1);
-  }
-});
-
-request.on('error', (err) => {
-  console.error('Health check failed:', err.message);
-  process.exit(1);
-});
-
-request.on('timeout', () => {
-  console.error('Health check timeout');
-  request.destroy();
-  process.exit(1);
-});
-
-request.end();
-
-const options = {
-  host: 'localhost',
-  port: process.env.PORT || 3004,
-  path: '/api/v1/health',
-  timeout: 2000
-};
-
-const request = http.request(options, (res) => {
-  console.log(`Health check status: ${res.statusCode}`);
-  if (res.statusCode === 200) {
-    process.exit(0);
-  } else {
-    process.exit(1);
-  }
-});
-
-request.on('error', (err) => {
-  console.error('Health check failed:', err.message);
-  process.exit(1);
-});
-
-request.on('timeout', () => {
-  console.error('Health check timeout');
-  request.destroy();
-  process.exit(1);
-});
-
-request.end();
