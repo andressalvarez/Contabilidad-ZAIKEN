@@ -190,6 +190,12 @@ model Usuario {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Relaciones inversas (propiedad)
+  personas      Persona[]
+  categorias    Categoria[]
+  campanas      Campana[]
+  transacciones Transaccion[]
+
   @@map("usuarios")
 }
 
