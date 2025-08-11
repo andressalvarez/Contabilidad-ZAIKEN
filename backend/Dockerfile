@@ -5,7 +5,7 @@
 # ===========================================
 
 # Etapa de construcción
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 # Instalar dependencias del sistema
 RUN apk add --no-cache \
@@ -22,8 +22,8 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Instalar dependencias
-RUN npm ci --only=production && npm cache clean --force
+# Instalar dependencias (incluye devDeps para poder compilar con Nest/TS)
+RUN npm ci && npm cache clean --force
 
 # Copiar código fuente
 COPY . .
@@ -34,8 +34,11 @@ RUN npx prisma generate
 # Construir aplicación
 RUN npm run build
 
+# Quitar dependencias de desarrollo para optimizar el runtime
+RUN npm prune --omit=dev
+
 # Etapa de producción
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 
 # Instalar dependencias del sistema para producción
 RUN apk add --no-cache \
@@ -49,16 +52,16 @@ RUN adduser -S nestjs -u 1001
 # Establecer directorio de trabajo
 WORKDIR /app
 
-# Copiar archivos de dependencias
-COPY package*.json ./
-COPY prisma ./prisma/
+# Copiar package.json para que npm pueda ejecutar scripts en runtime
+COPY --from=builder /app/package*.json ./
 
-# Instalar solo dependencias de producción
-RUN npm ci --only=production && npm cache clean --force
+# Copiar node_modules resultantes (ya sin devDeps) y el build
+COPY --from=builder /app/node_modules ./node_modules
 
 # Copiar archivos construidos desde la etapa anterior
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+# Healthcheck script
+COPY --from=builder /app/healthcheck.js ./healthcheck.js
 
 # Cambiar propiedad de archivos
 RUN chown -R nestjs:nodejs /app
