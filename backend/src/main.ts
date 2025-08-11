@@ -41,8 +41,8 @@ async function bootstrap() {
     });
   }
 
-  const port = process.env.PORT || 3004;
-  await app.listen(port);
+  const port = Number(process.env.PORT) || 3004;
+  await app.listen(port, '0.0.0.0');
 
   console.log(`🚀 Servidor NestJS ejecutándose en http://localhost:${port}`);
   console.log(`📖 API documentación: http://localhost:${port}/api/v1`);
