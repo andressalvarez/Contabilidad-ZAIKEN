@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 // Rutas públicas (no requieren sesión)
 const PUBLIC_PATHS = [
   '/login',
+  '/register',
   '/favicon.ico',
   '/_next',
   '/healthz',
