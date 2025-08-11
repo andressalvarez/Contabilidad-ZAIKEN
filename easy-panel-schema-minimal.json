@@ -1,0 +1,104 @@
+{
+  "name": "zaiken-system",
+  "title": "Zaiken System",
+  "description": "Sistema de gestión financiera",
+  "category": "Business",
+  "env": [
+    {
+      "name": "NODE_ENV",
+      "label": "Node Environment",
+      "default": "production",
+      "type": "select",
+      "options": [
+        {
+          "label": "Production",
+          "value": "production"
+        },
+        {
+          "label": "Development",
+          "value": "development"
+        }
+      ]
+    },
+    {
+      "name": "DOMAIN_URL",
+      "label": "Domain URL",
+      "default": "https://panel.secujack.com",
+      "type": "text"
+    },
+    {
+      "name": "JWT_SECRET",
+      "label": "JWT Secret",
+      "default": "zaiken_jwt_secret_2024",
+      "type": "text"
+    },
+    {
+      "name": "POSTGRES_PASSWORD",
+      "label": "PostgreSQL Password",
+      "default": "zaiken_password_2024",
+      "type": "text"
+    }
+  ],
+  "services": {
+    "postgres": {
+      "image": "postgres:15-alpine",
+      "environment": [
+        "POSTGRES_DB=zaiken_db",
+        "POSTGRES_USER=zaiken_user",
+        "POSTGRES_PASSWORD={{POSTGRES_PASSWORD}}"
+      ],
+      "volumes": [
+        "postgres_data:/var/lib/postgresql/data"
+      ]
+    },
+    "backend": {
+      "build": {
+        "context": "https://github.com/andressalvarez/Contabilidad-ZAIKEN.git#main:backend"
+      },
+      "environment": [
+        "NODE_ENV={{NODE_ENV}}",
+        "PORT=3004",
+        "DATABASE_URL=postgresql://zaiken_user:{{POSTGRES_PASSWORD}}@postgres:5432/zaiken_db",
+        "JWT_SECRET={{JWT_SECRET}}",
+        "CORS_ORIGIN={{DOMAIN_URL}}"
+      ],
+      "depends_on": [
+        "postgres"
+      ]
+    },
+    "frontend": {
+      "build": {
+        "context": "https://github.com/andressalvarez/Contabilidad-ZAIKEN.git#main:frontend"
+      },
+      "environment": [
+        "NODE_ENV={{NODE_ENV}}",
+        "NEXT_PUBLIC_API_URL={{DOMAIN_URL}}/api/v1",
+        "NEXT_PUBLIC_APP_URL={{DOMAIN_URL}}"
+      ],
+      "depends_on": [
+        "backend"
+      ]
+    },
+    "nginx": {
+      "image": "nginx:alpine",
+      "ports": [
+        "80:80"
+      ],
+      "volumes": [
+        "./nginx.conf:/etc/nginx/nginx.conf:ro"
+      ],
+      "depends_on": [
+        "backend",
+        "frontend"
+      ]
+    }
+  },
+  "volumes": {
+    "postgres_data": {}
+  },
+  "files": {
+    "nginx.conf": {
+      "content": "events {\n    worker_connections 1024;\n}\n\nhttp {\n    include /etc/nginx/mime.types;\n    default_type application/octet-stream;\n    \n    upstream backend {\n        server backend:3004;\n    }\n    \n    upstream frontend {\n        server frontend:3000;\n    }\n    \n    server {\n        listen 80;\n        server_name _;\n        \n        location / {\n            proxy_pass http://frontend;\n            proxy_set_header Host $host;\n            proxy_set_header X-Real-IP $remote_addr;\n        }\n        \n        location /api/ {\n            proxy_pass http://backend/api/;\n            proxy_set_header Host $host;\n            proxy_set_header X-Real-IP $remote_addr;\n        }\n    }\n}"
+    }
+  }
+}
