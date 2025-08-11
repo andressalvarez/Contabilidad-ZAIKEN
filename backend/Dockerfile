@@ -83,9 +83,9 @@ EXPOSE 3004
 ENV NODE_ENV=production
 ENV PORT=3004
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+# Health check (relaja tiempos para evitar falsos negativos en arranque)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=25s --retries=3 \
     CMD node healthcheck.js
 
-# Comando de inicio
-CMD ["npm", "run", "start:prod"]
+# Comando de inicio (evitar npm para que no intercepte señales)
+CMD ["node", "dist/src/main.js"]
