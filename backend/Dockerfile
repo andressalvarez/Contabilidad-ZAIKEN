@@ -65,6 +65,11 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 # Healthcheck script
 COPY --from=builder /app/healthcheck.js ./healthcheck.js
+COPY --from=builder /app/package*.json ./
+
+# Copiar entrypoint para migraciones/importe único
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
 
 # Verificación en build: asegurar que el directorio dist exista
 RUN echo "Contenido de /app:" && ls -la /app && \
@@ -87,8 +92,9 @@ ENV PORT=3004
 HEALTHCHECK --interval=30s --timeout=5s --start-period=25s --retries=3 \
     CMD node healthcheck.js
 
-# Comando de inicio (evitar npm para que no intercepte señales)
-CMD ["node", "dist/src/main.js"]
+# Comando de inicio (entrypoint aplica migraciones e importa una sola vez)
+ENV IMPORT_ON_BOOT=true
+ENTRYPOINT ["./docker-entrypoint.sh"]
 
 ENV NODE_ENV=production
 ENV PORT=3004
