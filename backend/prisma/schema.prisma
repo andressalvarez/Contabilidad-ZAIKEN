@@ -196,6 +196,9 @@ model Usuario {
   campanas      Campana[]
   transacciones Transaccion[]
 
+  // Roles de plataforma (opcional)
+  rolesSistema  UsuarioRol[]
+
   @@map("usuarios")
 }
 
@@ -249,4 +252,30 @@ model VSConfiguracion {
   updatedAt             DateTime @updatedAt
 
   @@map("vs_configuraciones")
+}
+
+// ==========================
+// Roles de plataforma (Auth)
+// ==========================
+
+model RolSistema {
+  id          Int          @id @default(autoincrement())
+  nombre      String       @unique
+  descripcion String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  usuarios    UsuarioRol[]
+
+  @@map("roles_sistema")
+}
+
+model UsuarioRol {
+  usuarioId    Int
+  rolSistemaId Int
+  createdAt    DateTime @default(now())
+  usuario      Usuario   @relation(fields: [usuarioId], references: [id])
+  rolSistema   RolSistema @relation(fields: [rolSistemaId], references: [id])
+
+  @@id([usuarioId, rolSistemaId])
+  @@map("usuarios_roles")
 }
