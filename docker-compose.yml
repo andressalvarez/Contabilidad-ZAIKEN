@@ -23,7 +23,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/prisma/migrations:/docker-entrypoint-initdb.d
     ports:
-      - "5543:5432"
+      - "5432:5432"
     networks:
       - zaiken-network
     healthcheck:
