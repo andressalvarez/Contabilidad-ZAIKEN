@@ -51,16 +51,34 @@ npm run analyze:categories
 npm run analyze:categories /ruta/al/backup.json
 ```
 
-### 2. Importación de Datos
+### 2. Auditoría previa (opcional)
 
-**Importar backup por defecto:**
+Genera un reporte JSON/CSV de transacciones que no se importarían y las razones (ej.: `MISSING_CAMPANA`, `INVALID_FECHA`):
+
 ```bash
-npm run import:backup
+# Desde la raíz del repo
+npx --yes --prefix backend ts-node backend/scripts/audit-backup.ts <ruta/al/backup.json>
 ```
 
-**Importar archivo específico:**
+Los archivos se guardan en: `backend/logs/import-audit-<timestamp>.{json,csv}`.
+
+### 3. Importación de Datos
+
+Antes de importar, aplica migraciones (no usar fresh):
 ```bash
-npm run import:data /ruta/al/backup.json
+DATABASE_URL="<tu_conexion_postgres>" npm --prefix backend run prisma:migrate:prod
+```
+
+Opciones de importación:
+
+- Borrado total (wipe-all) y luego importar:
+```bash
+DATABASE_URL="<tu_conexion_postgres>" npx --yes --prefix backend ts-node backend/scripts/import-backup.ts <ruta/al/backup.json> --wipe-all
+```
+
+- Solo tablas financieras (transacciones, registro de horas, distribución):
+```bash
+DATABASE_URL="<tu_conexion_postgres>" npx --yes --prefix backend ts-node backend/scripts/import-backup.ts <ruta/al/backup.json> --wipe-tx
 ```
 
 ## 📋 Proceso de Importación
@@ -86,6 +104,11 @@ npm run import:data /ruta/al/backup.json
 - **Existentes**: Se vinculan por nombre
 - **Nuevas**: Se crean automáticamente
 - **Sin categoría**: `categoriaId = null`
+ 
+### Reglas importantes del importador
+- Requiere `campanaId` o `companyId` en cada transacción; si no, se omite (se registrará como `MISSING_CAMPANA`).
+- Evita duplicados por `(fecha, concepto, monto)`.
+- Crea tipos `GASTO/INGRESO/APORTE` si faltan.
 
 ## 🛠️ Características Técnicas
 
