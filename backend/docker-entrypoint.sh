@@ -11,7 +11,7 @@ fi
 
 # Control flag (default true)
 IMPORT_ON_BOOT=${IMPORT_ON_BOOT:-true}
-BACKUP_URL_DEFAULT="https://raw.githubusercontent.com/andressalvarez/Contabilidad-ZAIKEN/main/zaiken-system/backup_2025-07-15.json"
+BACKUP_URL_DEFAULT="https://raw.githubusercontent.com/andressalvarez/Contabilidad-ZAIKEN/main/backup_2025-07-15.json"
 BACKUP_URL=${BACKUP_URL:-$BACKUP_URL_DEFAULT}
 BACKUP_FILE=${BACKUP_FILE:-/app/backup.json}
 
