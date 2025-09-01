@@ -257,7 +257,7 @@ export default function TransaccionesPage() {
       headers.join(','),
       ...filteredTransacciones.map(t => [
         t.id,
-        new Date(t.fecha).toLocaleDateString('es-CO'),
+        (typeof t.fecha === 'string' ? t.fecha.slice(0, 10) : new Date(t.fecha as any).toISOString().slice(0,10)),
         t.tipo,
         `"${t.concepto || ''}"`,
         t.categoria?.nombre || '',
@@ -1021,7 +1021,7 @@ export default function TransaccionesPage() {
                           {transaccion.id}
                         </td>
                         <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {new Date(transaccion.fecha).toLocaleDateString('es-CO')}
+                          {typeof transaccion.fecha === 'string' ? transaccion.fecha.slice(0, 10) : new Date(transaccion.fecha as any).toISOString().slice(0,10)}
                         </td>
                         <td className="px-3 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${

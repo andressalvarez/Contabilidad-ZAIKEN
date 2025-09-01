@@ -35,3 +35,4 @@ UPDATE "campanas" SET "usuarioId" = 1 WHERE "usuarioId" IS NULL;
 UPDATE "transacciones" SET "usuarioId" = 1 WHERE "usuarioId" IS NULL;
 
 
+

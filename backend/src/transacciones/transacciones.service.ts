@@ -66,7 +66,8 @@ export class TransaccionesService {
       const transaccion = await this.prisma.transaccion.create({
         data: {
           ...createTransaccionDto,
-          fecha: new Date(createTransaccionDto.fecha),
+          // Interpretar fecha YYYY-MM-DD como local a medianoche para evitar desfases por zona horaria
+          fecha: new Date(`${createTransaccionDto.fecha}T00:00:00`),
         },
         include: {
           tipo: true,
@@ -203,7 +204,8 @@ export class TransaccionesService {
 
       const updateData: any = { ...updateTransaccionDto };
       if (updateTransaccionDto.fecha) {
-        updateData.fecha = new Date(updateTransaccionDto.fecha);
+        // Interpretar fecha YYYY-MM-DD como local a medianoche
+        updateData.fecha = new Date(`${updateTransaccionDto.fecha}T00:00:00`);
       }
 
       const transaccion = await this.prisma.transaccion.update({
