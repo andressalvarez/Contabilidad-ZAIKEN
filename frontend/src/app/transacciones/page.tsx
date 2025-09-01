@@ -70,8 +70,16 @@ export default function TransaccionesPage() {
 
   // Formulario para nueva transacción
   // Cambia el estado inicial y el formulario para usar categoriaId
+  const getTodayLocal = () => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
   const [formData, setFormData] = useState({
-    fecha: new Date().toISOString().split('T')[0],
+    fecha: getTodayLocal(),
     tipoId: 0,
     concepto: '',
     categoriaId: '',
@@ -125,7 +133,7 @@ export default function TransaccionesPage() {
         notas: formData.notas || ''
       });
       setFormData({
-        fecha: new Date().toISOString().split('T')[0],
+        fecha: getTodayLocal(),
         tipoId: 0, // Resetear a INGRESO por defecto
         concepto: '',
         categoriaId: '',
