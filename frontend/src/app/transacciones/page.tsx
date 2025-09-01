@@ -54,19 +54,51 @@ export default function TransaccionesPage() {
     fechaFin: ''
   });
 
+  // Helpers de fecha sin timezone
+  const toISODate = (value: string | Date) => {
+    if (!value) return '';
+    if (typeof value === 'string') return value.slice(0, 10);
+    const d = new Date(value as any);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const toDisplayDate = (value: string | Date) => {
+    const iso = toISODate(value);
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  };
+
   // Año actual para las tendencias
   const añoActual = new Date().getFullYear();
 
   // Hooks de datos
-  const { data: transacciones = [], isLoading, refetch } = useTransacciones(filters);
-  const { data: stats } = useTransaccionesStats(filters);
+  const { data: transacciones = [], isLoading, refetch } = useTransacciones({
+    fechaInicio: filters.fechaInicio || undefined,
+    fechaFin: filters.fechaFin || undefined,
+    personaId: filters.personaId ? Number(filters.personaId) : undefined,
+    campanaId: filters.campanaId ? Number(filters.campanaId) : undefined,
+  });
+  const { data: stats } = useTransaccionesStats({
+    fechaInicio: filters.fechaInicio || undefined,
+    fechaFin: filters.fechaFin || undefined,
+    personaId: filters.personaId ? Number(filters.personaId) : undefined,
+    campanaId: filters.campanaId ? Number(filters.campanaId) : undefined,
+  });
   const { data: categorias = [], isLoading: categoriasLoading, error: categoriasError } = useCategorias();
   const { data: tiposTransaccion = [], isLoading: tiposTransaccionLoading } = useTiposTransaccion();
   const { data: personas = [] } = usePersonas();
   const { data: roles = [] } = useRoles();
   const { data: campanas = [] } = useCampanas();
-  const { data: tendenciasMensuales = [], isLoading: loadingTendencias, refetch: refetchTendencias } = useTendenciasMensuales(añoActual, chartFilters);
-  const { data: resumenTiposGasto = [], isLoading: loadingResumen, refetch: refetchResumen } = useResumenPorTiposGasto(chartFilters);
+  const { data: tendenciasMensuales = [], isLoading: loadingTendencias, refetch: refetchTendencias } = useTendenciasMensuales(añoActual);
+  const { data: resumenTiposGasto = [], isLoading: loadingResumen, refetch: refetchResumen } = useResumenPorTiposGasto({
+    fechaInicio: chartFilters.fechaInicio || undefined,
+    fechaFin: chartFilters.fechaFin || undefined,
+    personaId: chartFilters.personaId || undefined,
+  });
 
   // Formulario para nueva transacción
   // Cambia el estado inicial y el formulario para usar categoriaId
@@ -78,15 +110,27 @@ export default function TransaccionesPage() {
     return `${y}-${m}-${day}`;
   };
 
-  const [formData, setFormData] = useState({
+  type FormDataState = {
+    fecha: string;
+    tipoId: number;
+    concepto: string;
+    categoriaId?: number;
+    monto: string;
+    moneda: string;
+    personaId?: number;
+    campanaId?: number;
+    notas: string;
+  };
+
+  const [formData, setFormData] = useState<FormDataState>({
     fecha: getTodayLocal(),
     tipoId: 0,
     concepto: '',
-    categoriaId: '',
+    categoriaId: undefined,
     monto: '',
     moneda: 'COP',
-    personaId: '',
-    campanaId: '',
+    personaId: undefined,
+    campanaId: undefined,
     notas: ''
   });
 
@@ -136,11 +180,11 @@ export default function TransaccionesPage() {
         fecha: getTodayLocal(),
         tipoId: 0, // Resetear a INGRESO por defecto
         concepto: '',
-        categoriaId: '',
+        categoriaId: undefined,
         monto: '',
         moneda: 'COP',
-        personaId: '',
-        campanaId: '',
+        personaId: undefined,
+        campanaId: undefined,
         notas: ''
       });
       toast.success('Transacción agregada exitosamente');
@@ -265,7 +309,7 @@ export default function TransaccionesPage() {
       headers.join(','),
       ...filteredTransacciones.map(t => [
         t.id,
-        (typeof t.fecha === 'string' ? t.fecha.slice(0, 10) : new Date(t.fecha as any).toISOString().slice(0,10)),
+        toISODate(t.fecha),
         t.tipo,
         `"${t.concepto || ''}"`,
         t.categoria?.nombre || '',
@@ -281,7 +325,7 @@ export default function TransaccionesPage() {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `transacciones_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `transacciones_${getTodayLocal()}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -365,7 +409,8 @@ export default function TransaccionesPage() {
       const meses = tendenciasMensuales.map(t => t.nombre);
       const dataIng = tendenciasMensuales.map(t => t.ingresos);
       const dataGast = tendenciasMensuales.map(t => t.gastos);
-      const dataAport = tendenciasMensuales.map(t => t.aportes || 0);
+      // Si el backend no provee 'aportes' en la tendencia, no renderizamos esa serie
+      // const dataAport = tendenciasMensuales.map(() => 0);
 
       new window.Chart(ctx, {
         type: 'line',
@@ -384,13 +429,6 @@ export default function TransaccionesPage() {
               data: dataGast,
               borderColor: '#EF4444',
               backgroundColor: 'rgba(239,68,68,0.2)',
-              tension: 0.3
-            },
-            {
-              label: 'Aportes',
-              data: dataAport,
-              borderColor: '#3B82F6',
-              backgroundColor: 'rgba(59,130,246,0.2)',
               tension: 0.3
             }
           ]
@@ -492,7 +530,7 @@ export default function TransaccionesPage() {
   };
 
   // Mejora el manejo de errores de la API
-  const handleApiError = (error) => {
+  const handleApiError = (error: any) => {
     if (!error) return toast.error('Error desconocido de la API');
     if (error.message) return toast.error(error.message);
     if (error.response?.data?.message) return toast.error(error.response.data.message);
@@ -599,7 +637,7 @@ export default function TransaccionesPage() {
                   Categoría
                 </label>
                 <select
-                  value={formData.categoriaId || ""}
+                  value={(formData.categoriaId ?? '').toString()}
                   onChange={e => setFormData({...formData, categoriaId: e.target.value ? Number(e.target.value) : undefined})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
@@ -658,8 +696,8 @@ export default function TransaccionesPage() {
                   Persona
                 </label>
                 <select
-                  value={formData.personaId}
-                  onChange={(e) => setFormData({...formData, personaId: e.target.value})}
+                  value={String(formData.personaId ?? '')}
+                  onChange={(e) => setFormData({...formData, personaId: e.target.value ? Number(e.target.value) : undefined})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">-- Seleccione persona --</option>
@@ -675,8 +713,8 @@ export default function TransaccionesPage() {
                   Tipo de Gasto
                 </label>
                 <select
-                  value={formData.campanaId}
-                  onChange={(e) => setFormData({...formData, campanaId: e.target.value})}
+                  value={String(formData.campanaId ?? '')}
+                  onChange={(e) => setFormData({...formData, campanaId: e.target.value ? Number(e.target.value) : undefined})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">-- Seleccione tipo de gasto --</option>
@@ -776,7 +814,7 @@ export default function TransaccionesPage() {
                 >
                   <option value="">Todos los tipos</option>
                   {tiposTransaccion.map(tipo => (
-                    <option key={tipo.id} value={tipo.nombre}>{tipo.nombre}</option>
+                    <option key={tipo.id} value={tipo.id}>{tipo.nombre}</option>
                   ))}
                 </select>
               </div>
@@ -789,8 +827,8 @@ export default function TransaccionesPage() {
                   Categoría
                 </label>
                 <select
-                  value={filters.categoriaId || ""}
-                  onChange={e => setFilters({...filters, categoriaId: e.target.value ? Number(e.target.value) : undefined})}
+                  value={(filters.categoriaId ?? '').toString()}
+                  onChange={e => setFilters({...filters, categoriaId: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled={categoriasLoading}
                 >
@@ -800,8 +838,8 @@ export default function TransaccionesPage() {
                   ) : categoriasError ? (
                     <option value="" disabled>Error cargando categorías</option>
                   ) : Array.isArray(categorias) && categorias.length > 0 ? (
-                    categorias.map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                  categorias.map(cat => (
+                      <option key={cat.id} value={String(cat.id)}>{cat.nombre}</option>
                     ))
                   ) : (
                     <option value="" disabled>No hay categorías disponibles</option>
@@ -818,7 +856,7 @@ export default function TransaccionesPage() {
                   Persona
                 </label>
                 <select
-                  value={filters.personaId}
+                  value={String(filters.personaId)}
                   onChange={(e) => setFilters({...filters, personaId: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
@@ -835,7 +873,7 @@ export default function TransaccionesPage() {
                   Tipo de Gasto
                 </label>
                 <select
-                  value={filters.campanaId}
+                  value={String(filters.campanaId)}
                   onChange={(e) => setFilters({...filters, campanaId: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
@@ -1029,7 +1067,7 @@ export default function TransaccionesPage() {
                           {transaccion.id}
                         </td>
                         <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {typeof transaccion.fecha === 'string' ? transaccion.fecha.slice(0, 10) : new Date(transaccion.fecha as any).toISOString().slice(0,10)}
+                          {toDisplayDate(transaccion.fecha)}
                         </td>
                         <td className="px-3 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${

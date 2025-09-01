@@ -159,7 +159,7 @@ export interface CreateTransaccionDto {
   monto: number;
   concepto: string;
   fecha: string;
-  categoria?: string;
+  categoriaId?: number;
   personaId?: number;
   campanaId?: number;
   moneda?: string;
