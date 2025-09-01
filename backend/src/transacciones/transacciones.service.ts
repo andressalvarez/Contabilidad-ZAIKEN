@@ -44,6 +44,20 @@ export interface ResumenPorCategoria {
 
 @Injectable()
 export class TransaccionesService {
+  private parseFechaLocal(fechaRaw: string | Date): Date {
+    if (fechaRaw instanceof Date) {
+      return fechaRaw;
+    }
+    if (typeof fechaRaw !== 'string') {
+      return new Date(fechaRaw as any);
+    }
+    // Si viene solo 'YYYY-MM-DD', fijar a medianoche local
+    if (/^\d{4}-\d{2}-\d{2}$/.test(fechaRaw)) {
+      return new Date(`${fechaRaw}T00:00:00`);
+    }
+    // Si ya viene con 'T', confiar en el valor provisto (local/ISO)
+    return new Date(fechaRaw);
+  }
   constructor(
     private prisma: PrismaService,
     private categoriasService: CategoriasService,
@@ -66,8 +80,8 @@ export class TransaccionesService {
       const transaccion = await this.prisma.transaccion.create({
         data: {
           ...createTransaccionDto,
-          // Interpretar fecha YYYY-MM-DD como local a medianoche para evitar desfases por zona horaria
-          fecha: new Date(`${createTransaccionDto.fecha}T00:00:00`),
+          // Aceptar 'YYYY-MM-DD' o 'YYYY-MM-DDTHH:mm:ss'
+          fecha: this.parseFechaLocal(createTransaccionDto.fecha),
         },
         include: {
           tipo: true,
@@ -204,8 +218,8 @@ export class TransaccionesService {
 
       const updateData: any = { ...updateTransaccionDto };
       if (updateTransaccionDto.fecha) {
-        // Interpretar fecha YYYY-MM-DD como local a medianoche
-        updateData.fecha = new Date(`${updateTransaccionDto.fecha}T00:00:00`);
+        // Aceptar 'YYYY-MM-DD' o 'YYYY-MM-DDTHH:mm:ss'
+        updateData.fecha = this.parseFechaLocal(updateTransaccionDto.fecha);
       }
 
       const transaccion = await this.prisma.transaccion.update({
