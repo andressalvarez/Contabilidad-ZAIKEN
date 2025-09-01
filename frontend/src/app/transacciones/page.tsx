@@ -122,7 +122,7 @@ export default function TransaccionesPage() {
     }
     try {
       await createTransaccion.mutateAsync({
-        fecha: formData.fecha,
+        fecha: `${formData.fecha}T00:00:00`,
         tipoId: formData.tipoId,
         concepto: formData.concepto,
         categoriaId: formData.categoriaId ? Number(formData.categoriaId) : undefined,
@@ -215,7 +215,7 @@ export default function TransaccionesPage() {
 
     try {
       const updateData = {
-        fecha: editingData.fecha,
+        fecha: editingData.fecha ? `${editingData.fecha}T00:00:00` : undefined,
         tipoId: editingData.tipoId,
         concepto: editingData.concepto,
         categoriaId: editingData.categoriaId || undefined,
