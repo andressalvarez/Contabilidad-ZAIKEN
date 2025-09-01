@@ -228,7 +228,7 @@ export default function TransaccionesPage() {
 
       await updateTransaccion.mutateAsync({
         id: selectedTransaccion.id,
-        ...updateData
+        data: updateData
       });
 
       toast.success('¡Transacción actualizada exitosamente! 🎉');
