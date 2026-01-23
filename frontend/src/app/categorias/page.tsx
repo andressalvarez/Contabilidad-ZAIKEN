@@ -9,91 +9,60 @@ import {
   getPaginationRowModel,
   flexRender,
 } from '@tanstack/react-table';
-import { Plus, Trash2, Tags, ChevronLeft, ChevronRight } from 'lucide-react';
-
-// Simulación de datos (reemplazar por hooks reales)
-const transaccionesData = [
-  { id: 1, categoria: 'Publicidad (TikTok)' },
-  { id: 2, categoria: 'Publicidad (Facebook)' },
-  { id: 3, categoria: 'Dominio/Hosting' },
-  { id: 4, categoria: 'Publicidad (Facebook)' },
-  { id: 5, categoria: 'Venta / Ingreso campaña' },
-  { id: 6, categoria: 'Publicidad (TikTok)' },
-  { id: 7, categoria: 'Publicidad (Facebook)' },
-  { id: 8, categoria: 'Publicidad (Facebook)' },
-  { id: 9, categoria: 'Publicidad (Facebook)' },
-  { id: 10, categoria: 'Publicidad (Facebook)' },
-  { id: 11, categoria: 'Publicidad (Facebook)' },
-  { id: 12, categoria: 'Publicidad (Facebook)' },
-  { id: 13, categoria: 'Venta / Ingreso campaña' },
-  { id: 14, categoria: 'Venta / Ingreso campaña' },
-  { id: 15, categoria: 'Venta / Ingreso campaña' },
-  { id: 16, categoria: 'Venta / Ingreso campaña' },
-  { id: 17, categoria: 'Venta / Ingreso campaña' },
-  { id: 18, categoria: 'Venta / Ingreso campaña' },
-  { id: 19, categoria: 'Venta / Ingreso campaña' },
-  { id: 20, categoria: 'Venta / Ingreso campaña' },
-  { id: 21, categoria: 'Venta / Ingreso campaña' },
-  { id: 22, categoria: 'Venta / Ingreso campaña' },
-  { id: 23, categoria: 'Venta / Ingreso campaña' },
-  { id: 24, categoria: 'Venta / Ingreso campaña' },
-  { id: 25, categoria: 'Venta / Ingreso campaña' },
-];
-const gruposData = [
-  { nombre: 'Gastos del negocio', color: '#f59e42', categorias: ['Publicidad (TikTok)', 'Publicidad (Facebook)'] },
-  { nombre: 'Ingresos', color: '#3b82f6', categorias: ['Venta / Ingreso campaña'] },
-];
-const carpetasData = [
-  { nombre: 'Ingresos netos / Gastos en campañas', grupos: ['Gastos del negocio', 'Ingresos'] },
-];
-
-const categoriasData = [
-  { id: 1, nombre: 'Publicidad (TikTok)' },
-  { id: 2, nombre: 'Publicidad (Facebook)' },
-  { id: 3, nombre: 'Dominio/Hosting' },
-  { id: 4, nombre: 'Aporte socio' },
-  { id: 5, nombre: 'Venta / Ingreso campaña' },
-];
+import { Plus, Trash2, Tags, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { useCategorias, useCreateCategoria, useDeleteCategoria } from '@/hooks/useCategorias';
+import { useTransacciones } from '@/hooks/useTransacciones';
 
 export default function CategoriasPage() {
-  const [data, setData] = useState(categoriasData);
   const [inputValue, setInputValue] = useState('');
   const [globalFilter, setGlobalFilter] = useState('');
 
-  // Calcular uso en transacciones
-  const getUso = (nombre) =>
-    transaccionesData.filter((t) => t.categoria === nombre).length;
+  // Fetch data from backend
+  const { data: categorias = [], isLoading, error } = useCategorias();
+  const { data: transacciones = [] } = useTransacciones();
+  const createCategoriaMutation = useCreateCategoria();
+  const deleteCategoriaMutation = useDeleteCategoria();
 
-  // Calcular grupos asignados
-  const getGrupos = (nombre) =>
-    gruposData.filter((g) => g.categorias.includes(nombre));
-
-  // Validación de eliminación
-  const canDelete = (nombre) => getUso(nombre) === 0 && getGrupos(nombre).length === 0;
+  // Calcular uso en transacciones por categoriaId
+  const getUso = (categoriaId: number) =>
+    transacciones.filter((t: any) => t.categoriaId === categoriaId).length;
 
   // Agregar categoría
   const handleAdd = () => {
     const nombre = inputValue.trim();
-    if (!nombre) return alert('Por favor ingresa el nombre de la categoría');
-    if (nombre.length < 2) return alert('El nombre debe tener al menos 2 caracteres');
-    if (nombre.length > 50) return alert('El nombre no puede exceder 50 caracteres');
-    if (data.some((cat) => cat.nombre.toLowerCase() === nombre.toLowerCase()))
-      return alert('Ya existe una categoría con ese nombre');
-    setData((prev) => [
-      ...prev,
-      { id: prev.length ? Math.max(...prev.map((c) => c.id)) + 1 : 1, nombre },
-    ]);
-    setInputValue('');
+    if (!nombre) {
+      alert('Por favor ingresa el nombre de la categoría');
+      return;
+    }
+    if (nombre.length < 2) {
+      alert('El nombre debe tener al menos 2 caracteres');
+      return;
+    }
+    if (nombre.length > 50) {
+      alert('El nombre no puede exceder 50 caracteres');
+      return;
+    }
+    if (categorias.some((cat: any) => cat.nombre.toLowerCase() === nombre.toLowerCase())) {
+      alert('Ya existe una categoría con ese nombre');
+      return;
+    }
+
+    createCategoriaMutation.mutate({ nombre }, {
+      onSuccess: () => {
+        setInputValue('');
+      },
+    });
   };
 
   // Eliminar categoría
-  const handleDelete = (row) => {
-    if (!canDelete(row.nombre)) {
-      alert('No se puede eliminar: la categoría está en uso en transacciones o grupos');
+  const handleDelete = (categoria: any) => {
+    const uso = getUso(categoria.id);
+    if (uso > 0) {
+      alert(`No se puede eliminar: la categoría está en uso en ${uso} transacción(es)`);
       return;
     }
-    if (window.confirm(`¿Eliminar la categoría "${row.nombre}"?`)) {
-      setData(data.filter((cat) => cat.id !== row.id));
+    if (window.confirm(`¿Eliminar la categoría "${categoria.nombre}"?`)) {
+      deleteCategoriaMutation.mutate(categoria.id);
     }
   };
 
@@ -104,18 +73,18 @@ export default function CategoriasPage() {
         accessorKey: 'id',
         header: 'ID',
         size: 60,
-        cell: (info) => info.getValue(),
+        cell: (info: any) => info.getValue(),
       },
       {
         accessorKey: 'nombre',
         header: 'Nombre de Categoría',
-        cell: (info) => <span className="font-medium text-gray-900">{info.getValue()}</span>,
+        cell: (info: any) => <span className="font-medium text-gray-900">{info.getValue()}</span>,
       },
       {
         id: 'uso',
         header: 'Uso en Transacciones',
-        cell: ({ row }) => {
-          const uso = getUso(row.original.nombre);
+        cell: ({ row }: any) => {
+          const uso = getUso(row.original.id);
           let badgeClass = 'bg-gray-100 text-gray-800';
           if (uso > 10) badgeClass = 'bg-green-100 text-green-800';
           else if (uso > 5) badgeClass = 'bg-yellow-100 text-yellow-800';
@@ -129,112 +98,72 @@ export default function CategoriasPage() {
         },
       },
       {
-        id: 'grupos',
-        header: 'Grupos Asignados',
-        cell: ({ row }) => {
-          const grupos = getGrupos(row.original.nombre);
-          if (grupos.length === 0)
-            return <span className="text-gray-400 text-sm">Sin grupos</span>;
-          return grupos.slice(0, 2).map((g, i) => (
-            <span key={g.nombre} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mr-1 mb-1" style={{ background: g.color + '22', color: g.color }}>
-              <span className="w-2 h-2 rounded-full mr-1 inline-block" style={{ background: g.color }}></span>
-              {g.nombre}
-            </span>
-          ));
-        },
-      },
-      {
         id: 'acciones',
         header: 'Acciones',
-        cell: ({ row }) => (
-          <button
-            className="inline-flex items-center px-3 py-1 border border-red-300 text-red-700 rounded-md hover:bg-red-50 transition-colors text-sm font-medium"
-            onClick={() => handleDelete(row.original)}
-            disabled={!canDelete(row.original.nombre)}
-          >
-            <Trash2 className="mr-1" size={16} /> Eliminar
-          </button>
-        ),
+        cell: ({ row }: any) => {
+          const uso = getUso(row.original.id);
+          return (
+            <button
+              className="inline-flex items-center px-3 py-1 border border-red-300 text-red-700 rounded-md hover:bg-red-50 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => handleDelete(row.original)}
+              disabled={uso > 0 || deleteCategoriaMutation.isPending}
+            >
+              {deleteCategoriaMutation.isPending ? (
+                <Loader2 className="mr-1 animate-spin" size={16} />
+              ) : (
+                <Trash2 className="mr-1" size={16} />
+              )}
+              Eliminar
+            </button>
+          );
+        },
         size: 120,
       },
     ],
-    [data]
+    [categorias, transacciones, deleteCategoriaMutation.isPending]
   );
 
   // Configuración de la tabla
   const table = useReactTable({
-    data,
+    data: categorias,
     columns,
     state: { globalFilter },
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     onGlobalFilterChange: setGlobalFilter,
-    globalFilterFn: (row, columnId, filterValue) => {
+    globalFilterFn: (row: any, columnId: any, filterValue: any) => {
       return String(row.getValue(columnId)).toLowerCase().includes(filterValue.toLowerCase());
     },
   });
 
-  // Organización visual por grupos y carpetas
-  const renderOrganizacion = () => (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm mt-8">
-      <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">Organización por Grupos</h3>
-          <p className="text-sm text-gray-600">Grupos activos organizados por carpetas</p>
+  // Show loading state
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="p-6 flex items-center justify-center min-h-[400px]">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <p className="text-gray-600">Cargando categorías...</p>
+          </div>
         </div>
-        <div className="flex items-center space-x-3">
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-            <Tags className="mr-1 h-4 w-4" /> {carpetasData.length} carpetas
-          </span>
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-            <Tags className="mr-1 h-4 w-4" /> {gruposData.length} grupos activos
-          </span>
+      </MainLayout>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <MainLayout>
+        <div className="p-6">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
+            <p className="font-semibold">Error al cargar categorías</p>
+            <p className="text-sm mt-1">{(error as Error).message}</p>
+          </div>
         </div>
-      </div>
-      <div className="p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {carpetasData.map((carpeta) => (
-            <div key={carpeta.nombre} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-4 h-4 rounded bg-blue-400"></div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900">{carpeta.nombre}</h4>
-                  <p className="text-sm text-gray-600">{carpeta.grupos.length} grupos activos</p>
-                </div>
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-white border border-gray-300">
-                  Carpeta
-                </span>
-              </div>
-              <div className="space-y-2">
-                {carpeta.grupos.map((grupoNombre) => {
-                  const grupo = gruposData.find((g) => g.nombre === grupoNombre);
-                  if (!grupo) return null;
-                  return (
-                    <div key={grupo.nombre} className="bg-white rounded-lg p-3 border border-gray-200 hover:shadow-sm transition-shadow">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-3 h-3 rounded-full" style={{ background: grupo.color }}></div>
-                        <div className="flex-1">
-                          <div className="font-medium text-gray-900">{grupo.nombre}</div>
-                          <div className="text-xs text-gray-500">
-                            {grupo.categorias.length} categorías: {grupo.categorias.slice(0, 3).join(', ')}
-                            {grupo.categorias.length > 3 ? '...' : ''}
-                          </div>
-                        </div>
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Activo
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -247,14 +176,27 @@ export default function CategoriasPage() {
           <input
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleAdd()}
             placeholder="Nombre de la categoría"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={createCategoriaMutation.isPending}
           />
           <button
             onClick={handleAdd}
-            className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 font-semibold"
+            disabled={createCategoriaMutation.isPending}
+            className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            Agregar Categoría
+            {createCategoriaMutation.isPending ? (
+              <>
+                <Loader2 className="animate-spin" size={18} />
+                Guardando...
+              </>
+            ) : (
+              <>
+                <Plus size={18} />
+                Agregar Categoría
+              </>
+            )}
           </button>
         </div>
         <div className="bg-white rounded-lg shadow overflow-x-auto">
@@ -275,42 +217,50 @@ export default function CategoriasPage() {
               ))}
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="hover:bg-gray-50 transition-colors">
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-4 py-3 whitespace-nowrap">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
+              {table.getRowModel().rows.length === 0 ? (
+                <tr>
+                  <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500">
+                    No hay categorías registradas. Agrega una nueva categoría arriba.
+                  </td>
                 </tr>
-              ))}
+              ) : (
+                table.getRowModel().rows.map((row) => (
+                  <tr key={row.id} className="hover:bg-gray-50 transition-colors">
+                    {row.getVisibleCells().map((cell) => (
+                      <td key={cell.id} className="px-4 py-3 whitespace-nowrap">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
         {/* Paginación */}
-        <div className="flex items-center justify-between mt-4">
-          <div className="text-sm text-gray-600">
-            Página {table.getState().pagination.pageIndex + 1} de {table.getPageCount()}
+        {table.getPageCount() > 1 && (
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-gray-600">
+              Página {table.getState().pagination.pageIndex + 1} de {table.getPageCount()}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+                className="px-3 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+                className="px-3 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-              className="px-3 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-              className="px-3 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
-        {/* Organización visual por grupos y carpetas */}
-        {renderOrganizacion()}
+        )}
       </div>
     </MainLayout>
   );

@@ -29,7 +29,8 @@ export function useTransacciones(filtros: FiltrosTransacciones = {}) {
   return useQuery({
     queryKey: transaccionesKeys.list(filtros),
     queryFn: () => TransaccionesService.getAll(filtros),
-    staleTime: 1000 * 60 * 2, // 2 minutos
+    staleTime: 1000 * 30, // 30 segundos
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -93,6 +94,8 @@ export function useCreateTransaccion() {
 
   return useMutation({
     mutationFn: (data: CreateTransaccionDto) => TransaccionesService.create(data),
+    retry: 2,
+    retryDelay: 1000,
     onSuccess: (newTransaccion) => {
       // Invalidar todas las consultas relacionadas
       queryClient.invalidateQueries({ queryKey: transaccionesKeys.lists() });
@@ -113,6 +116,8 @@ export function useUpdateTransaccion() {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateTransaccionDto }) =>
       TransaccionesService.update(id, data),
+    retry: 2,
+    retryDelay: 1000,
     onSuccess: (updatedTransaccion) => {
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: transaccionesKeys.lists() });
@@ -169,6 +174,8 @@ export function useDeleteTransaccion() {
 
   return useMutation({
     mutationFn: (id: number) => TransaccionesService.delete(id),
+    retry: 2,
+    retryDelay: 1000,
     onSuccess: (_, deletedId) => {
       // Invalidar todas las consultas
       queryClient.invalidateQueries({ queryKey: transaccionesKeys.all });

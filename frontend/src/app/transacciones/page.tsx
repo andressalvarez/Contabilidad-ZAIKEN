@@ -9,6 +9,8 @@ import { useRoles } from '@/hooks/useRoles';
 import { useCampanas } from '@/hooks/useCampanas';
 import { Transaccion } from '@/types';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/utils/errors';
+import { useDebounce } from '@/hooks/useDebounce';
 import {
   Plus,
   Search,
@@ -33,9 +35,11 @@ export default function TransaccionesPage() {
   // Estados principales
   const [showCharts, setShowCharts] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [editingData, setEditingData] = useState<Partial<Transaccion>>({});
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedTransaccion, setSelectedTransaccion] = useState<Transaccion | null>(null);
+  const [modalError, setModalError] = useState<string | null>(null);
 
   // Cambia el estado inicial y el formulario para usar categoriaId
   const [filters, setFilters] = useState({
@@ -75,12 +79,14 @@ export default function TransaccionesPage() {
   // Año actual para las tendencias
   const añoActual = new Date().getFullYear();
 
-  // Hooks de datos
+  // Hooks de datos - pass ALL filters to backend
   const { data: transacciones = [], isLoading, refetch } = useTransacciones({
     fechaInicio: filters.fechaInicio || undefined,
     fechaFin: filters.fechaFin || undefined,
+    tipo: filters.tipo || undefined,
     personaId: filters.personaId ? Number(filters.personaId) : undefined,
     campanaId: filters.campanaId ? Number(filters.campanaId) : undefined,
+    categoria: filters.categoriaId ? categorias.find(c => c.id === Number(filters.categoriaId))?.nombre : undefined,
   });
   const { data: stats } = useTransaccionesStats({
     fechaInicio: filters.fechaInicio || undefined,
@@ -156,8 +162,18 @@ export default function TransaccionesPage() {
       toast.error('Por favor complete todos los campos obligatorios');
       return;
     }
-    if (!formData.tipoId || !tiposTransaccion.find(t => t.id === formData.tipoId)) {
+    // Bug #1 Fix: Validate tipoId
+    if (!formData.tipoId || formData.tipoId === 0) {
+      toast.error('Por favor seleccione un tipo de transacción');
+      return;
+    }
+    if (!tiposTransaccion.find(t => t.id === formData.tipoId)) {
       toast.error('Tipo de transacción inválido');
+      return;
+    }
+    // Bug #1 Fix: Validate categoriaId
+    if (!formData.categoriaId || formData.categoriaId === 0) {
+      toast.error('Por favor seleccione una categoría');
       return;
     }
     if (formData.tipoId === 3 && !formData.personaId) {
@@ -176,9 +192,11 @@ export default function TransaccionesPage() {
         campanaId: formData.campanaId ? Number(formData.campanaId) : undefined,
         notas: formData.notas || ''
       });
+      // Bug #2 Fix: Reset to valid INGRESO tipo instead of 0
+      const tipoIngreso = tiposTransaccion.find(t => t.nombre === 'INGRESO');
       setFormData({
         fecha: getTodayLocal(),
-        tipoId: 0, // Resetear a INGRESO por defecto
+        tipoId: tipoIngreso?.id || 1, // Default to INGRESO tipo
         concepto: '',
         categoriaId: undefined,
         monto: '',
@@ -227,6 +245,7 @@ export default function TransaccionesPage() {
       campanaId: transaccion.campanaId,
       notas: transaccion.notas || ''
     });
+    setModalError(null); // Clear any previous errors
     setShowEditModal(true);
   };
 
@@ -287,7 +306,9 @@ export default function TransaccionesPage() {
 
     } catch (error) {
       console.error('🎨 DEBUG: Error al actualizar:', error);
-      toast.error('Error al actualizar la transacción');
+      const errorMessage = getErrorMessage(error);
+      setModalError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -340,23 +361,18 @@ export default function TransaccionesPage() {
   const chartMensualInstance = useRef<any>(null);
   const chartGastosCatInstance = useRef<any>(null);
 
-  // Datos filtrados
+  // Datos filtrados - ONLY filter by search term (all other filters are backend-side)
+  // Using debounced search to avoid excessive filtering while typing
   const filteredTransacciones = useMemo(() => {
+    if (debouncedSearchTerm === '') return transacciones;
+
     return transacciones.filter(transaccion => {
-      const matchesSearch = searchTerm === '' ||
-        transaccion.concepto?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaccion.categoria?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaccion.persona?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaccion.campana?.nombre?.toLowerCase().includes(searchTerm.toLowerCase());
-
-      const matchesTipo = !filters.tipo || transaccion.tipo?.nombre === filters.tipo;
-      const matchesCategoria = !filters.categoriaId || transaccion.categoriaId === parseInt(filters.categoriaId);
-      const matchesPersona = !filters.personaId || transaccion.personaId === parseInt(filters.personaId);
-      const matchesCampana = !filters.campanaId || transaccion.campanaId === parseInt(filters.campanaId);
-
-      return matchesSearch && matchesTipo && matchesCategoria && matchesPersona && matchesCampana;
+      return transaccion.concepto?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        transaccion.categoria?.nombre?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        transaccion.persona?.nombre?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        transaccion.campana?.nombre?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
     });
-  }, [transacciones, searchTerm, filters]);
+  }, [transacciones, debouncedSearchTerm]);
 
   // Calcular estadísticas
   const estadisticas = useMemo(() => {
@@ -1166,7 +1182,9 @@ export default function TransaccionesPage() {
               </div>
               <button
                 onClick={handleCloseEditModal}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                disabled={updateTransaccion.isPending}
+                className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title={updateTransaccion.isPending ? "Guardando..." : "Cerrar"}
               >
                 <X size={24} />
               </button>
@@ -1174,6 +1192,27 @@ export default function TransaccionesPage() {
 
             {/* Contenido del Modal */}
             <div className="p-6 space-y-6">
+              {/* Error Message */}
+              {modalError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+                  <div className="flex-shrink-0 text-red-600">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-medium text-red-800">Error al guardar</h3>
+                    <p className="text-sm text-red-700 mt-1">{modalError}</p>
+                  </div>
+                  <button
+                    onClick={() => setModalError(null)}
+                    className="flex-shrink-0 text-red-400 hover:text-red-600"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
+
               {/* Row 1: Fecha y Tipo */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -1325,7 +1364,8 @@ export default function TransaccionesPage() {
             <div className="flex items-center justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-xl">
               <button
                 onClick={handleCloseEditModal}
-                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                disabled={updateTransaccion.isPending}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ❌ Cancelar
               </button>

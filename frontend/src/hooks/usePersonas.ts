@@ -20,7 +20,8 @@ export function usePersonas(includeInactive = false) {
   return useQuery({
     queryKey: personasKeys.list(includeInactive ? 'all' : 'active'),
     queryFn: () => PersonasService.getAll(includeInactive),
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: 1000 * 30, // 30 segundos
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -66,6 +67,8 @@ export function useCreatePersona() {
 
   return useMutation({
     mutationFn: (data: CreatePersonaDto) => PersonasService.create(data),
+    retry: 2,
+    retryDelay: 1000,
     onSuccess: (newPersona) => {
       // Invalidar y refetch las listas
       queryClient.invalidateQueries({ queryKey: personasKeys.lists() });
@@ -73,6 +76,10 @@ export function useCreatePersona() {
 
       // Optimistamente actualizar el cache
       queryClient.setQueryData(personasKeys.detail(newPersona.id), newPersona);
+
+      // Invalidate transacciones and estadisticas since they depend on personas
+      queryClient.invalidateQueries({ queryKey: ['transacciones'] });
+      queryClient.invalidateQueries({ queryKey: ['estadisticas'] });
 
       toast.success('Persona creada exitosamente');
     },
@@ -89,6 +96,8 @@ export function useUpdatePersona() {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdatePersonaDto }) =>
       PersonasService.update(id, data),
+    retry: 2,
+    retryDelay: 1000,
     onSuccess: (updatedPersona) => {
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: personasKeys.lists() });
@@ -97,6 +106,10 @@ export function useUpdatePersona() {
 
       // También invalidar estadísticas si existen
       queryClient.invalidateQueries({ queryKey: personasKeys.stats(updatedPersona.id) });
+
+      // Invalidate transacciones and estadisticas since they depend on personas
+      queryClient.invalidateQueries({ queryKey: ['transacciones'] });
+      queryClient.invalidateQueries({ queryKey: ['estadisticas'] });
 
       toast.success('Persona actualizada exitosamente');
     },
@@ -112,6 +125,8 @@ export function useDeletePersona() {
 
   return useMutation({
     mutationFn: (id: number) => PersonasService.delete(id),
+    retry: 2,
+    retryDelay: 1000,
     onSuccess: (_, deletedId) => {
       // Invalidar listas y resumen
       queryClient.invalidateQueries({ queryKey: personasKeys.lists() });
@@ -120,6 +135,10 @@ export function useDeletePersona() {
       // Remover la persona específica del cache
       queryClient.removeQueries({ queryKey: personasKeys.detail(deletedId) });
       queryClient.removeQueries({ queryKey: personasKeys.stats(deletedId) });
+
+      // Invalidate transacciones and estadisticas since they depend on personas
+      queryClient.invalidateQueries({ queryKey: ['transacciones'] });
+      queryClient.invalidateQueries({ queryKey: ['estadisticas'] });
 
       toast.success('Persona procesada exitosamente');
     },

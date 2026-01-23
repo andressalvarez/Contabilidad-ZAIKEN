@@ -25,7 +25,7 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Backfill: asegurar que exista el usuario 1 (Super Admin)
 INSERT INTO "usuarios" ("id", "email", "password", "nombre", "rol", "activo", "createdAt", "updatedAt")
-VALUES (1, 'admin@zaiken.local', '$2a$10$4rJxqW0JwJE8S7Q4f3iYve7r5q1fUd0v1m0d3xYqzXbQy7Vb8rP1y', 'Super Admin', 'ADMIN', true, NOW(), NOW())
+VALUES (1, 'contacto@zaiken.com.co', '$2b$10$1RJuTF7b089gTG.1owFCMOgEcviUhQ8Li2yA56CT3MmYy.Uh.vNLq', 'Super Admin', 'ADMIN', true, NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 -- Establecer usuarioId=1 en registros existentes que aún no tengan dueño
