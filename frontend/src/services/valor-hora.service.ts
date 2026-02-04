@@ -29,13 +29,25 @@ export class ValorHoraService {
     }
   }
 
-  // Obtener valores por hora de una persona
+  // ⚠️ Deprecado - usar getByUsuarioId
+  /** @deprecated Usar getByUsuarioId en su lugar */
   static async getByPersonaId(personaId: number): Promise<ValorHora[]> {
     try {
       const response = await api.get(`${ENDPOINT}/persona/${personaId}`);
       return response.data?.data || [];
     } catch (error) {
       console.error('Error fetching valor hora by persona:', error);
+      throw error;
+    }
+  }
+
+  // ✅ Obtener valores por hora de un usuario
+  static async getByUsuarioId(usuarioId: number): Promise<ValorHora[]> {
+    try {
+      const response = await api.get(`${ENDPOINT}/usuario/${usuarioId}`);
+      return response.data?.data || [];
+    } catch (error) {
+      console.error('Error fetching valor hora by usuario:', error);
       throw error;
     }
   }
