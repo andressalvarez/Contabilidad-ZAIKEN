@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useTransacciones, useCreateTransaccion, useUpdateTransaccion, useDeleteTransaccion, useTendenciasMensuales, useResumenPorCategorias, useResumenPorTiposGasto, useTransaccionesStats } from '@/hooks/useTransacciones';
 import { useCategorias } from '@/hooks/useCategorias';
 import { useTiposTransaccion } from '@/hooks/useTiposTransaccion';
-import { usePersonas } from '@/hooks/usePersonas';
+import { useUsuarios } from '@/hooks/useUsuarios'; // ✅ Cambio: usePersonas → useUsuarios
 import { useRoles } from '@/hooks/useRoles';
 import { useCampanas } from '@/hooks/useCampanas';
 import { Transaccion } from '@/types';
@@ -45,7 +45,7 @@ export default function TransaccionesPage() {
   const [filters, setFilters] = useState({
     tipo: '',
     categoriaId: '',
-    personaId: '',
+    usuarioId: '', // ✅ Cambio: usuarioId → usuarioId
     campanaId: '',
     fechaInicio: '',
     fechaFin: ''
@@ -53,7 +53,7 @@ export default function TransaccionesPage() {
 
   // Filtros para gráficas
   const [chartFilters, setChartFilters] = useState({
-    personaId: '',
+    usuarioId: '', // ✅ Cambio: usuarioId → usuarioId
     fechaInicio: '',
     fechaFin: ''
   });
@@ -84,26 +84,26 @@ export default function TransaccionesPage() {
     fechaInicio: filters.fechaInicio || undefined,
     fechaFin: filters.fechaFin || undefined,
     tipo: filters.tipo || undefined,
-    personaId: filters.personaId ? Number(filters.personaId) : undefined,
+    usuarioId: filters.usuarioId ? Number(filters.usuarioId) : undefined, // ✅ Cambio: usuarioId → usuarioId
     campanaId: filters.campanaId ? Number(filters.campanaId) : undefined,
     categoria: filters.categoriaId ? categorias.find(c => c.id === Number(filters.categoriaId))?.nombre : undefined,
   });
   const { data: stats } = useTransaccionesStats({
     fechaInicio: filters.fechaInicio || undefined,
     fechaFin: filters.fechaFin || undefined,
-    personaId: filters.personaId ? Number(filters.personaId) : undefined,
+    usuarioId: filters.usuarioId ? Number(filters.usuarioId) : undefined, // ✅ Cambio: usuarioId → usuarioId
     campanaId: filters.campanaId ? Number(filters.campanaId) : undefined,
   });
   const { data: categorias = [], isLoading: categoriasLoading, error: categoriasError } = useCategorias();
   const { data: tiposTransaccion = [], isLoading: tiposTransaccionLoading } = useTiposTransaccion();
-  const { data: personas = [] } = usePersonas();
+  const { data: usuarios = [] } = useUsuarios(); // ✅ Cambio: usePersonas → useUsuarios
   const { data: roles = [] } = useRoles();
   const { data: campanas = [] } = useCampanas();
   const { data: tendenciasMensuales = [], isLoading: loadingTendencias, refetch: refetchTendencias } = useTendenciasMensuales(añoActual);
   const { data: resumenTiposGasto = [], isLoading: loadingResumen, refetch: refetchResumen } = useResumenPorTiposGasto({
     fechaInicio: chartFilters.fechaInicio || undefined,
     fechaFin: chartFilters.fechaFin || undefined,
-    personaId: chartFilters.personaId || undefined,
+    usuarioId: chartFilters.usuarioId || undefined, // ✅ Cambio: usuarioId → usuarioId
   });
 
   // Formulario para nueva transacción
@@ -123,7 +123,7 @@ export default function TransaccionesPage() {
     categoriaId?: number;
     monto: string;
     moneda: string;
-    personaId?: number;
+    usuarioId?: number; // ✅ Cambio: usuarioId → usuarioId
     campanaId?: number;
     notas: string;
   };
@@ -135,7 +135,7 @@ export default function TransaccionesPage() {
     categoriaId: undefined,
     monto: '',
     moneda: 'COP',
-    personaId: undefined,
+    usuarioId: undefined, // ✅ Cambio: usuarioId → usuarioId
     campanaId: undefined,
     notas: ''
   });
@@ -176,7 +176,7 @@ export default function TransaccionesPage() {
       toast.error('Por favor seleccione una categoría');
       return;
     }
-    if (formData.tipoId === 3 && !formData.personaId) {
+    if (formData.tipoId === 3 && !formData.usuarioId) {
       toast.error('Para aportes debe seleccionar una persona');
       return;
     }
@@ -188,7 +188,7 @@ export default function TransaccionesPage() {
         categoriaId: formData.categoriaId ? Number(formData.categoriaId) : undefined,
         monto: parseFloat(formData.monto),
         moneda: formData.moneda || 'COP',
-        personaId: formData.personaId ? Number(formData.personaId) : undefined,
+        usuarioId: formData.usuarioId ? Number(formData.usuarioId) : undefined,
         campanaId: formData.campanaId ? Number(formData.campanaId) : undefined,
         notas: formData.notas || ''
       });
@@ -201,7 +201,7 @@ export default function TransaccionesPage() {
         categoriaId: undefined,
         monto: '',
         moneda: 'COP',
-        personaId: undefined,
+        usuarioId: undefined,
         campanaId: undefined,
         notas: ''
       });
@@ -241,7 +241,7 @@ export default function TransaccionesPage() {
       categoriaId: transaccion.categoriaId,
       monto: transaccion.monto,
       moneda: transaccion.moneda || 'COP',
-      personaId: transaccion.personaId,
+      usuarioId: transaccion.usuarioId,
       campanaId: transaccion.campanaId,
       notas: transaccion.notas || ''
     });
@@ -284,7 +284,7 @@ export default function TransaccionesPage() {
         categoriaId: editingData.categoriaId || undefined,
         monto: typeof editingData.monto === 'string' ? parseFloat(editingData.monto) : editingData.monto,
         moneda: editingData.moneda || 'COP',
-        personaId: editingData.personaId || undefined,
+        usuarioId: editingData.usuarioId || undefined,
         campanaId: editingData.campanaId || undefined,
         notas: editingData.notas || ''
       };
@@ -323,7 +323,7 @@ export default function TransaccionesPage() {
   const handleExport = () => {
     const headers = [
       'ID', 'Fecha', 'Tipo', 'Concepto', 'Categoría', 'Monto', 'Moneda',
-      'Persona', 'Campaña', 'Notas'
+      'Usuario', 'Campaña', 'Notas'
     ];
 
     const csvContent = [
@@ -706,18 +706,18 @@ export default function TransaccionesPage() {
                 </select>
               </div>
 
-              {/* Persona */}
+              {/* Usuario */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Persona
+                  Usuario
                 </label>
                 <select
-                  value={String(formData.personaId ?? '')}
-                  onChange={(e) => setFormData({...formData, personaId: e.target.value ? Number(e.target.value) : undefined})}
+                  value={String(formData.usuarioId ?? '')}
+                  onChange={(e) => setFormData({...formData, usuarioId: e.target.value ? Number(e.target.value) : undefined})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">-- Seleccione persona --</option>
-                  {personas.map(persona => (
+                  {usuarios.map(persona => (
                     <option key={persona.id} value={persona.id}>{persona.nombre}</option>
                   ))}
                 </select>
@@ -866,18 +866,18 @@ export default function TransaccionesPage() {
                 )}
               </div>
 
-              {/* Persona */}
+              {/* Usuario */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Persona
+                  Usuario
                 </label>
                 <select
-                  value={String(filters.personaId)}
-                  onChange={(e) => setFilters({...filters, personaId: e.target.value})}
+                  value={String(filters.usuarioId)}
+                  onChange={(e) => setFilters({...filters, usuarioId: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Todas las personas</option>
-                  {personas.map(persona => (
+                  {usuarios.map(persona => (
                     <option key={persona.id} value={persona.id}>{persona.nombre}</option>
                   ))}
                 </select>
@@ -913,7 +913,7 @@ export default function TransaccionesPage() {
                 onClick={() => setFilters({
                   tipo: '',
                   categoriaId: '',
-                  personaId: '',
+                  usuarioId: '',
                   campanaId: '',
                   fechaInicio: '',
                   fechaFin: ''
@@ -949,12 +949,12 @@ export default function TransaccionesPage() {
                 <h3 className="text-lg font-medium">Ingresos y Gastos Mensuales</h3>
                 <div className="flex gap-2">
                   <select
-                    value={chartFilters.personaId}
-                    onChange={(e) => setChartFilters({...chartFilters, personaId: e.target.value})}
+                    value={chartFilters.usuarioId}
+                    onChange={(e) => setChartFilters({...chartFilters, usuarioId: e.target.value})}
                     className="px-3 py-1 border border-gray-300 rounded-md text-sm"
                   >
                     <option value="">Filtrar persona: Todas</option>
-                    {personas.map(persona => (
+                    {usuarios.map(persona => (
                       <option key={persona.id} value={persona.id}>{persona.nombre}</option>
                     ))}
                   </select>
@@ -1063,7 +1063,7 @@ export default function TransaccionesPage() {
                         Mon.
                       </th>
                       <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Persona
+                        Usuario
                       </th>
                       <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Campaña
@@ -1294,7 +1294,7 @@ export default function TransaccionesPage() {
                 </div>
               </div>
 
-              {/* Row 4: Categoría y Persona */}
+              {/* Row 4: Categoría y Usuario */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1313,15 +1313,15 @@ export default function TransaccionesPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    👤 Persona
+                    👤 Usuario
                   </label>
                   <select
-                    value={editingData.personaId || ''}
-                    onChange={(e) => handleFieldChange('personaId', e.target.value ? Number(e.target.value) : undefined)}
+                    value={editingData.usuarioId || ''}
+                    onChange={(e) => handleFieldChange('usuarioId', e.target.value ? Number(e.target.value) : undefined)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   >
                     <option value="">Sin persona</option>
-                    {personas.map(persona => (
+                    {usuarios.map(persona => (
                       <option key={persona.id} value={persona.id}>{persona.nombre}</option>
                     ))}
                   </select>
