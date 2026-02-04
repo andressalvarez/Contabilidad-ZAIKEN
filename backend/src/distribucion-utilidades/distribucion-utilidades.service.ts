@@ -19,7 +19,21 @@ export class DistribucionUtilidadesService {
       include: {
         detalles: {
           include: {
-            persona: true,
+            usuario: {
+              select: {
+                id: true,
+                nombre: true,
+                email: true,
+                participacionPorc: true,
+                rolNegocio: {
+                  select: {
+                    id: true,
+                    nombreRol: true,
+                  },
+                },
+              },
+            },
+            persona: true, // Mantener para compatibilidad
           },
         },
       },
@@ -36,7 +50,21 @@ export class DistribucionUtilidadesService {
       include: {
         detalles: {
           include: {
-            persona: true,
+            usuario: {
+              select: {
+                id: true,
+                nombre: true,
+                email: true,
+                participacionPorc: true,
+                rolNegocio: {
+                  select: {
+                    id: true,
+                    nombreRol: true,
+                  },
+                },
+              },
+            },
+            persona: true, // Mantener para compatibilidad
           },
         },
       },
@@ -57,7 +85,21 @@ export class DistribucionUtilidadesService {
       include: {
         detalles: {
           include: {
-            persona: true,
+            usuario: {
+              select: {
+                id: true,
+                nombre: true,
+                email: true,
+                participacionPorc: true,
+                rolNegocio: {
+                  select: {
+                    id: true,
+                    nombreRol: true,
+                  },
+                },
+              },
+            },
+            persona: true, // Mantener para compatibilidad
           },
         },
       },
@@ -84,7 +126,21 @@ export class DistribucionUtilidadesService {
       include: {
         detalles: {
           include: {
-            persona: true,
+            usuario: {
+              select: {
+                id: true,
+                nombre: true,
+                email: true,
+                participacionPorc: true,
+                rolNegocio: {
+                  select: {
+                    id: true,
+                    nombreRol: true,
+                  },
+                },
+              },
+            },
+            persona: true, // Mantener para compatibilidad
           },
         },
       },
@@ -116,7 +172,7 @@ export class DistribucionUtilidadesService {
       totalDistribuido,
       distribucionesPendientes,
       distribucionesCompletadas,
-      personasActivas,
+      usuariosActivos, // ✅ Cambiado de personasActivas a usuariosActivos
     ] = await Promise.all([
       this.prisma.distribucionUtilidades.count({
         where: { negocioId },
@@ -145,16 +201,18 @@ export class DistribucionUtilidadesService {
           estado: 'Distribuida',
         },
       }),
-      this.prisma.persona.count({
+      // ✅ Cambiar de persona a usuario
+      this.prisma.usuario.count({
         where: {
           negocioId,
           activo: true,
+          participacionPorc: { gt: 0 }, // Solo usuarios con participación
         },
       }),
     ]);
 
-    const promedioPorPersona = personasActivas > 0
-      ? (totalDistribuido._sum.montoDistribuido || 0) / personasActivas
+    const promedioPorUsuario = usuariosActivos > 0
+      ? (totalDistribuido._sum.montoDistribuido || 0) / usuariosActivos
       : 0;
 
     return {
@@ -164,7 +222,7 @@ export class DistribucionUtilidadesService {
         totalDistribuido: totalDistribuido._sum.montoDistribuido || 0,
         distribucionesPendientes,
         distribucionesCompletadas,
-        promedioPorPersona,
+        promedioPorPersona: promedioPorUsuario, // Mantener nombre del campo para compatibilidad con frontend
       },
     };
   }
@@ -182,34 +240,39 @@ export class DistribucionUtilidadesService {
       throw new NotFoundException(`Distribución con ID ${id} no encontrada`);
     }
 
-    // Obtener personas activas del negocio
-    const personas = await this.prisma.persona.findMany({
+    // ✅ Obtener usuarios activos del negocio con participación > 0
+    const usuarios = await this.prisma.usuario.findMany({
       where: {
         negocioId,
         activo: true,
+        participacionPorc: { gt: 0 }, // Solo usuarios con participación
       },
-      include: { rol: true },
+      include: {
+        rolNegocio: true,
+        personas: { take: 1 }, // Obtener primera persona para compatibilidad backward
+      },
     });
 
-    if (personas.length === 0) {
-      throw new Error('No hay personas activas para distribuir utilidades');
+    if (usuarios.length === 0) {
+      throw new Error('No hay usuarios activos con participación para distribuir utilidades');
     }
 
-    // Calcular distribución basada en participación
-    const totalParticipacion = personas.reduce((acc, persona) => acc + persona.participacionPorc, 0);
+    // ✅ Calcular distribución basada en participación (ahora desde Usuario)
+    const totalParticipacion = usuarios.reduce((acc, usuario) => acc + usuario.participacionPorc, 0);
 
     if (totalParticipacion === 0) {
-      throw new Error('No hay participación definida para las personas');
+      throw new Error('No hay participación definida para los usuarios');
     }
 
-    // Crear detalles de distribución
-    const detalles = personas.map(persona => {
-      const porcentaje = persona.participacionPorc / totalParticipacion;
+    // ✅ Crear detalles de distribución usando usuarioId
+    const detalles = usuarios.map(usuario => {
+      const porcentaje = usuario.participacionPorc / totalParticipacion;
       const montoDistribuido = distribucion.utilidadTotal * porcentaje;
 
       return {
         distribucionId: id,
-        personaId: persona.id,
+        usuarioId: usuario.id, // ✅ Usar usuarioId
+        personaId: usuario.personas[0]?.id, // Mantener personaId para compatibilidad
         porcentajeParticipacion: porcentaje * 100,
         montoDistribuido,
       };
