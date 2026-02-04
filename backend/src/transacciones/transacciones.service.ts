@@ -13,7 +13,8 @@ export interface FiltrosTransacciones {
   categoria?: string;
   categoriaId?: number;
   categoriasIds?: number[];
-  personaId?: number;
+  usuarioId?: number; // ✅ Nuevo campo principal
+  personaId?: number; // ⚠️ Deprecado - mantener para compatibilidad
   campanaId?: number;
   aprobado?: boolean;
 }
@@ -66,10 +67,14 @@ export class TransaccionesService {
   // Crear transacción
   async create(negocioId: number, createTransaccionDto: CreateTransaccionDto): Promise<any> {
     try {
-      // Validar relaciones si se proporcionan
-      if (createTransaccionDto.personaId) {
+      // ✅ Validar usuarioId si se proporciona (prioridad)
+      if (createTransaccionDto.usuarioId) {
+        await this.validateUsuario(createTransaccionDto.usuarioId, negocioId);
+      } else if (createTransaccionDto.personaId) {
+        // Backward compatibility: validar persona y obtener usuarioId
         await this.validatePersona(createTransaccionDto.personaId, negocioId);
       }
+
       if (createTransaccionDto.campanaId) {
         await this.validateCampana(createTransaccionDto.campanaId, negocioId);
       }
@@ -86,7 +91,20 @@ export class TransaccionesService {
         },
         include: {
           tipo: true,
-          persona: true,
+          usuario: {
+            select: {
+              id: true,
+              nombre: true,
+              email: true,
+              rolNegocio: {
+                select: {
+                  id: true,
+                  nombreRol: true,
+                },
+              },
+            },
+          },
+          persona: true, // Mantener para compatibilidad
           campana: true,
           categoria: true,
         },
@@ -133,7 +151,10 @@ export class TransaccionesService {
       where.categoriaId = { in: filtros.categoriasIds };
     }
 
-    if (filtros.personaId) {
+    // ✅ Priorizar usuarioId, fallback a personaId
+    if (filtros.usuarioId) {
+      where.usuarioId = filtros.usuarioId;
+    } else if (filtros.personaId) {
       where.personaId = filtros.personaId;
     }
 
@@ -149,7 +170,20 @@ export class TransaccionesService {
       where,
       include: {
         tipo: true,
-        persona: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
         campana: true,
         categoria: true,
       },
@@ -164,7 +198,20 @@ export class TransaccionesService {
       take: limit,
       include: {
         tipo: true,
-        persona: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
         campana: true,
       },
       orderBy: { createdAt: 'desc' },
@@ -180,7 +227,20 @@ export class TransaccionesService {
       },
       include: {
         tipo: true,
-        persona: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
         campana: true,
       },
       orderBy: { fecha: 'desc' },
@@ -196,7 +256,20 @@ export class TransaccionesService {
       },
       include: {
         tipo: true,
-        persona: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
         campana: true,
         categoria: true,
       },
@@ -215,10 +288,14 @@ export class TransaccionesService {
       // Verificar que existe
       const transaccionExistente = await this.findOne(id, negocioId);
 
-      // Validar relaciones si se proporcionan
-      if (updateTransaccionDto.personaId) {
+      // ✅ Validar usuarioId si se proporciona (prioridad)
+      if (updateTransaccionDto.usuarioId) {
+        await this.validateUsuario(updateTransaccionDto.usuarioId, negocioId);
+      } else if (updateTransaccionDto.personaId) {
+        // Backward compatibility
         await this.validatePersona(updateTransaccionDto.personaId, negocioId);
       }
+
       if (updateTransaccionDto.campanaId) {
         await this.validateCampana(updateTransaccionDto.campanaId, negocioId);
       }
@@ -236,7 +313,20 @@ export class TransaccionesService {
         where: { id },
         data: updateData,
         include: {
-          persona: true,
+          usuario: {
+            select: {
+              id: true,
+              nombre: true,
+              email: true,
+              rolNegocio: {
+                select: {
+                  id: true,
+                  nombreRol: true,
+                },
+              },
+            },
+          },
+          persona: true, // Mantener para compatibilidad
           campana: true,
           categoria: true,
         },
@@ -827,6 +917,20 @@ export class TransaccionesService {
     }
   }
 
+  // ✅ Nuevo método para validar usuario
+  private async validateUsuario(usuarioId: number, negocioId: number): Promise<void> {
+    const usuario = await this.prisma.usuario.findFirst({
+      where: {
+        id: usuarioId,
+        negocioId
+      },
+    });
+    if (!usuario) {
+      throw new NotFoundException(`Usuario con ID ${usuarioId} no encontrado`);
+    }
+  }
+
+  // ⚠️ Deprecado - usar validateUsuario
   private async validatePersona(personaId: number, negocioId: number): Promise<void> {
     const persona = await this.prisma.persona.findFirst({
       where: {
