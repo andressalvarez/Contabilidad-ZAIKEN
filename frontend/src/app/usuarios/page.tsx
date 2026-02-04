@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Plus,
   Edit,
@@ -13,20 +13,32 @@ import {
   Key,
   CheckCircle,
   XCircle,
-  UserCog
+  UserCog,
+  Briefcase,
+  TrendingUp,
+  DollarSign,
+  FileText,
+  Percent
 } from 'lucide-react';
 import { useUsuarios } from '@/hooks/useUsuarios';
-import { UsuariosService, Usuario } from '@/services/usuarios.service';
+import { UsuariosService } from '@/services/usuarios.service';
+import { RolesService } from '@/services/roles.service';
+import { Usuario, Rol, CreateUsuarioDto } from '@/types';
 import MainLayout from '@/components/layout/MainLayout';
 import { toast } from 'react-hot-toast';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 
 interface FormData {
   nombre: string;
   email: string;
-  rol: 'ADMIN' | 'USER';
+  rol: 'ADMIN_NEGOCIO' | 'USER' | 'EMPLEADO';
   password: string;
   activo: boolean;
+  // ✅ Campos migrados de Persona
+  rolId?: number;
+  participacionPorc?: number;
+  valorHora?: number;
+  notas?: string;
 }
 
 export default function UsuariosPage() {
@@ -38,14 +50,25 @@ export default function UsuariosPage() {
     rol: 'USER',
     password: '',
     activo: true,
+    // ✅ Campos migrados de Persona
+    rolId: undefined,
+    participacionPorc: 0,
+    valorHora: 0,
+    notas: '',
   });
 
   const queryClient = useQueryClient();
   const { data: usuarios = [], isLoading, error } = useUsuarios();
 
+  // ✅ Cargar roles para el selector
+  const { data: roles = [] } = useQuery<Rol[]>({
+    queryKey: ['roles'],
+    queryFn: () => RolesService.getActive(),
+  });
+
   // Mutations
   const createMutation = useMutation({
-    mutationFn: (data: FormData) => UsuariosService.create(data),
+    mutationFn: (data: CreateUsuarioDto) => UsuariosService.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['usuarios'] });
       toast.success('Usuario creado exitosamente');
@@ -85,12 +108,23 @@ export default function UsuariosPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validación de participación
+    if (formData.participacionPorc && formData.participacionPorc > 100) {
+      toast.error('La participación no puede ser mayor a 100%');
+      return;
+    }
+
     if (editingUsuario) {
-      const updateData: Partial<FormData> = {
+      const updateData: Partial<CreateUsuarioDto> = {
         nombre: formData.nombre,
         email: formData.email,
         rol: formData.rol,
         activo: formData.activo,
+        // ✅ Campos migrados de Persona
+        rolId: formData.rolId,
+        participacionPorc: formData.participacionPorc,
+        valorHora: formData.valorHora,
+        notas: formData.notas,
       };
 
       // Solo incluir password si se cambió
@@ -104,7 +138,7 @@ export default function UsuariosPage() {
         toast.error('La contraseña es obligatoria para nuevos usuarios');
         return;
       }
-      await createMutation.mutateAsync(formData);
+      await createMutation.mutateAsync(formData as CreateUsuarioDto);
     }
   };
 
@@ -115,6 +149,11 @@ export default function UsuariosPage() {
       rol: usuario.rol,
       password: '', // No pre-llenar password por seguridad
       activo: usuario.activo,
+      // ✅ Campos migrados de Persona
+      rolId: usuario.rolId,
+      participacionPorc: usuario.participacionPorc || 0,
+      valorHora: usuario.valorHora || 0,
+      notas: usuario.notas || '',
     });
     setEditingUsuario(usuario);
     setIsCreateModalOpen(true);
@@ -133,6 +172,11 @@ export default function UsuariosPage() {
       rol: 'USER',
       password: '',
       activo: true,
+      // ✅ Campos migrados de Persona
+      rolId: undefined,
+      participacionPorc: 0,
+      valorHora: 0,
+      notas: '',
     });
     setEditingUsuario(null);
     setIsCreateModalOpen(false);
@@ -218,7 +262,16 @@ export default function UsuariosPage() {
                         Email
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Rol
+                        Rol Sistema
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Rol Negocio
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Participación
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Valor/Hora
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Estado
@@ -247,13 +300,45 @@ export default function UsuariosPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            usuario.rol === 'ADMIN'
+                            usuario.rol === 'ADMIN_NEGOCIO'
                               ? 'bg-purple-100 text-purple-800'
+                              : usuario.rol === 'EMPLEADO'
+                              ? 'bg-amber-100 text-amber-800'
                               : 'bg-blue-100 text-blue-800'
                           }`}>
                             <Shield className="h-3 w-3" />
-                            {usuario.rol}
+                            {usuario.rol === 'ADMIN_NEGOCIO' ? 'ADMIN' : usuario.rol}
                           </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {usuario.rolNegocio ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                              <Briefcase className="h-3 w-3" />
+                              {usuario.rolNegocio.nombreRol}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {usuario.participacionPorc > 0 ? (
+                            <div className="flex items-center gap-1 text-sm text-gray-900">
+                              <Percent className="h-3.5 w-3.5 text-green-600" />
+                              <span className="font-medium">{usuario.participacionPorc.toFixed(2)}%</span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-gray-400">0%</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {usuario.valorHora > 0 ? (
+                            <div className="flex items-center gap-1 text-sm text-gray-900">
+                              <DollarSign className="h-3.5 w-3.5 text-green-600" />
+                              <span>${usuario.valorHora.toFixed(2)}</span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-gray-400">-</span>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -347,17 +432,89 @@ export default function UsuariosPage() {
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                     <Shield className="h-4 w-4" />
-                    Rol *
+                    Rol del Sistema *
                   </label>
                   <select
                     value={formData.rol}
-                    onChange={(e) => setFormData({ ...formData, rol: e.target.value as 'ADMIN' | 'USER' })}
+                    onChange={(e) => setFormData({ ...formData, rol: e.target.value as 'ADMIN_NEGOCIO' | 'USER' | 'EMPLEADO' })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
                     required
                   >
                     <option value="USER">Usuario</option>
-                    <option value="ADMIN">Administrador</option>
+                    <option value="EMPLEADO">Empleado</option>
+                    <option value="ADMIN_NEGOCIO">Administrador</option>
                   </select>
+                </div>
+
+                {/* ✅ Campos migrados de Persona */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                    <Briefcase className="h-4 w-4" />
+                    Rol de Negocio (opcional)
+                  </label>
+                  <select
+                    value={formData.rolId || ''}
+                    onChange={(e) => setFormData({ ...formData, rolId: e.target.value ? parseInt(e.target.value) : undefined })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                  >
+                    <option value="">-- Sin rol de negocio --</option>
+                    {roles.map((rol) => (
+                      <option key={rol.id} value={rol.id}>
+                        {rol.nombreRol}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">Rol específico dentro del negocio (ej: Desarrollador, Diseñador)</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                      <Percent className="h-4 w-4" />
+                      % Participación
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      value={formData.participacionPorc || 0}
+                      onChange={(e) => setFormData({ ...formData, participacionPorc: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                      placeholder="0.00"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Para distribución de utilidades</p>
+                  </div>
+
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                      <DollarSign className="h-4 w-4" />
+                      Valor por Hora
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.valorHora || 0}
+                      onChange={(e) => setFormData({ ...formData, valorHora: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                    <FileText className="h-4 w-4" />
+                    Notas (opcional)
+                  </label>
+                  <textarea
+                    value={formData.notas || ''}
+                    onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                    placeholder="Información adicional sobre el usuario"
+                    rows={3}
+                  />
                 </div>
 
                 <div>
