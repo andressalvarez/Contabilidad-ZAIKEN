@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -6,19 +6,21 @@ export class VSCategoriasService {
   constructor(private prisma: PrismaService) {}
 
   // ===== CARPETAS =====
-  async createCarpeta(data: { nombre: string; color: string; visible?: boolean; orden?: number }) {
+  async createCarpeta(negocioId: number, data: { nombre: string; color: string; visible?: boolean; orden?: number }) {
     return this.prisma.vSCarpeta.create({
       data: {
         nombre: data.nombre,
         color: data.color,
         visible: data.visible ?? true,
         orden: data.orden ?? 0,
+        negocioId,
       },
     });
   }
 
-  async findAllCarpetas() {
+  async findAllCarpetas(negocioId: number) {
     return this.prisma.vSCarpeta.findMany({
+      where: { negocioId },
       include: {
         grupos: {
           include: {
@@ -34,9 +36,9 @@ export class VSCategoriasService {
     });
   }
 
-  async findCarpetaById(id: number) {
-    return this.prisma.vSCarpeta.findUnique({
-      where: { id },
+  async findCarpetaById(id: number, negocioId: number) {
+    const carpeta = await this.prisma.vSCarpeta.findFirst({
+      where: { id, negocioId },
       include: {
         grupos: {
           include: {
@@ -49,19 +51,29 @@ export class VSCategoriasService {
         },
       },
     });
+
+    if (!carpeta) {
+      throw new ForbiddenException(`Carpeta con ID ${id} no encontrada o no pertenece a este negocio`);
+    }
+
+    return carpeta;
   }
 
-  async updateCarpeta(id: number, data: { nombre?: string; color?: string; visible?: boolean; orden?: number }) {
+  async updateCarpeta(id: number, negocioId: number, data: { nombre?: string; color?: string; visible?: boolean; orden?: number }) {
+    await this.findCarpetaById(id, negocioId);
+
     return this.prisma.vSCarpeta.update({
       where: { id },
       data,
     });
   }
 
-  async deleteCarpeta(id: number) {
+  async deleteCarpeta(id: number, negocioId: number) {
+    await this.findCarpetaById(id, negocioId);
+
     // Primero actualizar grupos para quitar la referencia a la carpeta
     await this.prisma.vSGrupo.updateMany({
-      where: { carpetaId: id },
+      where: { carpetaId: id, negocioId },
       data: { carpetaId: null },
     });
 
@@ -71,7 +83,7 @@ export class VSCategoriasService {
   }
 
   // ===== GRUPOS =====
-  async createGrupo(data: {
+  async createGrupo(negocioId: number, data: {
     nombre: string;
     color: string;
     visible?: boolean;
@@ -86,6 +98,7 @@ export class VSCategoriasService {
         ...grupoData,
         visible: grupoData.visible ?? true,
         orden: grupoData.orden ?? 0,
+        negocioId,
         categorias: {
           create: categorias.map(categoriaId => ({
             categoriaId,
@@ -110,8 +123,9 @@ export class VSCategoriasService {
     };
   }
 
-  async findAllGrupos() {
+  async findAllGrupos(negocioId: number) {
     const grupos = await this.prisma.vSGrupo.findMany({
+      where: { negocioId },
       include: {
         categorias: {
           include: {
@@ -131,9 +145,9 @@ export class VSCategoriasService {
     }));
   }
 
-  async findGrupoById(id: number) {
-    const grupo = await this.prisma.vSGrupo.findUnique({
-      where: { id },
+  async findGrupoById(id: number, negocioId: number) {
+    const grupo = await this.prisma.vSGrupo.findFirst({
+      where: { id, negocioId },
       include: {
         categorias: {
           include: {
@@ -144,7 +158,9 @@ export class VSCategoriasService {
       },
     });
 
-    if (!grupo) return null;
+    if (!grupo) {
+      throw new ForbiddenException(`Grupo con ID ${id} no encontrado o no pertenece a este negocio`);
+    }
 
     // Transformar la respuesta para incluir categoriaIds
     return {
@@ -154,7 +170,7 @@ export class VSCategoriasService {
     };
   }
 
-  async updateGrupo(id: number, data: {
+  async updateGrupo(id: number, negocioId: number, data: {
     nombre?: string;
     color?: string;
     visible?: boolean;
@@ -162,6 +178,8 @@ export class VSCategoriasService {
     carpetaId?: number;
     categorias?: number[];
   }) {
+    await this.findGrupoById(id, negocioId);
+
     const { categorias, ...grupoData } = data;
 
     // Si se proporcionan categorías, actualizar la relación
@@ -203,7 +221,9 @@ export class VSCategoriasService {
     };
   }
 
-  async deleteGrupo(id: number) {
+  async deleteGrupo(id: number, negocioId: number) {
+    await this.findGrupoById(id, negocioId);
+
     // Eliminar categorías del grupo
     await this.prisma.vSGrupoCategoria.deleteMany({
       where: { grupoId: id },
@@ -215,42 +235,53 @@ export class VSCategoriasService {
   }
 
   // ===== CONFIGURACIONES =====
-  async createConfiguracion(data: { nombre: string; configuracion: any }) {
+  async createConfiguracion(negocioId: number, data: { nombre: string; configuracion: any }) {
     return this.prisma.vSConfiguracion.create({
       data: {
         nombre: data.nombre,
         configuracion: data.configuracion,
+        negocioId,
       },
     });
   }
 
-  async findAllConfiguraciones() {
+  async findAllConfiguraciones(negocioId: number) {
     return this.prisma.vSConfiguracion.findMany({
-      where: { activo: true },
+      where: { activo: true, negocioId },
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async findConfiguracionById(id: number) {
-    return this.prisma.vSConfiguracion.findUnique({
-      where: { id },
+  async findConfiguracionById(id: number, negocioId: number) {
+    const configuracion = await this.prisma.vSConfiguracion.findFirst({
+      where: { id, negocioId },
     });
+
+    if (!configuracion) {
+      throw new ForbiddenException(`Configuración con ID ${id} no encontrada o no pertenece a este negocio`);
+    }
+
+    return configuracion;
   }
 
-  async findConfiguracionByNombre(nombre: string) {
+  async findConfiguracionByNombre(nombre: string, negocioId: number) {
     return this.prisma.vSConfiguracion.findFirst({
-      where: { nombre, activo: true },
+      where: { nombre, activo: true, negocioId },
     });
   }
 
-  async updateConfiguracion(id: number, data: { nombre?: string; configuracion?: any; activo?: boolean }) {
+  async updateConfiguracion(id: number, negocioId: number, data: { nombre?: string; configuracion?: any; activo?: boolean }) {
+    await this.findConfiguracionById(id, negocioId);
+
     return this.prisma.vSConfiguracion.update({
       where: { id },
       data,
     });
   }
 
-  async deleteConfiguracion(id: number) {
+  async deleteConfiguracion(id: number, negocioId: number) {
+    await this.findConfiguracionById(id, negocioId);
+
     return this.prisma.vSConfiguracion.update({
       where: { id },
       data: { activo: false },
@@ -258,11 +289,11 @@ export class VSCategoriasService {
   }
 
   // ===== DATOS COMPLETOS =====
-  async getVSCategoriasData() {
+  async getVSCategoriasData(negocioId: number) {
     const [carpetas, grupos, configuraciones] = await Promise.all([
-      this.findAllCarpetas(),
-      this.findAllGrupos(),
-      this.findAllConfiguraciones(),
+      this.findAllCarpetas(negocioId),
+      this.findAllGrupos(negocioId),
+      this.findAllConfiguraciones(negocioId),
     ]);
 
     return {
@@ -273,7 +304,7 @@ export class VSCategoriasService {
   }
 
   // ===== DATOS PARA GRÁFICOS =====
-  async getDatosParaGrafico(filtros: {
+  async getDatosParaGrafico(negocioId: number, filtros: {
     tipo?: string;
     fechaDesde?: string;
     fechaHasta?: string;

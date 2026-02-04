@@ -96,6 +96,143 @@ export class RegistroHorasService {
       throw error;
     }
   }
+
+  // ==================== TIMER METHODS ====================
+
+  // Iniciar un timer
+  static async startTimer(data: {
+    personaId: number;
+    campanaId?: number;
+    descripcion?: string;
+  }): Promise<RegistroHoras> {
+    try {
+      const response = await api.post(`${ENDPOINT}/timer/start`, data);
+      if (!response.data?.data) {
+        throw new Error('Error iniciando timer');
+      }
+      return response.data.data;
+    } catch (error) {
+      console.error('Error starting timer:', error);
+      throw error;
+    }
+  }
+
+  // Pausar un timer
+  static async pauseTimer(id: number): Promise<RegistroHoras> {
+    try {
+      const response = await api.patch(`${ENDPOINT}/timer/${id}/pause`);
+      if (!response.data?.data) {
+        throw new Error('Error pausando timer');
+      }
+      return response.data.data;
+    } catch (error) {
+      console.error('Error pausing timer:', error);
+      throw error;
+    }
+  }
+
+  // Reanudar un timer
+  static async resumeTimer(id: number): Promise<RegistroHoras> {
+    try {
+      const response = await api.patch(`${ENDPOINT}/timer/${id}/resume`);
+      if (!response.data?.data) {
+        throw new Error('Error reanudando timer');
+      }
+      return response.data.data;
+    } catch (error) {
+      console.error('Error resuming timer:', error);
+      throw error;
+    }
+  }
+
+  // Detener un timer
+  static async stopTimer(id: number, descripcion?: string): Promise<RegistroHoras> {
+    try {
+      const response = await api.patch(`${ENDPOINT}/timer/${id}/stop`, {
+        descripcion,
+      });
+      if (!response.data?.data) {
+        throw new Error('Error deteniendo timer');
+      }
+      return response.data.data;
+    } catch (error) {
+      console.error('Error stopping timer:', error);
+      throw error;
+    }
+  }
+
+  // Obtener timer activo de una persona
+  static async getActiveTimer(personaId: number): Promise<RegistroHoras | null> {
+    try {
+      const response = await api.get(`${ENDPOINT}/timer/active/${personaId}`);
+      return response.data?.data || null;
+    } catch (error) {
+      console.error('Error fetching active timer:', error);
+      throw error;
+    }
+  }
+
+  // Cancelar un timer
+  static async cancelTimer(id: number): Promise<void> {
+    try {
+      await api.delete(`${ENDPOINT}/timer/${id}/cancel`);
+    } catch (error) {
+      console.error('Error canceling timer:', error);
+      throw error;
+    }
+  }
+
+  // ==================== APPROVAL METHODS ====================
+
+  // Obtener registros pendientes de aprobación
+  static async getPending(): Promise<RegistroHoras[]> {
+    try {
+      const response = await api.get(`${ENDPOINT}/pending`);
+      return response.data?.data || [];
+    } catch (error) {
+      console.error('Error fetching pending registros:', error);
+      throw error;
+    }
+  }
+
+  // Obtener registros rechazados
+  static async getRejected(): Promise<RegistroHoras[]> {
+    try {
+      const response = await api.get(`${ENDPOINT}/rejected`);
+      return response.data?.data || [];
+    } catch (error) {
+      console.error('Error fetching rejected registros:', error);
+      throw error;
+    }
+  }
+
+  // Aprobar un registro
+  static async approve(id: number): Promise<RegistroHoras> {
+    try {
+      const response = await api.patch(`${ENDPOINT}/${id}/approve`);
+      if (!response.data?.data) {
+        throw new Error('Error aprobando registro');
+      }
+      return response.data.data;
+    } catch (error) {
+      console.error('Error approving registro:', error);
+      throw error;
+    }
+  }
+
+  // Rechazar un registro
+  static async reject(id: number, motivo: string): Promise<RegistroHoras> {
+    try {
+      const response = await api.patch(`${ENDPOINT}/${id}/reject`, { motivo });
+      if (!response.data?.data) {
+        throw new Error('Error rechazando registro');
+      }
+      return response.data.data;
+    } catch (error) {
+      console.error('Error rejecting registro:', error);
+      throw error;
+    }
+  }
 }
 
 

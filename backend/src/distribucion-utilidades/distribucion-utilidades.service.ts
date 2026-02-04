@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateDistribucionUtilidadesDto } from './dto/create-distribucion-utilidades.dto';
 import { UpdateDistribucionUtilidadesDto } from './dto/update-distribucion-utilidades.dto';
@@ -7,9 +7,10 @@ import { UpdateDistribucionUtilidadesDto } from './dto/update-distribucion-utili
 export class DistribucionUtilidadesService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createDistribucionUtilidadesDto: CreateDistribucionUtilidadesDto) {
+  async create(negocioId: number, createDistribucionUtilidadesDto: CreateDistribucionUtilidadesDto) {
     const distribucion = await this.prisma.distribucionUtilidades.create({
       data: {
+        negocioId,
         periodo: createDistribucionUtilidadesDto.periodo,
         fecha: new Date(createDistribucionUtilidadesDto.fecha),
         utilidadTotal: createDistribucionUtilidadesDto.utilidadTotal,
@@ -27,8 +28,11 @@ export class DistribucionUtilidadesService {
     return { data: distribucion };
   }
 
-  async findAll() {
+  async findAll(negocioId: number) {
     const distribuciones = await this.prisma.distribucionUtilidades.findMany({
+      where: {
+        negocioId,
+      },
       include: {
         detalles: {
           include: {
@@ -44,9 +48,12 @@ export class DistribucionUtilidadesService {
     return { data: distribuciones };
   }
 
-  async findOne(id: number) {
-    const distribucion = await this.prisma.distribucionUtilidades.findUnique({
-      where: { id },
+  async findOne(id: number, negocioId: number) {
+    const distribucion = await this.prisma.distribucionUtilidades.findFirst({
+      where: {
+        id,
+        negocioId,
+      },
       include: {
         detalles: {
           include: {
@@ -63,7 +70,9 @@ export class DistribucionUtilidadesService {
     return { data: distribucion };
   }
 
-  async update(id: number, updateDistribucionUtilidadesDto: UpdateDistribucionUtilidadesDto) {
+  async update(id: number, negocioId: number, updateDistribucionUtilidadesDto: UpdateDistribucionUtilidadesDto) {
+    await this.findOne(id, negocioId);
+
     const distribucion = await this.prisma.distribucionUtilidades.update({
       where: { id },
       data: {
@@ -84,7 +93,9 @@ export class DistribucionUtilidadesService {
     return { data: distribucion };
   }
 
-  async remove(id: number) {
+  async remove(id: number, negocioId: number) {
+    await this.findOne(id, negocioId);
+
     // Eliminar detalles primero
     await this.prisma.distribucionDetalle.deleteMany({
       where: { distribucionId: id },
@@ -98,7 +109,7 @@ export class DistribucionUtilidadesService {
     return { message: 'Distribución eliminada exitosamente' };
   }
 
-  async getStats() {
+  async getStats(negocioId: number) {
     const [
       totalDistribuciones,
       totalUtilidades,
@@ -107,21 +118,38 @@ export class DistribucionUtilidadesService {
       distribucionesCompletadas,
       personasActivas,
     ] = await Promise.all([
-      this.prisma.distribucionUtilidades.count(),
+      this.prisma.distribucionUtilidades.count({
+        where: { negocioId },
+      }),
       this.prisma.distribucionUtilidades.aggregate({
+        where: { negocioId },
         _sum: { utilidadTotal: true },
       }),
       this.prisma.distribucionDetalle.aggregate({
+        where: {
+          distribucion: {
+            negocioId,
+          },
+        },
         _sum: { montoDistribuido: true },
       }),
       this.prisma.distribucionUtilidades.count({
-        where: { estado: 'Pendiente' },
+        where: {
+          negocioId,
+          estado: 'Pendiente',
+        },
       }),
       this.prisma.distribucionUtilidades.count({
-        where: { estado: 'Distribuida' },
+        where: {
+          negocioId,
+          estado: 'Distribuida',
+        },
       }),
       this.prisma.persona.count({
-        where: { activo: true },
+        where: {
+          negocioId,
+          activo: true,
+        },
       }),
     ]);
 
@@ -141,19 +169,25 @@ export class DistribucionUtilidadesService {
     };
   }
 
-  async distribuirAutomaticamente(id: number) {
+  async distribuirAutomaticamente(id: number, negocioId: number) {
     // Obtener la distribución
-    const distribucion = await this.prisma.distribucionUtilidades.findUnique({
-      where: { id },
+    const distribucion = await this.prisma.distribucionUtilidades.findFirst({
+      where: {
+        id,
+        negocioId,
+      },
     });
 
     if (!distribucion) {
       throw new NotFoundException(`Distribución con ID ${id} no encontrada`);
     }
 
-    // Obtener personas activas
+    // Obtener personas activas del negocio
     const personas = await this.prisma.persona.findMany({
-      where: { activo: true },
+      where: {
+        negocioId,
+        activo: true,
+      },
       include: { rol: true },
     });
 

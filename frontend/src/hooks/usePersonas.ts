@@ -147,3 +147,28 @@ export function useDeletePersona() {
     },
   });
 }
+
+// Hook para vincular una persona con un usuario
+export function useVincularUsuario() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ personaId, usuarioId }: { personaId: number; usuarioId: number }) =>
+      PersonasService.vincularUsuario(personaId, usuarioId),
+    retry: 2,
+    retryDelay: 1000,
+    onSuccess: (updatedPersona) => {
+      // Invalidar listas para reflejar el cambio
+      queryClient.invalidateQueries({ queryKey: personasKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: personasKeys.summary() });
+
+      // Actualizar la persona específica en cache
+      queryClient.setQueryData(personasKeys.detail(updatedPersona.id), updatedPersona);
+
+      toast.success('Usuario vinculado exitosamente');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Error al vincular usuario');
+    },
+  });
+}

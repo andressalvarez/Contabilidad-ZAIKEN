@@ -19,6 +19,7 @@ import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { RolesGuard } from './auth/roles.guard';
 import { UsuariosModule } from './usuarios/usuarios.module';
+import { CaslModule } from './casl/casl.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { UsuariosModule } from './usuarios/usuarios.module';
 
     // Módulos del sistema
     PrismaModule,
+    CaslModule,
     RolesModule,
     PersonasModule,
     TransaccionesModule,

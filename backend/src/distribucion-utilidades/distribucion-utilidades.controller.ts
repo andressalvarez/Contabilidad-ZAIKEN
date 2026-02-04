@@ -1,44 +1,102 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseIntPipe,
+  HttpStatus,
+  HttpCode,
+} from '@nestjs/common';
 import { DistribucionUtilidadesService } from './distribucion-utilidades.service';
 import { CreateDistribucionUtilidadesDto } from './dto/create-distribucion-utilidades.dto';
 import { UpdateDistribucionUtilidadesDto } from './dto/update-distribucion-utilidades.dto';
+import { NegocioId } from '../auth/negocio-id.decorator';
 
 @Controller('distribucion-utilidades')
 export class DistribucionUtilidadesController {
   constructor(private readonly distribucionUtilidadesService: DistribucionUtilidadesService) {}
 
   @Post()
-  create(@Body() createDistribucionUtilidadesDto: CreateDistribucionUtilidadesDto) {
-    return this.distribucionUtilidadesService.create(createDistribucionUtilidadesDto);
+  @HttpCode(HttpStatus.CREATED)
+  async create(
+    @NegocioId() negocioId: number,
+    @Body() createDistribucionUtilidadesDto: CreateDistribucionUtilidadesDto,
+  ) {
+    return {
+      success: true,
+      message: 'Distribución de utilidades creada exitosamente',
+      data: await this.distribucionUtilidadesService.create(negocioId, createDistribucionUtilidadesDto),
+    };
   }
 
   @Get()
-  findAll() {
-    return this.distribucionUtilidadesService.findAll();
+  async findAll(@NegocioId() negocioId: number) {
+    return {
+      success: true,
+      message: 'Distribuciones de utilidades obtenidas exitosamente',
+      data: await this.distribucionUtilidadesService.findAll(negocioId),
+    };
   }
 
   @Get('stats')
-  getStats() {
-    return this.distribucionUtilidadesService.getStats();
+  async getStats(@NegocioId() negocioId: number) {
+    return {
+      success: true,
+      message: 'Estadísticas obtenidas exitosamente',
+      data: await this.distribucionUtilidadesService.getStats(negocioId),
+    };
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.distribucionUtilidadesService.findOne(+id);
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @NegocioId() negocioId: number,
+  ) {
+    return {
+      success: true,
+      message: 'Distribución de utilidades obtenida exitosamente',
+      data: await this.distribucionUtilidadesService.findOne(id, negocioId),
+    };
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateDistribucionUtilidadesDto: UpdateDistribucionUtilidadesDto) {
-    return this.distribucionUtilidadesService.update(+id, updateDistribucionUtilidadesDto);
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @NegocioId() negocioId: number,
+    @Body() updateDistribucionUtilidadesDto: UpdateDistribucionUtilidadesDto,
+  ) {
+    return {
+      success: true,
+      message: 'Distribución de utilidades actualizada exitosamente',
+      data: await this.distribucionUtilidadesService.update(id, negocioId, updateDistribucionUtilidadesDto),
+    };
   }
 
   @Post(':id/distribuir-automatico')
-  distribuirAutomaticamente(@Param('id') id: string) {
-    return this.distribucionUtilidadesService.distribuirAutomaticamente(+id);
+  async distribuirAutomaticamente(
+    @Param('id', ParseIntPipe) id: number,
+    @NegocioId() negocioId: number,
+  ) {
+    const result = await this.distribucionUtilidadesService.distribuirAutomaticamente(id, negocioId);
+    return {
+      success: true,
+      message: result.message,
+    };
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.distribucionUtilidadesService.remove(+id);
+  @HttpCode(HttpStatus.OK)
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+    @NegocioId() negocioId: number,
+  ) {
+    const result = await this.distribucionUtilidadesService.remove(id, negocioId);
+    return {
+      success: true,
+      message: result.message,
+    };
   }
 }

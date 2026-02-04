@@ -1,0 +1,41 @@
+import {
+  Usuario,
+  Persona,
+  Campana,
+  Categoria,
+  Transaccion,
+  RegistroHoras,
+  ValorHora,
+  DistribucionUtilidades,
+  DistribucionDetalle,
+  VSCarpeta,
+  VSGrupo,
+  VSConfiguracion,
+} from '@prisma/client';
+
+export type Subjects =
+  | 'Usuario'
+  | Usuario
+  | 'Persona'
+  | Persona
+  | 'Campana'
+  | Campana
+  | 'Categoria'
+  | Categoria
+  | 'Transaccion'
+  | Transaccion
+  | 'RegistroHoras'
+  | RegistroHoras
+  | 'ValorHora'
+  | ValorHora
+  | 'DistribucionUtilidades'
+  | DistribucionUtilidades
+  | 'DistribucionDetalle'
+  | DistribucionDetalle
+  | 'VSCarpeta'
+  | VSCarpeta
+  | 'VSGrupo'
+  | VSGrupo
+  | 'VSConfiguracion'
+  | VSConfiguracion
+  | 'all';

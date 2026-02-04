@@ -13,6 +13,7 @@ import {
 import { CategoriasService } from './categorias.service';
 import { CreateCategoriaDto } from './dto/create-categoria.dto';
 import { UpdateCategoriaDto } from './dto/update-categoria.dto';
+import { NegocioId } from '../auth/negocio-id.decorator';
 
 @Controller('categorias')
 export class CategoriasController {
@@ -20,48 +21,58 @@ export class CategoriasController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createCategoriaDto: CreateCategoriaDto) {
+  async create(
+    @NegocioId() negocioId: number,
+    @Body() createCategoriaDto: CreateCategoriaDto,
+  ) {
     return {
       success: true,
       message: 'Categoría creada exitosamente',
-      data: await this.categoriasService.create(createCategoriaDto),
+      data: await this.categoriasService.create(negocioId, createCategoriaDto),
     };
   }
 
   @Get()
-  async findAll() {
+  async findAll(@NegocioId() negocioId: number) {
     return {
       success: true,
       message: 'Categorías obtenidas exitosamente',
-      data: await this.categoriasService.findAll(),
+      data: await this.categoriasService.findAll(negocioId),
     };
   }
 
   @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number) {
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @NegocioId() negocioId: number,
+  ) {
     return {
       success: true,
       message: 'Categoría obtenida exitosamente',
-      data: await this.categoriasService.findOne(id),
+      data: await this.categoriasService.findOne(id, negocioId),
     };
   }
 
   @Patch(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
+    @NegocioId() negocioId: number,
     @Body() updateCategoriaDto: UpdateCategoriaDto,
   ) {
     return {
       success: true,
       message: 'Categoría actualizada exitosamente',
-      data: await this.categoriasService.update(id, updateCategoriaDto),
+      data: await this.categoriasService.update(id, negocioId, updateCategoriaDto),
     };
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  async remove(@Param('id', ParseIntPipe) id: number) {
-    const result = await this.categoriasService.remove(id);
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+    @NegocioId() negocioId: number,
+  ) {
+    const result = await this.categoriasService.remove(id, negocioId);
     return {
       success: true,
       message: result.message,

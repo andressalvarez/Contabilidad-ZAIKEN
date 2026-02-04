@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateValorHoraDto, UpdateValorHoraDto } from './dto';
 
@@ -6,7 +6,7 @@ import { CreateValorHoraDto, UpdateValorHoraDto } from './dto';
 export class ValorHoraService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createValorHoraDto: CreateValorHoraDto) {
+  async create(negocioId: number, createValorHoraDto: CreateValorHoraDto) {
     // Obtener el rol de la persona
     const persona = await this.prisma.persona.findUnique({
       where: { id: createValorHoraDto.personaId },
@@ -19,6 +19,7 @@ export class ValorHoraService {
 
     return this.prisma.valorHora.create({
       data: {
+        negocioId,
         personaId: createValorHoraDto.personaId,
         rolId: persona.rolId,
         valor: createValorHoraDto.valor,
@@ -32,8 +33,9 @@ export class ValorHoraService {
     });
   }
 
-  async findAll() {
+  async findAll(negocioId: number) {
     return this.prisma.valorHora.findMany({
+      where: { negocioId },
       include: {
         persona: true,
         rol: true,
@@ -44,9 +46,12 @@ export class ValorHoraService {
     });
   }
 
-  async findOne(id: number) {
-    const valorHora = await this.prisma.valorHora.findUnique({
-      where: { id },
+  async findOne(id: number, negocioId: number) {
+    const valorHora = await this.prisma.valorHora.findFirst({
+      where: {
+        id,
+        negocioId,
+      },
       include: {
         persona: true,
         rol: true,
@@ -60,9 +65,12 @@ export class ValorHoraService {
     return valorHora;
   }
 
-  async findByPersonaId(personaId: number) {
+  async findByPersonaId(personaId: number, negocioId: number) {
     return this.prisma.valorHora.findMany({
-      where: { personaId },
+      where: {
+        personaId,
+        negocioId,
+      },
       include: {
         persona: true,
         rol: true,
@@ -73,9 +81,9 @@ export class ValorHoraService {
     });
   }
 
-  async update(id: number, updateValorHoraDto: UpdateValorHoraDto) {
-    // Verificar que existe
-    await this.findOne(id);
+  async update(id: number, negocioId: number, updateValorHoraDto: UpdateValorHoraDto) {
+    // Verificar que existe y pertenece al negocio
+    await this.findOne(id, negocioId);
 
     const updateData: any = {};
 
@@ -101,18 +109,21 @@ export class ValorHoraService {
     });
   }
 
-  async remove(id: number) {
-    // Verificar que existe
-    await this.findOne(id);
+  async remove(id: number, negocioId: number) {
+    // Verificar que existe y pertenece al negocio
+    await this.findOne(id, negocioId);
 
     return this.prisma.valorHora.delete({
       where: { id },
     });
   }
 
-  async getStats() {
+  async getStats(negocioId: number) {
     const valoresHora = await this.prisma.valorHora.findMany({
-      where: { activo: true },
+      where: {
+        negocioId,
+        activo: true,
+      },
     });
 
     const valores = valoresHora.map(vh => vh.valor);

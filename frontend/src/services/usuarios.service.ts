@@ -25,6 +25,10 @@ export const UsuariosService = {
   remove: async (id: number) => {
     const { data } = await api.delete(`/usuarios/${id}`)
     return data
+  },
+  updateMe: async (payload: Partial<{ nombre: string; email: string; password: string }>) => {
+    const { data } = await api.patch('/usuarios/me', payload)
+    return data
   }
 }
 

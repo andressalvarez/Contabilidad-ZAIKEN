@@ -17,9 +17,11 @@ import {
   useCreatePersona,
   useUpdatePersona,
   useDeletePersona,
-  usePersonasSummary
+  usePersonasSummary,
+  useVincularUsuario
 } from '@/hooks/usePersonas';
 import { useActiveRoles } from '@/hooks/useRoles';
+import { useUsuarios } from '@/hooks/useUsuarios';
 import { Persona, CreatePersonaDto } from '@/types';
 import MainLayout from '@/components/layout/MainLayout';
 
@@ -35,6 +37,9 @@ export default function PersonasPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingPersona, setEditingPersona] = useState<Persona | null>(null);
   const [includeInactive, setIncludeInactive] = useState(false);
+  const [vincularModalOpen, setVincularModalOpen] = useState(false);
+  const [personaToVincular, setPersonaToVincular] = useState<Persona | null>(null);
+  const [selectedUsuarioId, setSelectedUsuarioId] = useState<number>(0);
   const [formData, setFormData] = useState<FormData>({
     nombre: '',
     rolId: 0,
@@ -46,10 +51,12 @@ export default function PersonasPage() {
   // React Query hooks
   const { data: personas = [], isLoading, error } = usePersonas(includeInactive);
   const { data: roles = [] } = useActiveRoles();
+  const { data: usuarios = [] } = useUsuarios();
   const { data: summary } = usePersonasSummary();
   const createMutation = useCreatePersona();
   const updateMutation = useUpdatePersona();
   const deleteMutation = useDeletePersona();
+  const vincularMutation = useVincularUsuario();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,6 +106,33 @@ export default function PersonasPage() {
     setIsCreateModalOpen(false);
   };
 
+  const handleOpenVincularModal = (persona: Persona) => {
+    setPersonaToVincular(persona);
+    setSelectedUsuarioId(persona.usuarioId || 0);
+    setVincularModalOpen(true);
+  };
+
+  const handleVincular = async () => {
+    if (!personaToVincular || !selectedUsuarioId) {
+      return;
+    }
+
+    await vincularMutation.mutateAsync({
+      personaId: personaToVincular.id,
+      usuarioId: selectedUsuarioId,
+    });
+
+    setVincularModalOpen(false);
+    setPersonaToVincular(null);
+    setSelectedUsuarioId(0);
+  };
+
+  const getUsuarioName = (usuarioId: number | null | undefined) => {
+    if (!usuarioId) return null;
+    const usuario = usuarios.find(u => u.id === usuarioId);
+    return usuario ? usuario.nombre : null;
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -132,7 +166,7 @@ export default function PersonasPage() {
           </label>
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
           >
             <Plus className="h-4 w-4" />
             Nueva Persona
@@ -144,8 +178,8 @@ export default function PersonasPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Users className="h-5 w-5 text-blue-600" />
+                <div className="p-2 bg-indigo-100 rounded-lg">
+                  <Users className="h-5 w-5 text-indigo-600" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Total Personas</p>
@@ -206,7 +240,7 @@ export default function PersonasPage() {
           {/* Loading State */}
           {isLoading && (
             <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
               <p className="text-gray-600 mt-2">Cargando personas...</p>
             </div>
           )}
@@ -227,7 +261,7 @@ export default function PersonasPage() {
                   <p className="text-gray-600 mb-4">Comienza agregando tu primera persona</p>
                   <button
                     onClick={() => setIsCreateModalOpen(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg"
                   >
                     Agregar Primera Persona
                   </button>
@@ -242,6 +276,9 @@ export default function PersonasPage() {
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Rol
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Usuario
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Participación
@@ -277,7 +314,23 @@ export default function PersonasPage() {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {persona.usuarioId && getUsuarioName(persona.usuarioId) ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                <User className="h-3 w-3 mr-1" />
+                                {getUsuarioName(persona.usuarioId)}
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => handleOpenVincularModal(persona)}
+                                className="inline-flex items-center px-3 py-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors"
+                              >
+                                <User className="h-3 w-3 mr-1" />
+                                Vincular
+                              </button>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
                               {persona.participacionPorc}%
                             </span>
                           </td>
@@ -300,7 +353,7 @@ export default function PersonasPage() {
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 onClick={() => handleEdit(persona)}
-                                className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded"
+                                className="text-indigo-600 hover:text-indigo-900 p-1 hover:bg-indigo-50 rounded"
                               >
                                 <Edit className="h-4 w-4" />
                               </button>
@@ -323,6 +376,76 @@ export default function PersonasPage() {
           )}
         </div>
 
+        {/* Vincular Usuario Modal */}
+        {vincularModalOpen && personaToVincular && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl">
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Vincular Usuario
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Selecciona un usuario para vincular a <span className="font-semibold text-gray-900">{personaToVincular.nombre}</span>
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Usuario *
+                  </label>
+                  <select
+                    value={selectedUsuarioId}
+                    onChange={(e) => setSelectedUsuarioId(parseInt(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value={0}>-- Selecciona un usuario --</option>
+                    {usuarios.map(usuario => (
+                      <option key={usuario.id} value={usuario.id}>
+                        {usuario.nombre} ({usuario.email}) - {usuario.rol}
+                      </option>
+                    ))}
+                  </select>
+                  {usuarios.length === 0 && (
+                    <p className="text-xs text-amber-600 mt-2">
+                      No hay usuarios disponibles. Crea uno primero desde la sección de Usuarios.
+                    </p>
+                  )}
+                </div>
+
+                {selectedUsuarioId > 0 && (
+                  <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+                    <p className="text-xs text-indigo-800">
+                      <strong>Nota:</strong> Al vincular, {personaToVincular.nombre} tendrá acceso al sistema con este usuario.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setVincularModalOpen(false);
+                    setPersonaToVincular(null);
+                    setSelectedUsuarioId(0);
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleVincular}
+                  disabled={selectedUsuarioId === 0 || vincularMutation.isPending}
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {vincularMutation.isPending ? 'Vinculando...' : 'Vincular Usuario'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Create/Edit Modal */}
         {(isCreateModalOpen || editingPersona) && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -341,7 +464,7 @@ export default function PersonasPage() {
                       type="text"
                       value={formData.nombre}
                       onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       placeholder="Nombre completo"
                       required
                     />
@@ -354,7 +477,7 @@ export default function PersonasPage() {
                     <select
                       value={formData.rolId}
                       onChange={(e) => setFormData({ ...formData, rolId: parseInt(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       required
                     >
                       <option value={0}>Selecciona un rol</option>
@@ -377,7 +500,7 @@ export default function PersonasPage() {
                       step="0.01"
                       value={formData.participacionPorc}
                       onChange={(e) => setFormData({ ...formData, participacionPorc: parseFloat(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       required
                     />
                     {summary && summary.data && (
@@ -397,7 +520,7 @@ export default function PersonasPage() {
                       step="100"
                       value={formData.valorHora || ''}
                       onChange={(e) => setFormData({ ...formData, valorHora: parseInt(e.target.value) || 0 })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       placeholder="0"
                     />
                   </div>
@@ -415,7 +538,7 @@ export default function PersonasPage() {
                         step="0.5"
                         value={formData.horasTotales || ''}
                         onChange={(e) => setFormData({ ...formData, horasTotales: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       />
                     </div>
 
@@ -429,7 +552,7 @@ export default function PersonasPage() {
                         step="1000"
                         value={formData.aportesTotales || ''}
                         onChange={(e) => setFormData({ ...formData, aportesTotales: parseInt(e.target.value) || 0 })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       />
                     </div>
 
@@ -443,7 +566,7 @@ export default function PersonasPage() {
                         step="0.5"
                         value={formData.inversionHoras || ''}
                         onChange={(e) => setFormData({ ...formData, inversionHoras: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       />
                     </div>
 
@@ -457,7 +580,7 @@ export default function PersonasPage() {
                         step="1000"
                         value={formData.inversionTotal || ''}
                         onChange={(e) => setFormData({ ...formData, inversionTotal: parseInt(e.target.value) || 0 })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       />
                     </div>
 
@@ -482,7 +605,7 @@ export default function PersonasPage() {
                   <textarea
                     value={formData.notas || ''}
                     onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     rows={3}
                     placeholder="Información adicional sobre la persona..."
                   />
@@ -499,7 +622,7 @@ export default function PersonasPage() {
                   <button
                     type="submit"
                     disabled={createMutation.isPending || updateMutation.isPending}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {(createMutation.isPending || updateMutation.isPending) ? 'Guardando...' : (editingPersona ? 'Actualizar' : 'Crear')}
                   </button>

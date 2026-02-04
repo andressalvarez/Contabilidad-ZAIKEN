@@ -177,7 +177,7 @@ export function useDashboard(filtros: { fechaInicio?: string; fechaFin?: string 
     .sort((a, b) => b.monto - a.monto)
     .slice(0, 19) || []; // Limitar a 19 categorías para el gráfico
 
-  // Preparar datos para gastos por tipo de gasto (usando datos de gastos)
+  // Preparar datos para gastos por campaña (usando datos de gastos)
   const gastosPorCampana = resumenCampanas
     ?.filter(item => item.monto > 0)
     .reduce((acc, item) => {

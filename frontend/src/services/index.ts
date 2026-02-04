@@ -1,3 +1,4 @@
+export { AuthService } from './auth.service';
 export { RolesService } from './roles.service';
 export { PersonasService } from './personas.service';
 export { TransaccionesService } from './transacciones.service';
@@ -7,3 +8,4 @@ export { ValorHoraService } from './valor-hora.service';
 export { RegistroHorasService } from './registro-horas.service';
 export { CampanasService } from './campanas.service';
 export { DistribucionUtilidadesService } from './distribucion-utilidades.service';
+export { UsuariosService } from './usuarios.service';

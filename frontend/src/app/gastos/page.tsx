@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
+import { DeleteCampaignModal } from '@/components/DeleteCampaignModal';
 import { useCampanas, useCreateCampana, useUpdateCampana, useDeleteCampana } from '@/hooks/useCampanas';
 import { toast } from 'sonner';
 import {
@@ -41,6 +42,7 @@ export default function GastosPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [showCharts, setShowCharts] = useState(true);
+  const [deletingCampana, setDeletingCampana] = useState<any | null>(null);
   const [formData, setFormData] = useState({
     nombre: '',
     fechaInicio: '',
@@ -346,14 +348,19 @@ export default function GastosPage() {
     setEditingData({});
   };
 
-  // Eliminar campaña
-  const handleDelete = async (campana: any) => {
-    const confirmed = window.confirm(
-      `¿Eliminar campaña "${campana.nombre}"? Esto también eliminará todos los registros de horas y transacciones relacionadas.`
-    );
+  // Mostrar modal de eliminación
+  const handleDelete = (campana: any) => {
+    setDeletingCampana(campana);
+  };
 
-    if (confirmed) {
-      deleteCampana.mutate(campana.id);
+  // Confirmar eliminación
+  const confirmDelete = () => {
+    if (deletingCampana) {
+      deleteCampana.mutate(deletingCampana.id, {
+        onSuccess: () => {
+          setDeletingCampana(null);
+        },
+      });
     }
   };
 
@@ -822,6 +829,16 @@ export default function GastosPage() {
           @apply border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2;
         }
       `}</style>
+
+      {/* Modal de eliminación */}
+      {deletingCampana && (
+        <DeleteCampaignModal
+          campaignName={deletingCampana.nombre}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeletingCampana(null)}
+          isDeleting={deleteCampana.isPending}
+        />
+      )}
     </MainLayout>
   );
 }

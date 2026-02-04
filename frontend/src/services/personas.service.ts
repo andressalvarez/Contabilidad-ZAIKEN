@@ -137,4 +137,18 @@ export class PersonasService {
       throw error;
     }
   }
+
+  // Vincular una persona con un usuario
+  static async vincularUsuario(personaId: number, usuarioId: number): Promise<Persona> {
+    try {
+      const response = await api.patch(`${ENDPOINT}/${personaId}/vincular-usuario`, { usuarioId });
+      if (!response.data?.data) {
+        throw new Error('Error vinculando usuario');
+      }
+      return response.data.data;
+    } catch (error) {
+      console.error('Error vinculando usuario:', error);
+      throw error;
+    }
+  }
 }

@@ -43,9 +43,17 @@
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
     "postgres:docker": "npm run docker:up && npm run postgres:import",
-    "analyze:categories": "ts-node category-analyzer.ts"
+    "analyze:categories": "ts-node category-analyzer.ts",
+    "backup": "bash scripts/backup-db.sh",
+    "validate": "ts-node scripts/validate-data.ts",
+    "validate:migration": "ts-node scripts/validate-migration.ts",
+    "rollback": "ts-node scripts/rollback.ts",
+    "pre-deploy": "ts-node scripts/pre-deploy-check.ts",
+    "install:all": "npm install @casl/ability @casl/prisma && npm install && npx prisma generate"
   },
   "dependencies": {
+    "@casl/ability": "^6.7.1",
+    "@casl/prisma": "^1.4.1",
     "@nestjs/class-transformer": "^0.4.0",
     "@nestjs/class-validator": "^0.13.4",
     "@nestjs/common": "^11.0.1",

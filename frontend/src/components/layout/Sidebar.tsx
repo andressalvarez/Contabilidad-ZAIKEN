@@ -2,9 +2,19 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useRegistroHoras } from '@/hooks/useRegistroHoras'
+import { useCan } from '@/hooks/usePermissions'
+import { Action } from '@/types/permissions'
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const { data: registrosHoras = [] } = useRegistroHoras()
+  const canApprove = useCan(Action.Approve, 'RegistroHoras')
+
+  // Contar horas pendientes de aprobación
+  const pendingCount = registrosHoras.filter(
+    (r) => !r.aprobado && !r.rechazado
+  ).length
 
   const isActive = (path: string) => {
     return pathname === path
@@ -100,6 +110,28 @@ export default function Sidebar() {
                 <span>Registro Horas</span>
               </Link>
             </li>
+            {canApprove && (
+              <li>
+                <Link
+                  href="/horas-pendientes"
+                  className={`flex items-center justify-between gap-3 px-3 py-2 text-sm font-medium rounded-lg ${
+                    isActive('/horas-pendientes')
+                      ? 'text-amber-600 bg-amber-50'
+                      : 'text-gray-700 hover:bg-amber-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <i className="bi bi-clock-history"></i>
+                    <span>Aprobar Horas</span>
+                  </div>
+                  {pendingCount > 0 && (
+                    <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
+                      {pendingCount}
+                    </span>
+                  )}
+                </Link>
+              </li>
+            )}
           </ul>
         </div>
 
@@ -161,7 +193,7 @@ export default function Sidebar() {
           </ul>
         </div>
 
-        <div>
+        <div className="mb-6">
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Distribución</h3>
           <ul className="space-y-1">
             <li>
@@ -188,6 +220,25 @@ export default function Sidebar() {
               >
                 <i className="bi bi-list-check"></i>
                 <span>Distribución Detalle</span>
+              </Link>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Administración</h3>
+          <ul className="space-y-1">
+            <li>
+              <Link
+                href="/usuarios"
+                className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg ${
+                  isActive('/usuarios')
+                    ? 'text-indigo-600 bg-indigo-50'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <i className="bi bi-person-gear"></i>
+                <span>Usuarios</span>
               </Link>
             </li>
           </ul>

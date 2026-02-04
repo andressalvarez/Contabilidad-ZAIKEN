@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCampanaDto, UpdateCampanaDto } from './dto';
 
@@ -6,9 +6,10 @@ import { CreateCampanaDto, UpdateCampanaDto } from './dto';
 export class CampanasService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createCampanaDto: CreateCampanaDto) {
+  async create(negocioId: number, createCampanaDto: CreateCampanaDto) {
     return this.prisma.campana.create({
       data: {
+        negocioId,
         nombre: createCampanaDto.nombre,
         fechaInicio: new Date(createCampanaDto.fechaInicio),
         fechaFin: new Date(createCampanaDto.fechaFin),
@@ -20,9 +21,12 @@ export class CampanasService {
     });
   }
 
-  async findAll() {
+  async findAll(negocioId: number) {
     const campanas = await this.prisma.campana.findMany({
-      where: { activo: true },
+      where: {
+        negocioId,
+        activo: true,
+      },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -30,14 +34,21 @@ export class CampanasService {
     const campanasConMetricas = await Promise.all(
       campanas.map(async (campana) => {
         const transacciones = await this.prisma.transaccion.findMany({
-          where: { campanaId: campana.id },
+          where: {
+            negocioId,
+            campanaId: campana.id,
+          },
           include: {
             tipo: true
           }
         });
 
         const registroHoras = await this.prisma.registroHoras.findMany({
-          where: { campanaId: campana.id },
+          where: {
+            negocioId,
+            campanaId: campana.id,
+            aprobado: true, // Solo contar horas aprobadas
+          },
         });
 
         // Calcular métricas
@@ -66,9 +77,12 @@ export class CampanasService {
     return campanasConMetricas;
   }
 
-  async findOne(id: number) {
-    const campana = await this.prisma.campana.findUnique({
-      where: { id },
+  async findOne(id: number, negocioId: number) {
+    const campana = await this.prisma.campana.findFirst({
+      where: {
+        id,
+        negocioId,
+      },
     });
 
     if (!campana) {
@@ -78,8 +92,8 @@ export class CampanasService {
     return campana;
   }
 
-  async update(id: number, updateCampanaDto: UpdateCampanaDto) {
-    const campana = await this.findOne(id);
+  async update(id: number, negocioId: number, updateCampanaDto: UpdateCampanaDto) {
+    await this.findOne(id, negocioId);
 
     return this.prisma.campana.update({
       where: { id },
@@ -95,16 +109,22 @@ export class CampanasService {
     });
   }
 
-  async remove(id: number) {
-    const campana = await this.findOne(id);
+  async remove(id: number, negocioId: number) {
+    await this.findOne(id, negocioId);
 
-    // Eliminar registros relacionados
+    // Eliminar registros relacionados (solo del mismo negocio)
     await this.prisma.registroHoras.deleteMany({
-      where: { campanaId: id },
+      where: {
+        negocioId,
+        campanaId: id,
+      },
     });
 
     await this.prisma.transaccion.deleteMany({
-      where: { campanaId: id },
+      where: {
+        negocioId,
+        campanaId: id,
+      },
     });
 
     // Eliminar la campaña
@@ -115,15 +135,19 @@ export class CampanasService {
     return { message: 'Campaña eliminada exitosamente' };
   }
 
-  async getStats(filters?: any) {
+  async getStats(negocioId: number, filters?: any) {
     if (!filters) {
       // Estadísticas generales sin filtros
       const totalCampanas = await this.prisma.campana.count({
-        where: { activo: true },
+        where: {
+          negocioId,
+          activo: true,
+        },
       });
 
       const campanasActivas = await this.prisma.campana.count({
         where: {
+          negocioId,
           activo: true,
           fechaInicio: { lte: new Date() },
           fechaFin: { gte: new Date() },
@@ -132,6 +156,7 @@ export class CampanasService {
 
       const campanasFinalizadas = await this.prisma.campana.count({
         where: {
+          negocioId,
           activo: true,
           fechaFin: { lt: new Date() },
         },
@@ -139,6 +164,7 @@ export class CampanasService {
 
       const campanasFuturas = await this.prisma.campana.count({
         where: {
+          negocioId,
           activo: true,
           fechaInicio: { gt: new Date() },
         },
@@ -153,11 +179,14 @@ export class CampanasService {
     }
 
     // Estadísticas con filtros
-    const where: any = {};
+    const where: any = {
+      negocioId,
+    };
 
     if (filters.personaId) {
       where.transacciones = {
         some: {
+          negocioId,
           personaId: parseInt(filters.personaId)
         }
       };
@@ -167,6 +196,7 @@ export class CampanasService {
       where.transacciones = {
         ...where.transacciones,
         some: {
+          negocioId,
           ...where.transacciones?.some,
           fecha: {
             ...(filters.fechaInicio && { gte: new Date(filters.fechaInicio) }),
@@ -181,6 +211,7 @@ export class CampanasService {
       include: {
         transacciones: {
           where: {
+            negocioId,
             ...(filters.personaId && { personaId: parseInt(filters.personaId) }),
             ...(filters.fechaInicio || filters.fechaFin) && {
               fecha: {

@@ -1,0 +1,37 @@
+# Dockerfile para desarrollo - Backend NestJS
+FROM node:18-alpine
+
+# Instalar herramientas necesarias
+RUN apk add --no-cache bash postgresql-client
+
+WORKDIR /app
+
+# Copiar package files
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Instalar dependencias (usar install en lugar de ci para desarrollo)
+RUN npm install
+
+# Copiar código fuente
+COPY . .
+
+# Generar Prisma Client
+RUN npx prisma generate
+
+# Crear directorio de backups
+RUN mkdir -p /app/backups && chmod 755 /app/backups
+
+# Variables de entorno
+ENV NODE_ENV=development
+ENV PORT=3004
+
+# Exponer puerto
+EXPOSE 3004
+
+# Script de inicio
+COPY docker-entrypoint.sh /app/
+RUN chmod +x /app/docker-entrypoint.sh
+
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
+CMD ["npm", "run", "start:dev"]

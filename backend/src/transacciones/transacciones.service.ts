@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTransaccionDto } from './dto/create-transaccion.dto';
 import { UpdateTransaccionDto } from './dto/update-transaccion.dto';
@@ -64,22 +64,23 @@ export class TransaccionesService {
   ) {}
 
   // Crear transacción
-  async create(createTransaccionDto: CreateTransaccionDto): Promise<any> {
+  async create(negocioId: number, createTransaccionDto: CreateTransaccionDto): Promise<any> {
     try {
       // Validar relaciones si se proporcionan
       if (createTransaccionDto.personaId) {
-        await this.validatePersona(createTransaccionDto.personaId);
+        await this.validatePersona(createTransaccionDto.personaId, negocioId);
       }
       if (createTransaccionDto.campanaId) {
-        await this.validateCampana(createTransaccionDto.campanaId);
+        await this.validateCampana(createTransaccionDto.campanaId, negocioId);
       }
       if (createTransaccionDto.categoriaId) {
-        await this.validateCategoria(createTransaccionDto.categoriaId);
+        await this.validateCategoria(createTransaccionDto.categoriaId, negocioId);
       }
 
       const transaccion = await this.prisma.transaccion.create({
         data: {
           ...createTransaccionDto,
+          negocioId,
           // Aceptar 'YYYY-MM-DD' o 'YYYY-MM-DDTHH:mm:ss'
           fecha: this.parseFechaLocal(createTransaccionDto.fecha),
         },
@@ -93,7 +94,7 @@ export class TransaccionesService {
 
       // Actualizar totales de campaña si está asociada
       if (transaccion.campanaId) {
-        await this.updateCampanaTotals(transaccion.campanaId);
+        await this.updateCampanaTotals(transaccion.campanaId, negocioId);
       }
 
       return transaccion;
@@ -103,8 +104,10 @@ export class TransaccionesService {
   }
 
   // Obtener todas las transacciones con filtros
-  async findAll(filtros: FiltrosTransacciones = {}): Promise<any[]> {
-    const where: Prisma.TransaccionWhereInput = {};
+  async findAll(negocioId: number, filtros: FiltrosTransacciones = {}): Promise<any[]> {
+    const where: Prisma.TransaccionWhereInput = {
+      negocioId,
+    };
 
     // Aplicar filtros
     if (filtros.fechaInicio && filtros.fechaFin) {
@@ -155,8 +158,9 @@ export class TransaccionesService {
   }
 
   // Obtener transacciones recientes
-  async findRecent(limit = 10): Promise<any[]> {
+  async findRecent(negocioId: number, limit = 10): Promise<any[]> {
     return this.prisma.transaccion.findMany({
+      where: { negocioId },
       take: limit,
       include: {
         tipo: true,
@@ -168,9 +172,12 @@ export class TransaccionesService {
   }
 
   // Obtener transacciones pendientes de aprobación
-  async findPending(): Promise<any[]> {
+  async findPending(negocioId: number): Promise<any[]> {
     return this.prisma.transaccion.findMany({
-      where: { aprobado: false },
+      where: {
+        negocioId,
+        aprobado: false
+      },
       include: {
         tipo: true,
         persona: true,
@@ -181,9 +188,12 @@ export class TransaccionesService {
   }
 
   // Obtener transacción por ID
-  async findOne(id: number): Promise<any> {
-    const transaccion = await this.prisma.transaccion.findUnique({
-      where: { id },
+  async findOne(id: number, negocioId: number): Promise<any> {
+    const transaccion = await this.prisma.transaccion.findFirst({
+      where: {
+        id,
+        negocioId
+      },
       include: {
         tipo: true,
         persona: true,
@@ -200,20 +210,20 @@ export class TransaccionesService {
   }
 
   // Actualizar transacción
-  async update(id: number, updateTransaccionDto: UpdateTransaccionDto): Promise<any> {
+  async update(id: number, negocioId: number, updateTransaccionDto: UpdateTransaccionDto): Promise<any> {
     try {
       // Verificar que existe
-      const transaccionExistente = await this.findOne(id);
+      const transaccionExistente = await this.findOne(id, negocioId);
 
       // Validar relaciones si se proporcionan
       if (updateTransaccionDto.personaId) {
-        await this.validatePersona(updateTransaccionDto.personaId);
+        await this.validatePersona(updateTransaccionDto.personaId, negocioId);
       }
       if (updateTransaccionDto.campanaId) {
-        await this.validateCampana(updateTransaccionDto.campanaId);
+        await this.validateCampana(updateTransaccionDto.campanaId, negocioId);
       }
       if (updateTransaccionDto.categoriaId) {
-        await this.validateCategoria(updateTransaccionDto.categoriaId);
+        await this.validateCategoria(updateTransaccionDto.categoriaId, negocioId);
       }
 
       const updateData: any = { ...updateTransaccionDto };
@@ -238,7 +248,7 @@ export class TransaccionesService {
       if (transaccion.campanaId) campanasAfectadas.add(transaccion.campanaId);
 
       for (const campanaId of campanasAfectadas) {
-        await this.updateCampanaTotals(campanaId as number);
+        await this.updateCampanaTotals(campanaId as number, negocioId);
       }
 
       return transaccion;
@@ -251,8 +261,8 @@ export class TransaccionesService {
   }
 
   // Eliminar transacción
-  async remove(id: number): Promise<{ message: string }> {
-    const transaccion = await this.findOne(id);
+  async remove(id: number, negocioId: number): Promise<{ message: string }> {
+    const transaccion = await this.findOne(id, negocioId);
 
     await this.prisma.transaccion.delete({
       where: { id },
@@ -260,7 +270,7 @@ export class TransaccionesService {
 
     // Actualizar totales de campaña si estaba asociada
     if (transaccion.campanaId) {
-      await this.updateCampanaTotals(transaccion.campanaId);
+      await this.updateCampanaTotals(transaccion.campanaId, negocioId);
     }
 
     return {
@@ -269,17 +279,19 @@ export class TransaccionesService {
   }
 
   // Aprobar/rechazar transacción
-  async updateApprovalStatus(id: number, aprobado: boolean): Promise<any> {
-    const transaccion = await this.update(id, { aprobado });
+  async updateApprovalStatus(id: number, negocioId: number, aprobado: boolean): Promise<any> {
+    const transaccion = await this.update(id, negocioId, { aprobado });
     return transaccion;
   }
 
   // Obtener estadísticas generales
-  async getStats(filters: FiltrosTransacciones = {}) {
+  async getStats(negocioId: number, filters: FiltrosTransacciones = {}) {
     // Asegurar que existan los tipos por defecto
     await this.ensureDefaultTipos();
 
-    const where: any = {};
+    const where: any = {
+      negocioId
+    };
 
     if (filters.personaId) {
       where.personaId = parseInt(filters.personaId.toString());
@@ -326,6 +338,7 @@ export class TransaccionesService {
 
     // Estadísticas por persona
     const statsPorPersona = await this.prisma.persona.findMany({
+      where: { negocioId },
       include: {
         transacciones: {
           where,
@@ -335,6 +348,7 @@ export class TransaccionesService {
         },
         valorHoras: {
           where: {
+            negocioId,
             ...(filters.fechaInicio || filters.fechaFin) && {
               fechaInicio: {
                 ...(filters.fechaInicio && { gte: new Date(filters.fechaInicio) }),
@@ -369,6 +383,7 @@ export class TransaccionesService {
 
     // Estadísticas por campaña
     const statsPorCampana = await this.prisma.campana.findMany({
+      where: { negocioId },
       include: {
         transacciones: {
           where,
@@ -410,8 +425,9 @@ export class TransaccionesService {
   }
 
   // Obtener resumen por tipos de gasto
-  async getResumenPorTiposGasto(filtros: FiltrosTransacciones = {}): Promise<any[]> {
+  async getResumenPorTiposGasto(negocioId: number, filtros: FiltrosTransacciones = {}): Promise<any[]> {
     const where: Prisma.TransaccionWhereInput = {
+      negocioId,
       tipoId: 2, // Solo GASTOS
     };
 
@@ -458,7 +474,10 @@ export class TransaccionesService {
       select: {
         categoriaId: true,
         monto: true,
-        categoria: { select: { nombre: true } },
+        categoria: {
+          select: { nombre: true },
+          where: { negocioId }
+        },
       },
     });
 
@@ -488,8 +507,9 @@ export class TransaccionesService {
   }
 
   // Obtener resumen de gastos por campaña
-  async getResumenGastosPorCampana(filtros: FiltrosTransacciones = {}): Promise<any[]> {
+  async getResumenGastosPorCampana(negocioId: number, filtros: FiltrosTransacciones = {}): Promise<any[]> {
     const where: Prisma.TransaccionWhereInput = {
+      negocioId,
       tipoId: 2, // Solo GASTOS
     };
 
@@ -536,7 +556,10 @@ export class TransaccionesService {
       select: {
         campanaId: true,
         monto: true,
-        campana: { select: { nombre: true } },
+        campana: {
+          select: { nombre: true },
+          where: { negocioId }
+        },
       },
     });
 
@@ -566,12 +589,14 @@ export class TransaccionesService {
   }
 
   // Obtener resumen por categorías
-  async getResumenPorCategorias(filtros: FiltrosTransacciones = {}): Promise<ResumenPorCategoria[]> {
+  async getResumenPorCategorias(negocioId: number, filtros: FiltrosTransacciones = {}): Promise<ResumenPorCategoria[]> {
     // 1. Traer todas las categorías activas
-    const categorias = await this.categoriasService.findAll();
+    const categorias = await this.categoriasService.findAll(negocioId);
 
     // 2. Traer todas las transacciones filtradas
-    const where: Prisma.TransaccionWhereInput = {};
+    const where: Prisma.TransaccionWhereInput = {
+      negocioId
+    };
     if (filtros.fechaInicio && filtros.fechaFin) {
       where.fecha = {
         gte: new Date(filtros.fechaInicio),
@@ -662,8 +687,10 @@ export class TransaccionesService {
   }
 
   // Obtener tendencias mensuales
-  async getTendenciasMensuales(año?: number, filtros: FiltrosTransacciones = {}): Promise<any[]> {
-    const where: Prisma.TransaccionWhereInput = {};
+  async getTendenciasMensuales(negocioId: number, año?: number, filtros: FiltrosTransacciones = {}): Promise<any[]> {
+    const where: Prisma.TransaccionWhereInput = {
+      negocioId
+    };
 
     // Aplicar filtro de año
     if (año) {
@@ -697,7 +724,8 @@ export class TransaccionesService {
 
     if (filtros.categoria) {
       where.categoria = {
-        nombre: filtros.categoria
+        nombre: filtros.categoria,
+        negocioId
       };
     }
 
@@ -787,27 +815,36 @@ export class TransaccionesService {
   }
 
   // Validaciones privadas
-  private async validateCategoria(categoriaId: number): Promise<void> {
-    const categoria = await this.prisma.categoria.findUnique({
-      where: { id: categoriaId },
+  private async validateCategoria(categoriaId: number, negocioId: number): Promise<void> {
+    const categoria = await this.prisma.categoria.findFirst({
+      where: {
+        id: categoriaId,
+        negocioId
+      },
     });
     if (!categoria) {
       throw new NotFoundException(`Categoría con ID ${categoriaId} no encontrada`);
     }
   }
 
-  private async validatePersona(personaId: number): Promise<void> {
-    const persona = await this.prisma.persona.findUnique({
-      where: { id: personaId },
+  private async validatePersona(personaId: number, negocioId: number): Promise<void> {
+    const persona = await this.prisma.persona.findFirst({
+      where: {
+        id: personaId,
+        negocioId
+      },
     });
     if (!persona) {
       throw new NotFoundException(`Persona con ID ${personaId} no encontrada`);
     }
   }
 
-  private async validateCampana(campanaId: number): Promise<void> {
-    const campana = await this.prisma.campana.findUnique({
-      where: { id: campanaId },
+  private async validateCampana(campanaId: number, negocioId: number): Promise<void> {
+    const campana = await this.prisma.campana.findFirst({
+      where: {
+        id: campanaId,
+        negocioId
+      },
     });
     if (!campana) {
       throw new NotFoundException(`Campaña con ID ${campanaId} no encontrada`);
@@ -815,14 +852,22 @@ export class TransaccionesService {
   }
 
   // Actualizar totales de campaña
-  private async updateCampanaTotals(campanaId: number): Promise<void> {
+  private async updateCampanaTotals(campanaId: number, negocioId: number): Promise<void> {
     const [ingresos, gastos] = await Promise.all([
       this.prisma.transaccion.aggregate({
-        where: { campanaId, tipoId: 1 }, // Assuming 1 is INGRESO
+        where: {
+          negocioId,
+          campanaId,
+          tipoId: 1
+        }, // Assuming 1 is INGRESO
         _sum: { monto: true },
       }),
       this.prisma.transaccion.aggregate({
-        where: { campanaId, tipoId: 2 }, // Assuming 2 is GASTO
+        where: {
+          negocioId,
+          campanaId,
+          tipoId: 2
+        }, // Assuming 2 is GASTO
         _sum: { monto: true },
       }),
     ]);

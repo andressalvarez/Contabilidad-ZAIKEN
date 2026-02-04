@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Persona, Prisma } from '@prisma/client';
 import { CreatePersonaDto, UpdatePersonaDto } from './dto';
@@ -8,7 +8,7 @@ export class PersonasService {
   constructor(private prisma: PrismaService) {}
 
   // Crear una nueva persona
-  async create(createPersonaDto: CreatePersonaDto): Promise<Persona> {
+  async create(negocioId: number, createPersonaDto: CreatePersonaDto): Promise<Persona> {
     try {
       // Verificar que el rol existe
       const rol = await this.prisma.rol.findUnique({
@@ -20,7 +20,7 @@ export class PersonasService {
       }
 
       // Verificar que no exceda el 100% de participación total
-      const totalParticipacion = await this.getTotalParticipacion();
+      const totalParticipacion = await this.getTotalParticipacion(negocioId);
       if (totalParticipacion + createPersonaDto.participacionPorc > 100) {
         throw new BadRequestException(
           `La participación total excedería el 100%. Actual: ${totalParticipacion}%`
@@ -28,7 +28,10 @@ export class PersonasService {
       }
 
       return await this.prisma.persona.create({
-        data: createPersonaDto,
+        data: {
+          ...createPersonaDto,
+          negocioId,
+        },
         include: {
           rol: true,
           _count: {
@@ -49,8 +52,8 @@ export class PersonasService {
   }
 
   // Obtener todas las personas
-  async findAll(includeInactive = false): Promise<Persona[]> {
-    const where = includeInactive ? {} : { activo: true };
+  async findAll(negocioId: number, includeInactive = false): Promise<Persona[]> {
+    const where = includeInactive ? { negocioId } : { negocioId, activo: true };
 
     return this.prisma.persona.findMany({
       where,
@@ -73,14 +76,18 @@ export class PersonasService {
   }
 
   // Obtener personas activas
-  async findActive(): Promise<Persona[]> {
-    return this.findAll(false);
+  async findActive(negocioId: number): Promise<Persona[]> {
+    return this.findAll(negocioId, false);
   }
 
   // Obtener persona por ID
-  async findOne(id: number): Promise<Persona> {
-    const persona = await this.prisma.persona.findUnique({
-      where: { id },
+  async findOne(id: number, negocioId: number): Promise<Persona> {
+    const persona = await this.prisma.persona.findFirst({
+      where: {
+        id,
+        negocioId,
+        activo: true,
+      },
       include: {
         rol: true,
         valorHoras: {
@@ -96,7 +103,6 @@ export class PersonasService {
           orderBy: { fecha: 'desc' },
           take: 5,
           include: {
-
             campana: true,
           },
         },
@@ -119,13 +125,13 @@ export class PersonasService {
   }
 
   // Actualizar persona
-  async update(id: number, updatePersonaDto: UpdatePersonaDto): Promise<Persona> {
+  async update(id: number, negocioId: number, updatePersonaDto: UpdatePersonaDto): Promise<Persona> {
     try {
-      const personaExistente = await this.findOne(id);
+      const personaExistente = await this.findOne(id, negocioId);
 
       // Si se está actualizando la participación, verificar límites
       if (updatePersonaDto.participacionPorc !== undefined) {
-        const totalParticipacion = await this.getTotalParticipacion(id);
+        const totalParticipacion = await this.getTotalParticipacion(negocioId, id);
         if (totalParticipacion + updatePersonaDto.participacionPorc > 100) {
           throw new BadRequestException(
             `La participación total excedería el 100%. Actual sin esta persona: ${totalParticipacion}%`
@@ -171,8 +177,8 @@ export class PersonasService {
   }
 
   // Eliminar persona (soft delete)
-  async remove(id: number): Promise<{ message: string }> {
-    const persona = await this.findOne(id);
+  async remove(id: number, negocioId: number): Promise<{ message: string }> {
+    const persona = await this.findOne(id, negocioId);
 
     // Verificar si tiene registros asociados
     const hasRecords = await this.hasAssociatedRecords(id);
@@ -194,8 +200,8 @@ export class PersonasService {
   }
 
   // Obtener estadísticas de una persona
-  async getStats(id: number) {
-    const persona = await this.findOne(id);
+  async getStats(id: number, negocioId: number) {
+    const persona = await this.findOne(id, negocioId);
 
     // Estadísticas de transacciones
     const transaccionesStats = await this.prisma.transaccion.aggregate({
@@ -253,8 +259,8 @@ export class PersonasService {
     };
   }
 
-  async getSummary(filters: any) {
-    const where: any = {};
+  async getSummary(negocioId: number, filters: any) {
+    const where: any = { negocioId };
 
     if (filters.fechaInicio || filters.fechaFin) {
       where.transacciones = {
@@ -331,10 +337,50 @@ export class PersonasService {
   }
 
   // Método privado: obtener participación total
-  private async getTotalParticipacion(excludePersonaId?: number): Promise<number> {
+  /**
+   * Vincular una persona con un usuario
+   */
+  async vincularUsuario(personaId: number, negocioId: number, usuarioId: number) {
+    // Verificar que la persona existe y pertenece al negocio
+    const persona = await this.findOne(personaId, negocioId);
+    if (!persona) {
+      throw new NotFoundException(`Persona con ID ${personaId} no encontrada`);
+    }
+
+    // Verificar que el usuario existe y pertenece al mismo negocio
+    const usuario = await this.prisma.usuario.findFirst({
+      where: {
+        id: usuarioId,
+        negocioId,
+      },
+    });
+
+    if (!usuario) {
+      throw new NotFoundException(`Usuario con ID ${usuarioId} no encontrado o no pertenece al mismo negocio`);
+    }
+
+    // Actualizar la persona con el usuarioId
+    return this.prisma.persona.update({
+      where: { id: personaId },
+      data: { usuarioId },
+      include: {
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rol: true,
+          },
+        },
+        rol: true,
+      },
+    });
+  }
+
+  private async getTotalParticipacion(negocioId: number, excludePersonaId?: number): Promise<number> {
     const where = excludePersonaId
-      ? { activo: true, NOT: { id: excludePersonaId } }
-      : { activo: true };
+      ? { negocioId, activo: true, NOT: { id: excludePersonaId } }
+      : { negocioId, activo: true };
 
     const result = await this.prisma.persona.aggregate({
       where,

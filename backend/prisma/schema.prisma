@@ -7,6 +7,35 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ==========================
+// MODELO NEGOCIO (Multi-Tenant)
+// ==========================
+
+model Negocio {
+  id                       Int                      @id @default(autoincrement())
+  nombre                   String
+  descripcion              String?
+  activo                   Boolean                  @default(true)
+  configuracion            Json?                    // Configuración específica del negocio
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+
+  // Relaciones
+  usuarios                 Usuario[]
+  personas                 Persona[]
+  valorHoras               ValorHora[]
+  registroHoras            RegistroHoras[]
+  categorias               Categoria[]
+  campanas                 Campana[]
+  transacciones            Transaccion[]
+  distribucionUtilidades   DistribucionUtilidades[]
+  vsCarpetas               VSCarpeta[]
+  vsGrupos                 VSGrupo[]
+  vsConfiguraciones        VSConfiguracion[]
+
+  @@map("negocios")
+}
+
 model Rol {
   id          Int         @id @default(autoincrement())
   nombreRol   String      @unique
@@ -22,7 +51,8 @@ model Rol {
 
 model Persona {
   id                  Int                   @id @default(autoincrement())
-  nombre              String                @unique
+  negocioId           Int
+  nombre              String
   rolId               Int
   usuarioId           Int?
   horasTotales        Int                   @default(0)
@@ -37,17 +67,21 @@ model Persona {
   updatedAt           DateTime              @updatedAt
   email               String?
   distribucionDetalle DistribucionDetalle[]
+  negocio             Negocio               @relation(fields: [negocioId], references: [id])
   rol                 Rol                   @relation(fields: [rolId], references: [id])
   registroHoras       RegistroHoras[]
   transacciones       Transaccion[]
   valorHoras          ValorHora[]
   usuario             Usuario?              @relation(fields: [usuarioId], references: [id])
 
+  @@unique([negocioId, nombre])
+  @@index([negocioId])
   @@map("personas")
 }
 
 model ValorHora {
   id          Int       @id @default(autoincrement())
+  negocioId   Int
   personaId   Int
   rolId       Int
   valor       Float
@@ -57,46 +91,66 @@ model ValorHora {
   activo      Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  negocio     Negocio   @relation(fields: [negocioId], references: [id])
   rol         Rol       @relation(fields: [rolId], references: [id])
   persona     Persona   @relation(fields: [personaId], references: [id])
 
+  @@index([negocioId])
   @@map("valor_horas")
 }
 
 model RegistroHoras {
-  id          Int      @id @default(autoincrement())
-  personaId   Int
-  campanaId   Int?
-  fecha       DateTime
-  horas       Float
-  descripcion String?
-  aprobado    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  campana     Campana? @relation(fields: [campanaId], references: [id])
-  persona     Persona  @relation(fields: [personaId], references: [id])
+  id             Int       @id @default(autoincrement())
+  negocioId      Int
+  personaId      Int
+  campanaId      Int?
+  fecha          DateTime
+  horas          Float
+  descripcion    String?
+  aprobado       Boolean   @default(false)
+  aprobadoPor    Int?      // ID del usuario que aprobó
+  fechaAprobacion DateTime? // Cuándo fue aprobado
+  rechazado      Boolean   @default(false)
+  motivoRechazo  String?
+  origen         String    @default("MANUAL") // MANUAL o TIMER
+  timerInicio    DateTime? // Para registros desde timer
+  timerFin       DateTime? // Para registros desde timer
+  estado         String?   // RUNNING, PAUSADO, COMPLETADO (solo para TIMER)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  negocio        Negocio   @relation(fields: [negocioId], references: [id])
+  campana        Campana?  @relation(fields: [campanaId], references: [id])
+  persona        Persona   @relation(fields: [personaId], references: [id])
 
+  @@index([negocioId])
+  @@index([negocioId, personaId])
+  @@index([negocioId, aprobado])
   @@map("registro_horas")
 }
 
 model Categoria {
   id            Int           @id @default(autoincrement())
-  nombre        String        @unique
+  negocioId     Int
+  nombre        String
   usuarioId     Int?
   descripcion   String?
   color         String?
   activo        Boolean       @default(true)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+  negocio       Negocio       @relation(fields: [negocioId], references: [id])
   transacciones Transaccion[]
   vsGrupoCategorias VSGrupoCategoria[]
   usuario       Usuario?      @relation(fields: [usuarioId], references: [id])
 
+  @@unique([negocioId, nombre])
+  @@index([negocioId])
   @@map("categorias")
 }
 
 model Campana {
   id            Int             @id @default(autoincrement())
+  negocioId     Int
   nombre        String
   usuarioId     Int?
   descripcion   String?
@@ -109,10 +163,13 @@ model Campana {
   activo        Boolean         @default(true)
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
+  negocio       Negocio         @relation(fields: [negocioId], references: [id])
   registroHoras RegistroHoras[]
   transacciones Transaccion[]
   usuario       Usuario?        @relation(fields: [usuarioId], references: [id])
 
+  @@unique([negocioId, nombre])
+  @@index([negocioId])
   @@map("campanas")
 }
 
@@ -130,6 +187,7 @@ model TipoTransaccion {
 
 model Transaccion {
   id          Int             @id @default(autoincrement())
+  negocioId   Int
   tipoId      Int
   usuarioId   Int?
   monto       Float
@@ -144,25 +202,31 @@ model Transaccion {
   aprobado    Boolean         @default(false)
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
+  negocio     Negocio         @relation(fields: [negocioId], references: [id])
   campana     Campana?        @relation(fields: [campanaId], references: [id])
   persona     Persona?        @relation(fields: [personaId], references: [id])
   tipo        TipoTransaccion @relation(fields: [tipoId], references: [id])
   categoria   Categoria?      @relation(fields: [categoriaId], references: [id])
   usuario     Usuario?        @relation(fields: [usuarioId], references: [id])
 
+  @@index([negocioId])
+  @@index([negocioId, fecha])
   @@map("transacciones")
 }
 
 model DistribucionUtilidades {
   id            Int                   @id @default(autoincrement())
+  negocioId     Int
   periodo       String
   fecha         DateTime              @default(now())
   utilidadTotal Float
   estado        String                @default("Pendiente")
   createdAt     DateTime              @default(now())
   updatedAt     DateTime              @updatedAt
+  negocio       Negocio               @relation(fields: [negocioId], references: [id])
   detalles      DistribucionDetalle[]
 
+  @@index([negocioId])
   @@map("distribucion_utilidades")
 }
 
@@ -182,13 +246,17 @@ model DistribucionDetalle {
 
 model Usuario {
   id        Int      @id @default(autoincrement())
+  negocioId Int      // Usuario pertenece a un negocio
   email     String   @unique
   password  String
   nombre    String
-  rol       String   @default("USER")
+  rol       String   @default("USER") // ADMIN_NEGOCIO, USER, EMPLEADO
   activo    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Relación con negocio
+  negocio       Negocio   @relation(fields: [negocioId], references: [id])
 
   // Relaciones inversas (propiedad)
   personas      Persona[]
@@ -199,25 +267,31 @@ model Usuario {
   // Roles de plataforma (opcional)
   rolesSistema  UsuarioRol[]
 
+  @@index([negocioId])
+  @@index([negocioId, rol])
   @@map("usuarios")
 }
 
 // Modelos para VS Categorías - Sistema Avanzado
 model VSCarpeta {
   id          Int       @id @default(autoincrement())
+  negocioId   Int
   nombre      String
   color       String
   visible     Boolean   @default(true)
   orden       Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  negocio     Negocio   @relation(fields: [negocioId], references: [id])
   grupos      VSGrupo[]
 
+  @@index([negocioId])
   @@map("vs_carpetas")
 }
 
 model VSGrupo {
   id          Int       @id @default(autoincrement())
+  negocioId   Int
   nombre      String
   color       String
   visible     Boolean   @default(true)
@@ -225,9 +299,11 @@ model VSGrupo {
   carpetaId   Int?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  negocio     Negocio   @relation(fields: [negocioId], references: [id])
   carpeta     VSCarpeta? @relation(fields: [carpetaId], references: [id])
   categorias  VSGrupoCategoria[]
 
+  @@index([negocioId])
   @@map("vs_grupos")
 }
 
@@ -245,12 +321,16 @@ model VSGrupoCategoria {
 
 model VSConfiguracion {
   id                    Int      @id @default(autoincrement())
-  nombre                String   @unique
+  negocioId             Int
+  nombre                String
   configuracion         Json     // Almacena toda la configuración como JSON
   activo                Boolean  @default(true)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
+  negocio               Negocio  @relation(fields: [negocioId], references: [id])
 
+  @@unique([negocioId, nombre])
+  @@index([negocioId])
   @@map("vs_configuraciones")
 }
 

@@ -14,6 +14,12 @@ export class CreatePersonaDto {
   rolId: number;
 
   @IsOptional()
+  @IsInt({ message: 'El ID del usuario debe ser un número entero' })
+  @Min(1, { message: 'El ID del usuario debe ser válido' })
+  @Type(() => Number)
+  usuarioId?: number;
+
+  @IsOptional()
   @Type(() => Number)
   @Min(0, { message: 'Las horas totales deben ser positivas' })
   horasTotales?: number = 0;

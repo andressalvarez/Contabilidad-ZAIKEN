@@ -323,7 +323,7 @@ export default function TransaccionesPage() {
   const handleExport = () => {
     const headers = [
       'ID', 'Fecha', 'Tipo', 'Concepto', 'Categoría', 'Monto', 'Moneda',
-      'Persona', 'Tipo de Gasto', 'Notas'
+      'Persona', 'Campaña', 'Notas'
     ];
 
     const csvContent = [
@@ -723,17 +723,17 @@ export default function TransaccionesPage() {
                 </select>
               </div>
 
-              {/* Campaña/Tipo de Gasto */}
+              {/* Campaña */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tipo de Gasto
+                  Campaña
                 </label>
                 <select
                   value={String(formData.campanaId ?? '')}
                   onChange={(e) => setFormData({...formData, campanaId: e.target.value ? Number(e.target.value) : undefined})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">-- Seleccione tipo de gasto --</option>
+                  <option value="">-- Seleccione campaña --</option>
                   {campanas.map(campana => (
                     <option key={campana.id} value={campana.id}>{campana.nombre}</option>
                   ))}
@@ -886,14 +886,14 @@ export default function TransaccionesPage() {
               {/* Campaña */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tipo de Gasto
+                  Campaña
                 </label>
                 <select
                   value={String(filters.campanaId)}
                   onChange={(e) => setFilters({...filters, campanaId: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Todos los tipos de gasto</option>
+                  <option value="">Todas las campañas</option>
                   {campanas.map(campana => (
                     <option key={campana.id} value={campana.id}>{campana.nombre}</option>
                   ))}
@@ -1066,7 +1066,7 @@ export default function TransaccionesPage() {
                         Persona
                       </th>
                       <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Tipo de Gasto
+                        Campaña
                       </th>
                       <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Notas
