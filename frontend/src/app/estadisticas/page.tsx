@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useTransacciones } from '@/hooks/useTransacciones';
-import { useEstadisticas, useTendenciasMensuales, useResumenPorCategorias, useEstadisticasCampanas, useEstadisticasPersonas } from '@/hooks/useEstadisticas';
-import { usePersonas } from '@/hooks/usePersonas';
+import { useEstadisticas, useTendenciasMensuales, useResumenPorCategorias, useEstadisticasCampanas, useEstadisticasUsuarios } from '@/hooks/useEstadisticas';  // ✅ Cambio: useEstadisticasPersonas → useEstadisticasUsuarios
+import { useUsuarios } from '@/hooks/useUsuarios';  // ✅ Cambio: usePersonas → useUsuarios
 import { useCampanas } from '@/hooks/useCampanas';
 import { useRoles } from '@/hooks/useRoles';
 import { Transaccion } from '@/types';
@@ -49,7 +49,7 @@ export default function EstadisticasPage() {
   // Estados principales
   const [showCharts, setShowCharts] = useState(true);
   const [filters, setFilters] = useState({
-    personaId: '',
+    usuarioId: '',  // ✅ Cambio: personaId → usuarioId
     fechaInicio: '',
     fechaFin: '',
     tipo: ''
@@ -72,13 +72,13 @@ export default function EstadisticasPage() {
 
   // Hooks de datos
   const { data: stats } = useEstadisticas(filters);
-  const { data: personas = [] } = usePersonas();
+  const { data: usuarios = [] } = useUsuarios();  // ✅ Cambio: personas → usuarios, usePersonas → useUsuarios
   const { data: campanas = [] } = useCampanas();
   const { data: roles = [] } = useRoles();
   const { data: tendenciasMensuales = [], isLoading: loadingTendencias } = useTendenciasMensuales(añoActual, filters);
   const { data: resumenCategorias = [], isLoading: loadingCategorias } = useResumenPorCategorias(filters);
   const { data: estadisticasCampanas } = useEstadisticasCampanas(filters);
-  const { data: estadisticasPersonas } = useEstadisticasPersonas(filters);
+  const { data: estadisticasUsuarios } = useEstadisticasUsuarios(filters);  // ✅ Cambio: estadisticasPersonas → estadisticasUsuarios
 
   // Generar colores para gráficos
   const generateColors = (count: number) => {
@@ -550,18 +550,18 @@ export default function EstadisticasPage() {
 
   // Renderizar gráfico de Aportes y Utilidades
   const renderAportesUtilidades = () => {
-    // Usar directamente los datos básicos de personas que ya tienen los datos correctos
-    const datosPersonas = personas || [];
-    console.log('DEBUG datosPersonas desde personas:', datosPersonas);
+    // Usar directamente los datos básicos de usuarios que ya tienen los datos correctos
+    const datosUsuarios = usuarios || [];  // ✅ Cambio: datosPersonas → datosUsuarios, personas → usuarios
+    console.log('DEBUG datosUsuarios desde usuarios:', datosUsuarios);  // ✅ Cambio
 
-    // Filtrar personas con cualquier actividad financiera
-    const personasConActividad = datosPersonas.filter((p: any) =>
-      (p.aportesTotales > 0 || p.inversionTotal > 0 || p.horasTotales > 0)
+    // Filtrar usuarios con cualquier actividad financiera
+    const usuariosConActividad = datosUsuarios.filter((u: any) =>  // ✅ Cambio: personasConActividad → usuariosConActividad, p → u
+      (u.aportesTotales > 0 || u.inversionTotal > 0 || u.horasTotales > 0)  // ✅ Cambio
     );
 
-    console.log('DEBUG personasConActividad filtradas:', personasConActividad);
+    console.log('DEBUG usuariosConActividad filtradas:', usuariosConActividad);  // ✅ Cambio
 
-    if (!Array.isArray(personasConActividad) || personasConActividad.length === 0) {
+    if (!Array.isArray(usuariosConActividad) || usuariosConActividad.length === 0) {  // ✅ Cambio
       // Mostrar mensaje de sin datos o limpiar el canvas
       const container = document.getElementById('aportesUtilidadesContainer');
       if (container) {
@@ -578,21 +578,21 @@ export default function EstadisticasPage() {
           msg.className = 'chart-legend mt-6';
           container.appendChild(msg);
         }
-        msg.innerHTML = `<div class='text-center text-gray-500 py-8'>Sin datos de aportes/utilidades por persona</div>`;
+        msg.innerHTML = `<div class='text-center text-gray-500 py-8'>Sin datos de aportes/utilidades por usuario</div>`;  {/* ✅ Cambio: persona → usuario */}
       }
       return;
     }
 
-    const colors = generateColors(personasConActividad.length);
+    const colors = generateColors(usuariosConActividad.length);  // ✅ Cambio: personasConActividad → usuariosConActividad
 
     const chart = createResponsiveChart('aportesUtilidadesChart', {
       type: 'bar',
       data: {
-        labels: personasConActividad.map((p: any) => p.nombre),
+        labels: usuariosConActividad.map((u: any) => u.nombre),  // ✅ Cambio: p → u
         datasets: [
           {
             label: 'Aportes Totales',
-            data: personasConActividad.map((p: any) => p.aportesTotales ?? 0),
+            data: usuariosConActividad.map((u: any) => u.aportesTotales ?? 0),  // ✅ Cambio
             backgroundColor: colors,
             borderColor: colors,
             borderWidth: 2,
@@ -668,27 +668,27 @@ export default function EstadisticasPage() {
       const legendContainer = document.createElement('div');
       legendContainer.className = 'chart-legend mt-6';
 
-      const totalAportes = personasConActividad.reduce((sum, p) => sum + (p.aportesTotales ?? 0), 0);
-      const totalInversion = personasConActividad.reduce((sum, p) => sum + (p.inversionTotal ?? 0), 0);
-      const totalHoras = personasConActividad.reduce((sum, p) => sum + (p.horasTotales ?? 0), 0);
+      const totalAportes = usuariosConActividad.reduce((sum, u) => sum + (u.aportesTotales ?? 0), 0);  // ✅ Cambio: p → u
+      const totalInversion = usuariosConActividad.reduce((sum, u) => sum + (u.inversionTotal ?? 0), 0);  // ✅ Cambio
+      const totalHoras = usuariosConActividad.reduce((sum, u) => sum + (u.horasTotales ?? 0), 0);  // ✅ Cambio
 
       legendContainer.innerHTML = `
         <div class="legend-header mb-4">
-          <h3 class="text-lg font-semibold text-gray-800">Aportes por Persona</h3>
+          <h3 class="text-lg font-semibold text-gray-800">Aportes por Usuario</h3>  {/* ✅ Cambio: Persona → Usuario */}
           <div class="flex gap-4 text-sm text-gray-600">
             <span>Total Aportes: $${totalAportes.toLocaleString()}</span>
-            <span>Personas: ${personasConActividad.length}</span>
+            <span>Usuarios: ${usuariosConActividad.length}</span>  {/* ✅ Cambio: Personas → Usuarios */}
           </div>
         </div>
         <div class="legend-items space-y-2 max-h-64 overflow-y-auto">
-          ${personasConActividad.map((persona, index) => {
-            const aportes = persona.aportesTotales ?? 0;
-            const participacion = persona.participacionPorc ?? 0;
+          ${usuariosConActividad.map((usuario, index) => {  // ✅ Cambio: persona → usuario
+            const aportes = usuario.aportesTotales ?? 0;  // ✅ Cambio
+            const participacion = usuario.participacionPorc ?? 0;  // ✅ Cambio
             return `
               <div class="legend-item flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <div class="flex items-center gap-3">
                   <div class="w-4 h-4 rounded-full" style="background-color: ${colors[index]}"></div>
-                  <span class="text-sm font-medium text-gray-800">${persona.nombre}</span>
+                  <span class="text-sm font-medium text-gray-800">${usuario.nombre}</span>  {/* ✅ Cambio: persona → usuario */}
                 </div>
                 <div class="text-right">
                   <div class="text-sm font-semibold text-gray-900">
@@ -737,7 +737,7 @@ export default function EstadisticasPage() {
         renderGraficas();
       }, 100);
     }
-  }, [stats, resumenCategorias, campanas, personas, showCharts]);
+  }, [stats, resumenCategorias, campanas, usuarios, showCharts]);  // ✅ Cambio: personas → usuarios
 
   return (
     <MainLayout>
@@ -788,16 +788,16 @@ export default function EstadisticasPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <User size={16} className="inline mr-1" />
-                Persona
+                Usuario  {/* ✅ Cambio: Persona → Usuario */}
               </label>
               <select
-                value={filters.personaId}
-                onChange={(e) => setFilters(prev => ({ ...prev, personaId: e.target.value }))}
+                value={filters.usuarioId}  {/* ✅ Cambio: personaId → usuarioId */}
+                onChange={(e) => setFilters(prev => ({ ...prev, usuarioId: e.target.value }))}  {/* ✅ Cambio */}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
               >
-                <option value="">Todas las personas</option>
-                {personas.map(persona => (
-                  <option key={persona.id} value={persona.id}>{persona.nombre}</option>
+                <option value="">Todos los usuarios</option>  {/* ✅ Cambio: personas → usuarios */}
+                {usuarios.map(usuario => (  /* ✅ Cambio: personas → usuarios, persona → usuario */
+                  <option key={usuario.id} value={usuario.id}>{usuario.nombre}</option>  {/* ✅ Cambio */}
                 ))}
               </select>
             </div>
@@ -902,15 +902,15 @@ export default function EstadisticasPage() {
                 </div>
               </div>
 
-              {/* Aportes por Persona */}
+              {/* Aportes por Usuario */}  {/* ✅ Cambio: Persona → Usuario */}
               <div id="aportesUtilidadesContainer" className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-2 bg-purple-100 rounded-lg">
                     <Users className="text-purple-600" size={24} />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-800">Aportes por Persona</h3>
-                    <p className="text-sm text-gray-600">Contribuciones totales por persona</p>
+                    <h3 className="text-xl font-bold text-gray-800">Aportes por Usuario</h3>  {/* ✅ Cambio: Persona → Usuario */}
+                    <p className="text-sm text-gray-600">Contribuciones totales por usuario</p>  {/* ✅ Cambio: persona → usuario */}
                   </div>
                 </div>
                 <div className="relative h-80">
