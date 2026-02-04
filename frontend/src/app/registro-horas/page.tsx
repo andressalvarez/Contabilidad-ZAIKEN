@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useRegistroHoras, useCreateRegistroHoras, useUpdateRegistroHoras, useDeleteRegistroHoras } from '@/hooks/useRegistroHoras';
-import { usePersonas } from '@/hooks/usePersonas';
+import { useUsuarios } from '@/hooks/useUsuarios';
 import MainLayout from '@/components/layout/MainLayout';
 import {
   Plus,
@@ -26,7 +26,7 @@ import { toast } from 'react-hot-toast';
 
 interface FormData {
   fecha: string;
-  personaId: number;
+  usuarioId: number; // ✅ Cambio: personaId → usuarioId
   horas: number;
   descripcion: string;
 }
@@ -34,7 +34,7 @@ interface FormData {
 export default function RegistroHorasPage() {
   const [formData, setFormData] = useState<FormData>({
     fecha: new Date().toISOString().split('T')[0],
-    personaId: 0,
+    usuarioId: 0, // ✅ Cambio: personaId → usuarioId
     horas: 0,
     descripcion: ''
   });
@@ -44,7 +44,7 @@ export default function RegistroHorasPage() {
 
   // React Query hooks
   const { data: registrosHoras = [], isLoading, error, refetch } = useRegistroHoras();
-  const { data: personas = [] } = usePersonas(true);
+  const { data: usuarios = [] } = useUsuarios(); // ✅ Cambio: usePersonas → useUsuarios
   const createMutation = useCreateRegistroHoras();
   const updateMutation = useUpdateRegistroHoras();
   const deleteMutation = useDeleteRegistroHoras();
@@ -53,43 +53,47 @@ export default function RegistroHorasPage() {
   useEffect(() => {
     console.log('RegistroHorasPage - Debug Info:', {
       registrosHoras,
-      personas,
+      usuarios,
       isLoading,
       error,
       registrosHorasLength: registrosHoras.length,
-      personasLength: personas?.length || 0
+      usuariosLength: usuarios?.length || 0
     });
-  }, [registrosHoras, personas, isLoading, error]);
+  }, [registrosHoras, usuarios, isLoading, error]);
 
   // Filtrar registros por búsqueda
   const filteredRegistros = useMemo(() => {
     if (!searchTerm) return registrosHoras;
     return (registrosHoras || []).filter(registro => {
-      const persona = (personas || []).find(p => p.id === registro.personaId);
-      const nombrePersona = persona?.nombre || '';
-      return nombrePersona.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      // ✅ Priorizar usuarioId, fallback a personaId para registros antiguos
+      const usuarioId = registro.usuarioId || registro.personaId;
+      const usuario = (usuarios || []).find(u => u.id === usuarioId);
+      const nombreUsuario = usuario?.nombre || '';
+      return nombreUsuario.toLowerCase().includes(searchTerm.toLowerCase()) ||
              registro.descripcion?.toLowerCase().includes(searchTerm.toLowerCase()) ||
              registro.horas.toString().includes(searchTerm);
     });
-  }, [registrosHoras, personas, searchTerm]);
+  }, [registrosHoras, usuarios, searchTerm]);
 
   // Calcular estadísticas
   const stats = useMemo(() => {
     const totalHoras = registrosHoras.reduce((acc, r) => acc + (r.horas || 0), 0);
     const totalRegistros = registrosHoras.length;
-    const personasUnicas = new Set(registrosHoras.map(r => r.personaId)).size;
+    // ✅ Priorizar usuarioId, fallback a personaId
+    const usuariosUnicos = new Set(registrosHoras.map(r => r.usuarioId || r.personaId)).size;
 
     return {
       totalHoras,
       totalRegistros,
-      personasUnicas
+      usuariosUnicos
     };
   }, [registrosHoras]);
 
-  // Obtener nombre de la persona
-  const getPersonaName = (personaId: number) => {
-    const persona = (personas || []).find(p => p.id === personaId);
-    return persona?.nombre || 'Persona no encontrada';
+  // ✅ Obtener nombre del usuario
+  const getUserName = (registro: RegistroHoras) => {
+    const usuarioId = registro.usuarioId || registro.personaId;
+    const usuario = (usuarios || []).find(u => u.id === usuarioId);
+    return usuario?.nombre || 'Usuario no encontrado';
   };
 
   // Formatear fecha
@@ -101,14 +105,14 @@ export default function RegistroHorasPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.personaId || !formData.horas) {
-      toast.error('Debe ingresar Persona y Horas');
+    if (!formData.usuarioId || !formData.horas) {
+      toast.error('Debe ingresar Usuario y Horas');
       return;
     }
 
     try {
       const createData: CreateRegistroHorasDto = {
-        personaId: formData.personaId,
+        usuarioId: formData.usuarioId, // ✅ Cambio: personaId → usuarioId
         fecha: formData.fecha,
         horas: formData.horas,
         descripcion: formData.descripcion
@@ -119,7 +123,7 @@ export default function RegistroHorasPage() {
       // Limpiar formulario
       setFormData({
         fecha: new Date().toISOString().split('T')[0],
-        personaId: 0,
+        usuarioId: 0, // ✅ Cambio: personaId → usuarioId
         horas: 0,
         descripcion: ''
       });
@@ -132,7 +136,7 @@ export default function RegistroHorasPage() {
   const handleEdit = (registroHoras: RegistroHoras) => {
     setEditingId(registroHoras.id);
     setEditingData({
-      personaId: registroHoras.personaId,
+      usuarioId: registroHoras.usuarioId || registroHoras.personaId, // ✅ Priorizar usuarioId
       fecha: registroHoras.fecha,
       horas: registroHoras.horas,
       descripcion: registroHoras.descripcion
@@ -198,7 +202,7 @@ export default function RegistroHorasPage() {
             </div>
             <h1 className="text-3xl font-bold text-gray-900">Registro de Horas</h1>
           </div>
-          <p className="text-gray-600 ml-12">Control de tiempo trabajado por persona</p>
+          <p className="text-gray-600 ml-12">Control de tiempo trabajado por usuario</p>
         </div>
 
         {/* Estadísticas */}
@@ -233,8 +237,8 @@ export default function RegistroHorasPage() {
                 <User className="text-purple-600" size={24} />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Personas Activas</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.personasUnicas}</p>
+                <p className="text-sm text-gray-600">Usuarios Activos</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.usuariosUnicos}</p>
               </div>
             </div>
           </div>
@@ -268,18 +272,18 @@ export default function RegistroHorasPage() {
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                   <User className="h-4 w-4" />
-                  Persona *
+                  Usuario *
                 </label>
                 <select
-                  value={formData.personaId}
-                  onChange={(e) => setFormData(prev => ({ ...prev, personaId: parseInt(e.target.value) || 0 }))}
+                  value={formData.usuarioId}
+                  onChange={(e) => setFormData(prev => ({ ...prev, usuarioId: parseInt(e.target.value) || 0 }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
                   required
                 >
-                  <option value="">Seleccionar persona</option>
-                  {(personas || []).map(persona => (
-                    <option key={persona.id} value={persona.id}>
-                      {persona.nombre}
+                  <option value="">Seleccionar usuario</option>
+                  {(usuarios || []).map(usuario => (
+                    <option key={usuario.id} value={usuario.id}>
+                      {usuario.nombre}
                     </option>
                   ))}
                 </select>
@@ -367,7 +371,7 @@ export default function RegistroHorasPage() {
                     Fecha
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Persona
+                    Usuario
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Horas
@@ -424,13 +428,13 @@ export default function RegistroHorasPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         {editingId === registroHoras.id ? (
                           <select
-                            value={editingData.personaId || registroHoras.personaId}
-                            onChange={(e) => setEditingData(prev => ({ ...prev, personaId: parseInt(e.target.value) || 0 }))}
+                            value={editingData.usuarioId || registroHoras.usuarioId || registroHoras.personaId}
+                            onChange={(e) => setEditingData(prev => ({ ...prev, usuarioId: parseInt(e.target.value) || 0 }))}
                             className="px-2 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
                           >
-                            {(personas || []).map(persona => (
-                              <option key={persona.id} value={persona.id}>
-                                {persona.nombre}
+                            {(usuarios || []).map(usuario => (
+                              <option key={usuario.id} value={usuario.id}>
+                                {usuario.nombre}
                               </option>
                             ))}
                           </select>
@@ -439,7 +443,7 @@ export default function RegistroHorasPage() {
                             <div className="p-1.5 bg-indigo-100 rounded">
                               <User className="h-3.5 w-3.5 text-indigo-600" />
                             </div>
-                            <span className="font-medium text-gray-900">{getPersonaName(registroHoras.personaId)}</span>
+                            <span className="font-medium text-gray-900">{getUserName(registroHoras)}</span>
                           </div>
                         )}
                       </td>
@@ -530,7 +534,7 @@ export default function RegistroHorasPage() {
           <ul className="text-gray-600 text-sm space-y-2">
             <li className="flex items-start gap-2">
               <span className="text-indigo-600 font-bold">•</span>
-              <span>Registre las horas trabajadas por cada persona</span>
+              <span>Registre las horas trabajadas por cada usuario</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-indigo-600 font-bold">•</span>
