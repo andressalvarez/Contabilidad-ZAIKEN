@@ -29,13 +29,25 @@ export class RegistroHorasService {
     }
   }
 
-  // Obtener registros de horas de una persona
+  // ⚠️ Deprecado - usar getByUsuarioId
+  /** @deprecated Usar getByUsuarioId en su lugar */
   static async getByPersonaId(personaId: number): Promise<RegistroHoras[]> {
     try {
       const response = await api.get(`${ENDPOINT}/persona/${personaId}`);
       return response.data?.data || [];
     } catch (error) {
       console.error('Error fetching registro horas by persona:', error);
+      throw error;
+    }
+  }
+
+  // ✅ Obtener registros de horas de un usuario
+  static async getByUsuarioId(usuarioId: number): Promise<RegistroHoras[]> {
+    try {
+      const response = await api.get(`${ENDPOINT}/usuario/${usuarioId}`);
+      return response.data?.data || [];
+    } catch (error) {
+      console.error('Error fetching registro horas by usuario:', error);
       throw error;
     }
   }
@@ -99,9 +111,10 @@ export class RegistroHorasService {
 
   // ==================== TIMER METHODS ====================
 
-  // Iniciar un timer
+  // Iniciar un timer (acepta usuarioId o personaId)
   static async startTimer(data: {
-    personaId: number;
+    usuarioId?: number;
+    personaId?: number;
     campanaId?: number;
     descripcion?: string;
   }): Promise<RegistroHoras> {
@@ -161,13 +174,25 @@ export class RegistroHorasService {
     }
   }
 
-  // Obtener timer activo de una persona
+  // ⚠️ Deprecado - usar getActiveTimerByUsuario
+  /** @deprecated Usar getActiveTimerByUsuario en su lugar */
   static async getActiveTimer(personaId: number): Promise<RegistroHoras | null> {
     try {
       const response = await api.get(`${ENDPOINT}/timer/active/${personaId}`);
       return response.data?.data || null;
     } catch (error) {
       console.error('Error fetching active timer:', error);
+      throw error;
+    }
+  }
+
+  // ✅ Obtener timer activo de un usuario
+  static async getActiveTimerByUsuario(usuarioId: number): Promise<RegistroHoras | null> {
+    try {
+      const response = await api.get(`${ENDPOINT}/timer/active-usuario/${usuarioId}`);
+      return response.data?.data || null;
+    } catch (error) {
+      console.error('Error fetching active timer by usuario:', error);
       throw error;
     }
   }
