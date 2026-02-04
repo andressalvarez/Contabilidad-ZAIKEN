@@ -50,6 +50,19 @@ export class ValorHoraController {
     };
   }
 
+  // ✅ Nuevo endpoint para buscar por usuarioId
+  @Get('usuario/:usuarioId')
+  async findByUsuarioId(
+    @Param('usuarioId', ParseIntPipe) usuarioId: number,
+    @NegocioId() negocioId: number,
+  ) {
+    return {
+      success: true,
+      message: 'Valores por hora del usuario obtenidos exitosamente',
+      data: await this.valorHoraService.findByUsuarioId(usuarioId, negocioId),
+    };
+  }
+
   @Get(':id')
   async findOne(
     @Param('id', ParseIntPipe) id: number,

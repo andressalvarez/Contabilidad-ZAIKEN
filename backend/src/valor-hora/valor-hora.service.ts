@@ -7,27 +7,66 @@ export class ValorHoraService {
   constructor(private prisma: PrismaService) {}
 
   async create(negocioId: number, createValorHoraDto: CreateValorHoraDto) {
-    // Obtener el rol de la persona
-    const persona = await this.prisma.persona.findUnique({
-      where: { id: createValorHoraDto.personaId },
-      include: { rol: true }
-    });
+    // ✅ Priorizar usuarioId, fallback a personaId
+    let usuarioId = createValorHoraDto.usuarioId;
+    let personaId = createValorHoraDto.personaId;
+    let rolId: number;
 
-    if (!persona) {
-      throw new NotFoundException('Persona no encontrada');
+    if (usuarioId) {
+      // Obtener el rol del usuario
+      const usuario = await this.prisma.usuario.findFirst({
+        where: { id: usuarioId, negocioId },
+        include: { personas: { take: 1 } }
+      });
+
+      if (!usuario) {
+        throw new NotFoundException('Usuario no encontrado');
+      }
+
+      rolId = usuario.rolId;
+      personaId = usuario.personas?.[0]?.id; // Para compatibilidad
+    } else if (personaId) {
+      // Backward compatibility: obtener usuario desde persona
+      const persona = await this.prisma.persona.findUnique({
+        where: { id: personaId },
+        include: { rol: true }
+      });
+
+      if (!persona) {
+        throw new NotFoundException('Persona no encontrada');
+      }
+
+      usuarioId = persona.usuarioId;
+      rolId = persona.rolId;
+    } else {
+      throw new NotFoundException('Debe proporcionar usuarioId o personaId');
     }
 
     return this.prisma.valorHora.create({
       data: {
         negocioId,
-        personaId: createValorHoraDto.personaId,
-        rolId: persona.rolId,
+        usuarioId,
+        personaId, // Mantener para compatibilidad
+        rolId,
         valor: createValorHoraDto.valor,
         fechaInicio: new Date(createValorHoraDto.fechaInicio),
         notas: createValorHoraDto.notas,
       },
       include: {
-        persona: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
         rol: true,
       },
     });
@@ -37,7 +76,20 @@ export class ValorHoraService {
     return this.prisma.valorHora.findMany({
       where: { negocioId },
       include: {
-        persona: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
         rol: true,
       },
       orderBy: {
@@ -53,7 +105,20 @@ export class ValorHoraService {
         negocioId,
       },
       include: {
-        persona: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
         rol: true,
       },
     });
@@ -65,6 +130,7 @@ export class ValorHoraService {
     return valorHora;
   }
 
+  // ⚠️ Deprecado - usar findByUsuarioId
   async findByPersonaId(personaId: number, negocioId: number) {
     return this.prisma.valorHora.findMany({
       where: {
@@ -72,7 +138,50 @@ export class ValorHoraService {
         negocioId,
       },
       include: {
-        persona: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
+        rol: true,
+      },
+      orderBy: {
+        fechaInicio: 'desc',
+      },
+    });
+  }
+
+  // ✅ Nuevo método para buscar por usuarioId
+  async findByUsuarioId(usuarioId: number, negocioId: number) {
+    return this.prisma.valorHora.findMany({
+      where: {
+        usuarioId,
+        negocioId,
+      },
+      include: {
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
         rol: true,
       },
       orderBy: {
@@ -103,7 +212,20 @@ export class ValorHoraService {
       where: { id },
       data: updateData,
       include: {
-        persona: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
         rol: true,
       },
     });
@@ -131,12 +253,18 @@ export class ValorHoraService {
       ? valores.reduce((sum, val) => sum + val, 0) / valores.length
       : 0;
     const valorMaximo = valores.length > 0 ? Math.max(...valores) : 0;
-    const personasConValor = new Set(valoresHora.map(vh => vh.personaId)).size;
+
+    // ✅ Contar usuarios únicos (priorizar usuarioId)
+    const usuariosConValor = new Set(
+      valoresHora
+        .map(vh => vh.usuarioId || vh.personaId) // Usar usuarioId, fallback a personaId
+        .filter(id => id !== null)
+    ).size;
 
     return {
       valorPromedio,
       valorMaximo,
-      personasConValor,
+      personasConValor: usuariosConValor, // Mantener nombre del campo para compatibilidad con frontend
       totalValores: valoresHora.length,
     };
   }
