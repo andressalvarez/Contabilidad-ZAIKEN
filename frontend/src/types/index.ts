@@ -7,16 +7,54 @@ export interface Rol {
   createdAt: string;
   updatedAt: string;
   personas?: Persona[];
+  usuarios?: Usuario[];
   _count?: {
     personas: number;
+    usuarios: number;
     valorHoras: number;
   };
 }
 
+// ✅ Usuario - Entidad principal consolidada
+export interface Usuario {
+  id: number;
+  negocioId: number;
+  email: string;
+  nombre: string;
+  rol: 'ADMIN_NEGOCIO' | 'USER' | 'EMPLEADO';
+  activo: boolean;
+
+  // Campos migrados de Persona
+  rolId?: number;
+  rolNegocio?: Rol;
+  participacionPorc: number;
+  horasTotales: number;
+  aportesTotales: number;
+  valorHora: number;
+  inversionHoras: number;
+  inversionTotal: number;
+  notas?: string;
+
+  // Campos de autenticación (SMTP)
+  emailVerified?: boolean;
+  activationToken?: string;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
+
+  createdAt: string;
+  updatedAt: string;
+
+  // Relaciones
+  personas?: Persona[]; // Para compatibilidad temporal
+}
+
+// ⚠️ Persona - Deprecada (mantener temporalmente para compatibilidad)
+/** @deprecated Usar Usuario en su lugar */
 export interface Persona {
   id: number;
   nombre: string;
   rolId: number;
+  usuarioId?: number; // Vinculación con Usuario
   horasTotales: number;
   aportesTotales: number;
   valorHora: number;
@@ -28,6 +66,7 @@ export interface Persona {
   createdAt: string;
   updatedAt: string;
   rol?: Rol;
+  usuario?: Usuario;
 }
 
 export interface Categoria {
@@ -72,8 +111,14 @@ export interface Transaccion {
   fecha: string;
   categoriaId?: number;
   categoria?: Categoria;
+  // ✅ usuarioId es el nuevo campo principal
+  usuarioId?: number;
+  usuario?: Usuario;
+  // ⚠️ Deprecado - usar usuarioId
   personaId?: number;
+  persona?: Persona;
   campanaId?: number;
+  campana?: Campana;
   moneda: string;
   notas?: string;
   comprobante?: string;
@@ -81,14 +126,18 @@ export interface Transaccion {
   createdAt: string;
   updatedAt: string;
   tipo?: TipoTransaccion;
-  persona?: Persona;
-  campana?: Campana;
 }
 
 export interface ValorHora {
   id: number;
-  personaId: number;
+  // ✅ usuarioId es el nuevo campo principal
+  usuarioId?: number;
+  usuario?: Usuario;
+  // ⚠️ Deprecado - usar usuarioId
+  personaId?: number;
+  persona?: Persona;
   rolId: number;
+  rol?: Rol;
   valor: number;
   notas?: string;
   fechaInicio: string;
@@ -96,20 +145,29 @@ export interface ValorHora {
   activo: boolean;
   createdAt: string;
   updatedAt: string;
-  persona?: Persona;
-  rol?: Rol;
 }
 
 export interface RegistroHoras {
   id: number;
-  personaId: number;
+  // ✅ usuarioId es el nuevo campo principal
+  usuarioId?: number;
+  usuario?: Usuario;
+  // ⚠️ Deprecado - usar usuarioId
+  personaId?: number;
+  persona?: Persona;
+  campanaId?: number;
   fecha: string;
   horas: number;
   descripcion?: string;
   aprobado: boolean;
+  rechazado?: boolean;
+  motivoRechazo?: string;
+  origen?: string; // 'MANUAL' | 'TIMER'
+  timerInicio?: string;
+  timerFin?: string;
+  estado?: string; // 'RUNNING' | 'PAUSADO' | 'COMPLETADO'
   createdAt: string;
   updatedAt: string;
-  persona?: Persona;
 }
 
 export interface DistribucionUtilidades {
@@ -126,13 +184,17 @@ export interface DistribucionUtilidades {
 export interface DistribucionDetalle {
   id: number;
   distribucionId: number;
-  personaId: number;
+  // ✅ usuarioId es el nuevo campo principal
+  usuarioId?: number;
+  usuario?: Usuario;
+  // ⚠️ Deprecado - usar usuarioId
+  personaId?: number;
+  persona?: Persona;
   porcentajeParticipacion: number;
   montoDistribuido: number;
   createdAt: string;
   updatedAt: string;
   distribucion?: DistribucionUtilidades;
-  persona?: Persona;
 }
 
 // DTOs para formularios
@@ -154,12 +216,33 @@ export interface CreatePersonaDto {
 
 export interface UpdatePersonaDto extends Partial<CreatePersonaDto> {}
 
+// DTOs para Usuario
+export interface CreateUsuarioDto {
+  email: string;
+  password: string;
+  nombre: string;
+  rol: 'ADMIN_NEGOCIO' | 'USER' | 'EMPLEADO';
+  activo?: boolean;
+  // Campos migrados de Persona
+  rolId?: number;
+  participacionPorc?: number;
+  horasTotales?: number;
+  aportesTotales?: number;
+  valorHora?: number;
+  notas?: string;
+}
+
+export interface UpdateUsuarioDto extends Partial<CreateUsuarioDto> {}
+
 export interface CreateTransaccionDto {
   tipoId: number;
   monto: number;
   concepto: string;
   fecha: string;
   categoriaId?: number;
+  // ✅ usuarioId es el nuevo campo principal
+  usuarioId?: number;
+  // ⚠️ Deprecado - usar usuarioId
   personaId?: number;
   campanaId?: number;
   moneda?: string;
@@ -169,7 +252,10 @@ export interface CreateTransaccionDto {
 export interface UpdateTransaccionDto extends Partial<CreateTransaccionDto> {}
 
 export interface CreateValorHoraDto {
-  personaId: number;
+  // ✅ usuarioId es el nuevo campo principal
+  usuarioId?: number;
+  // ⚠️ Deprecado - usar usuarioId
+  personaId?: number;
   valor: number;
   fechaInicio: string;
   notas?: string;
@@ -178,7 +264,10 @@ export interface CreateValorHoraDto {
 export interface UpdateValorHoraDto extends Partial<CreateValorHoraDto> {}
 
 export interface CreateRegistroHorasDto {
-  personaId: number;
+  // ✅ usuarioId es el nuevo campo principal
+  usuarioId?: number;
+  // ⚠️ Deprecado - usar usuarioId
+  personaId?: number;
   campanaId?: number;
   fecha: string;
   horas: number;
