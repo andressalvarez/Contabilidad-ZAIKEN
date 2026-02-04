@@ -7,13 +7,30 @@ export class RegistroHorasService {
   constructor(private prisma: PrismaService) {}
 
   async create(negocioId: number, createRegistroHorasDto: CreateRegistroHorasDto) {
-    // Verificar que la persona existe
-    const persona = await this.prisma.persona.findUnique({
-      where: { id: createRegistroHorasDto.personaId }
+    // ✅ Priorizar usuarioId si está presente, sino usar personaId (compatibilidad)
+    let usuarioId = createRegistroHorasDto.usuarioId;
+    let personaId = createRegistroHorasDto.personaId;
+
+    if (!usuarioId && personaId) {
+      // Obtener usuarioId desde persona (compatibilidad backward)
+      const persona = await this.prisma.persona.findUnique({
+        where: { id: personaId },
+        select: { usuarioId: true }
+      });
+      usuarioId = persona?.usuarioId;
+    }
+
+    if (!usuarioId) {
+      throw new NotFoundException('Usuario no encontrado para el registro de horas');
+    }
+
+    // Verificar que el usuario existe y pertenece al negocio
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: usuarioId },
     });
 
-    if (!persona) {
-      throw new NotFoundException('Persona no encontrada');
+    if (!usuario || usuario.negocioId !== negocioId) {
+      throw new NotFoundException('Usuario no encontrado o no pertenece al negocio');
     }
 
     // Verificar que la campaña existe si se proporciona
@@ -30,14 +47,28 @@ export class RegistroHorasService {
     return this.prisma.registroHoras.create({
       data: {
         negocioId,
-        personaId: createRegistroHorasDto.personaId,
+        usuarioId,
+        personaId, // Mantener para compatibilidad
         campanaId: createRegistroHorasDto.campanaId,
         fecha: new Date(createRegistroHorasDto.fecha),
         horas: createRegistroHorasDto.horas,
         descripcion: createRegistroHorasDto.descripcion,
       },
       include: {
-        persona: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
       },
     });
   }
@@ -48,7 +79,20 @@ export class RegistroHorasService {
         negocioId,
       },
       include: {
-        persona: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
       },
       orderBy: {
         fecha: 'desc',
@@ -63,7 +107,20 @@ export class RegistroHorasService {
         negocioId,
       },
       include: {
-        persona: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
       },
     });
 
@@ -81,7 +138,51 @@ export class RegistroHorasService {
         personaId,
       },
       include: {
-        persona: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
+      },
+      orderBy: {
+        fecha: 'desc',
+      },
+    });
+  }
+
+  /**
+   * ✅ Nuevo método para buscar por usuarioId
+   */
+  async findByUsuarioId(negocioId: number, usuarioId: number) {
+    return this.prisma.registroHoras.findMany({
+      where: {
+        negocioId,
+        usuarioId,
+      },
+      include: {
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
       },
       orderBy: {
         fecha: 'desc',
@@ -95,8 +196,29 @@ export class RegistroHorasService {
 
     const updateData: any = {};
 
-    if (updateRegistroHorasDto.personaId !== undefined) {
+    // ✅ Priorizar usuarioId, actualizar personaId si es necesario
+    if (updateRegistroHorasDto.usuarioId !== undefined) {
+      updateData.usuarioId = updateRegistroHorasDto.usuarioId;
+
+      // Sincronizar personaId desde usuarioId (para compatibilidad)
+      const usuario = await this.prisma.usuario.findUnique({
+        where: { id: updateRegistroHorasDto.usuarioId },
+        include: { personas: { take: 1 } }
+      });
+      if (usuario?.personas?.[0]) {
+        updateData.personaId = usuario.personas[0].id;
+      }
+    } else if (updateRegistroHorasDto.personaId !== undefined) {
       updateData.personaId = updateRegistroHorasDto.personaId;
+
+      // Sincronizar usuarioId desde personaId (backward compatibility)
+      const persona = await this.prisma.persona.findUnique({
+        where: { id: updateRegistroHorasDto.personaId },
+        select: { usuarioId: true }
+      });
+      if (persona?.usuarioId) {
+        updateData.usuarioId = persona.usuarioId;
+      }
     }
 
     if (updateRegistroHorasDto.campanaId !== undefined) {
@@ -119,7 +241,20 @@ export class RegistroHorasService {
       where: { id },
       data: updateData,
       include: {
-        persona: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
       },
     });
   }
@@ -145,41 +280,75 @@ export class RegistroHorasService {
     const totalRegistros = registrosHoras.length;
     const promedioHorasPorDia = totalRegistros > 0 ? totalHoras / totalRegistros : 0;
 
-    // Contar personas únicas que tienen registros
-    const personasUnicas = new Set(registrosHoras.map(r => r.personaId)).size;
+    // ✅ Contar usuarios únicos que tienen registros (priorizar usuarioId)
+    const usuariosUnicos = new Set(
+      registrosHoras
+        .map(r => r.usuarioId || r.personaId) // Usar usuarioId, fallback a personaId
+        .filter(id => id !== null)
+    ).size;
 
     return {
       totalHoras,
       totalRegistros,
       promedioHorasPorDia,
-      personasActivas: personasUnicas,
+      personasActivas: usuariosUnicos, // Ahora cuenta usuarios únicos
     };
   }
 
   // ==================== TIMER METHODS ====================
 
   /**
-   * Inicia un timer para una persona
+   * Inicia un timer para un usuario
+   * @param usuarioId - ID del usuario (puede recibir personaId como fallback)
    */
-  async startTimer(negocioId: number, personaId: number, campanaId?: number, descripcion?: string) {
-    // Verificar que no hay un timer activo para esta persona
+  async startTimer(negocioId: number, usuarioIdOrPersonaId: number, campanaId?: number, descripcion?: string) {
+    // ✅ Determinar si es usuarioId o personaId
+    let usuarioId: number;
+    let personaId: number | undefined;
+
+    // Intentar como usuarioId primero
+    const usuario = await this.prisma.usuario.findFirst({
+      where: { id: usuarioIdOrPersonaId, negocioId },
+      include: { personas: { take: 1 } }
+    });
+
+    if (usuario) {
+      usuarioId = usuario.id;
+      personaId = usuario.personas?.[0]?.id; // Para compatibilidad
+    } else {
+      // Intentar como personaId (backward compatibility)
+      const persona = await this.prisma.persona.findFirst({
+        where: { id: usuarioIdOrPersonaId, negocioId },
+        select: { usuarioId: true, id: true }
+      });
+
+      if (!persona || !persona.usuarioId) {
+        throw new NotFoundException('Usuario no encontrado');
+      }
+
+      usuarioId = persona.usuarioId;
+      personaId = persona.id;
+    }
+
+    // Verificar que no hay un timer activo para este usuario
     const timerActivo = await this.prisma.registroHoras.findFirst({
       where: {
         negocioId,
-        personaId,
+        usuarioId,
         estado: 'RUNNING',
       },
     });
 
     if (timerActivo) {
-      throw new BadRequestException('Ya existe un timer activo para esta persona');
+      throw new BadRequestException('Ya existe un timer activo para este usuario');
     }
 
     // Crear nuevo registro con timer
     return this.prisma.registroHoras.create({
       data: {
         negocioId,
-        personaId,
+        usuarioId,
+        personaId, // Mantener para compatibilidad
         campanaId,
         fecha: new Date(),
         horas: 0,
@@ -191,7 +360,20 @@ export class RegistroHorasService {
         rechazado: false,
       },
       include: {
-        persona: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
         campana: true,
       },
     });
@@ -222,7 +404,20 @@ export class RegistroHorasService {
         horas: registro.horas + horasTranscurridas,
       },
       include: {
-        persona: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
         campana: true,
       },
     });
@@ -245,7 +440,20 @@ export class RegistroHorasService {
         timerInicio: new Date(),
       },
       include: {
-        persona: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
         campana: true,
       },
     });
@@ -279,26 +487,77 @@ export class RegistroHorasService {
         ...(descripcion && { descripcion }),
       },
       include: {
-        persona: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
         campana: true,
       },
     });
   }
 
   /**
-   * Obtiene el timer activo de una persona
+   * Obtiene el timer activo de un usuario
+   * @param usuarioIdOrPersonaId - ID del usuario (puede recibir personaId como fallback)
    */
-  async getActiveTimer(negocioId: number, personaId: number) {
+  async getActiveTimer(negocioId: number, usuarioIdOrPersonaId: number) {
+    // ✅ Determinar si es usuarioId o personaId
+    let usuarioId: number | undefined;
+
+    // Intentar como usuarioId primero
+    const usuario = await this.prisma.usuario.findFirst({
+      where: { id: usuarioIdOrPersonaId, negocioId },
+      select: { id: true }
+    });
+
+    if (usuario) {
+      usuarioId = usuario.id;
+    } else {
+      // Intentar como personaId (backward compatibility)
+      const persona = await this.prisma.persona.findFirst({
+        where: { id: usuarioIdOrPersonaId, negocioId },
+        select: { usuarioId: true }
+      });
+      usuarioId = persona?.usuarioId || undefined;
+    }
+
+    if (!usuarioId) {
+      return null;
+    }
+
     return this.prisma.registroHoras.findFirst({
       where: {
         negocioId,
-        personaId,
+        usuarioId,
         estado: {
           in: ['RUNNING', 'PAUSADO'],
         },
       },
       include: {
-        persona: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
         campana: true,
       },
     });
@@ -345,7 +604,20 @@ export class RegistroHorasService {
         motivoRechazo: null,
       },
       include: {
-        persona: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
         campana: true,
       },
     });
@@ -371,7 +643,20 @@ export class RegistroHorasService {
         fechaAprobacion: null,
       },
       include: {
-        persona: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
         campana: true,
       },
     });
@@ -389,7 +674,20 @@ export class RegistroHorasService {
         estado: 'COMPLETADO', // Solo mostrar los completados
       },
       include: {
-        persona: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
         campana: true,
       },
       orderBy: {
@@ -408,7 +706,20 @@ export class RegistroHorasService {
         rechazado: true,
       },
       include: {
-        persona: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true, // Mantener para compatibilidad
         campana: true,
       },
       orderBy: {

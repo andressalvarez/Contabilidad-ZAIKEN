@@ -44,6 +44,16 @@ export class RegistroHorasController {
     };
   }
 
+  // ✅ Nuevo endpoint para buscar por usuarioId
+  @Get('usuario/:usuarioId')
+  async findByUsuarioId(@NegocioId() negocioId: number, @Param('usuarioId', ParseIntPipe) usuarioId: number) {
+    return {
+      success: true,
+      message: 'Registros de horas del usuario obtenidos exitosamente',
+      data: await this.registroHorasService.findByUsuarioId(negocioId, usuarioId),
+    };
+  }
+
   @Get(':id')
   async findOne(@NegocioId() negocioId: number, @Param('id', ParseIntPipe) id: number) {
     return {
@@ -78,14 +88,23 @@ export class RegistroHorasController {
   @HttpCode(HttpStatus.CREATED)
   async startTimer(
     @NegocioId() negocioId: number,
-    @Body() body: { personaId: number; campanaId?: number; descripcion?: string }
+    @Body() body: { usuarioId?: number; personaId?: number; campanaId?: number; descripcion?: string }
   ) {
+    // ✅ Priorizar usuarioId, fallback a personaId para compatibilidad
+    const id = body.usuarioId || body.personaId;
+    if (!id) {
+      return {
+        success: false,
+        message: 'Debe proporcionar usuarioId o personaId',
+      };
+    }
+
     return {
       success: true,
       message: 'Timer iniciado exitosamente',
       data: await this.registroHorasService.startTimer(
         negocioId,
-        body.personaId,
+        id,
         body.campanaId,
         body.descripcion
       ),
@@ -129,6 +148,20 @@ export class RegistroHorasController {
     @Param('personaId', ParseIntPipe) personaId: number
   ) {
     const timer = await this.registroHorasService.getActiveTimer(negocioId, personaId);
+    return {
+      success: true,
+      message: timer ? 'Timer activo encontrado' : 'No hay timer activo',
+      data: timer,
+    };
+  }
+
+  // ✅ Nuevo endpoint para obtener timer activo por usuarioId
+  @Get('timer/active-usuario/:usuarioId')
+  async getActiveTimerByUsuario(
+    @NegocioId() negocioId: number,
+    @Param('usuarioId', ParseIntPipe) usuarioId: number
+  ) {
+    const timer = await this.registroHorasService.getActiveTimer(negocioId, usuarioId);
     return {
       success: true,
       message: timer ? 'Timer activo encontrado' : 'No hay timer activo',
