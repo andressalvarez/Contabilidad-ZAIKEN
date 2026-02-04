@@ -23,11 +23,11 @@ interface DistribucionUtilidades {
 interface DistribucionDetalle {
   id: number
   distribucionId: number
-  personaId: number
+  usuarioId: number  // ✅ Cambio: personaId → usuarioId
   porcentajeParticipacion: number
   montoDistribuido: number
   fecha: string
-  persona?: {
+  usuario?: {  // ✅ Cambio: persona → usuario
     id: number
     nombre: string
   }
@@ -37,7 +37,7 @@ interface DistribucionDetalle {
   }
 }
 
-interface Persona {
+interface Usuario {  // ✅ Cambio: Persona → Usuario
   id: number
   nombre: string
   activo: boolean
@@ -67,7 +67,7 @@ export default function DistribucionDetallePage() {
   const [globalFilter, setGlobalFilter] = useState('')
   const [formData, setFormData] = useState({
     distribucionId: '',
-    personaId: '',
+    usuarioId: '',  // ✅ Cambio: personaId → usuarioId
     participacionPorc: '',
     fecha: new Date().toISOString().split('T')[0]
   })
@@ -89,10 +89,10 @@ export default function DistribucionDetallePage() {
     }
   })
 
-  const { data: personas = [] } = useQuery({
-    queryKey: ['personas'],
+  const { data: usuarios = [] } = useQuery({  // ✅ Cambio: personas → usuarios
+    queryKey: ['usuarios'],  // ✅ Cambio
     queryFn: async () => {
-      const response = await api.get('/personas')
+      const response = await api.get('/usuarios')  // ✅ Cambio
       return response.data.data || []
     }
   })
@@ -116,7 +116,7 @@ export default function DistribucionDetallePage() {
       setIsCreateModalOpen(false)
       setFormData({
         distribucionId: '',
-        personaId: '',
+        usuarioId: '',  // ✅ Cambio: personaId → usuarioId
         participacionPorc: '',
         fecha: new Date().toISOString().split('T')[0]
       })
@@ -148,7 +148,7 @@ export default function DistribucionDetallePage() {
     return detalles.filter(detalle => {
       const matchesDistribucion = !selectedDistribucionId || detalle.distribucionId === selectedDistribucionId
       const matchesSearch = !globalFilter ||
-        detalle.persona?.nombre?.toLowerCase().includes(globalFilter.toLowerCase()) ||
+        detalle.usuario?.nombre?.toLowerCase().includes(globalFilter.toLowerCase()) ||  // ✅ Cambio: persona → usuario
         detalle.distribucion?.periodo?.toLowerCase().includes(globalFilter.toLowerCase())
       return matchesDistribucion && matchesSearch
     })
@@ -160,14 +160,14 @@ export default function DistribucionDetallePage() {
 
   // Handlers usando useCallback
   const handleCreate = useCallback(() => {
-    if (!formData.distribucionId || !formData.personaId || !formData.participacionPorc) {
+    if (!formData.distribucionId || !formData.usuarioId || !formData.participacionPorc) {  // ✅ Cambio
       toast.error('Por favor complete todos los campos')
       return
     }
 
     const data = {
       distribucionId: parseInt(formData.distribucionId),
-      personaId: parseInt(formData.personaId),
+      usuarioId: parseInt(formData.usuarioId),  // ✅ Cambio: personaId → usuarioId
       porcentajeParticipacion: parseFloat(formData.participacionPorc),
       fecha: formData.fecha
     }
@@ -212,14 +212,14 @@ export default function DistribucionDetallePage() {
       return
     }
 
-    const personasActivas = personas.filter(p => p.activo !== false)
-    if (personasActivas.length === 0) {
-      toast.error('No hay personas activas para distribuir')
+    const usuariosActivos = usuarios.filter(u => u.activo !== false)  // ✅ Cambio: personasActivas → usuariosActivos, personas → usuarios
+    if (usuariosActivos.length === 0) {  // ✅ Cambio
+      toast.error('No hay usuarios activos para distribuir')  // ✅ Cambio
       return
     }
 
-    const totalSalarios = personasActivas.reduce((acc, persona) => {
-      const rol = roles.find(r => r.id === persona.id)
+    const totalSalarios = usuariosActivos.reduce((acc, usuario) => {  // ✅ Cambio: persona → usuario
+      const rol = roles.find(r => r.id === usuario.id)  // ✅ Cambio
       return acc + (rol?.salarioBase || 0)
     }, 0)
 
@@ -228,15 +228,15 @@ export default function DistribucionDetallePage() {
       return
     }
 
-    const detallesACrear = personasActivas.map(persona => {
-      const rol = roles.find(r => r.id === persona.id)
+    const detallesACrear = usuariosActivos.map(usuario => {  // ✅ Cambio: persona → usuario
+      const rol = roles.find(r => r.id === usuario.id)  // ✅ Cambio
       const salarioBase = rol?.salarioBase || 0
       const porcentaje = totalSalarios > 0 ? (salarioBase / totalSalarios) * 100 : 0
       const monto = (distribucion.utilidadTotal * porcentaje) / 100
 
       return {
         distribucionId: selectedDistribucionId,
-        personaId: persona.id,
+        usuarioId: usuario.id,  // ✅ Cambio: personaId → usuarioId
         porcentajeParticipacion: porcentaje,
         montoDistribuido: monto,
         fecha: new Date().toISOString().split('T')[0]
@@ -254,7 +254,7 @@ export default function DistribucionDetallePage() {
       toast.error('Error en la distribución automática')
       console.error(error)
     })
-  }, [selectedDistribucionId, distribuciones, detalles, personas, roles, queryClient])
+  }, [selectedDistribucionId, distribuciones, detalles, usuarios, roles, queryClient])  // ✅ Cambio: personas → usuarios
 
   // Columnas de la tabla usando useMemo
   const columns = useMemo(() => [
@@ -268,8 +268,8 @@ export default function DistribucionDetallePage() {
       cell: info => info.getValue() || 'N/A',
       size: 150
     }),
-    columnHelper.accessor('persona.nombre', {
-      header: 'Persona',
+    columnHelper.accessor('usuario.nombre', {  // ✅ Cambio: persona.nombre → usuario.nombre
+      header: 'Usuario',  // ✅ Cambio: Persona → Usuario
       cell: info => info.getValue() || 'N/A',
       size: 200
     }),
@@ -335,7 +335,7 @@ export default function DistribucionDetallePage() {
           }
 
           const chartData = {
-            labels: filteredDetalles.map(d => d.persona?.nombre || 'N/A'),
+            labels: filteredDetalles.map(d => d.usuario?.nombre || 'N/A'),  // ✅ Cambio: persona → usuario
             datasets: [{
               label: 'Monto Distribuido',
               data: filteredDetalles.map(d => d.montoDistribuido),
@@ -389,7 +389,7 @@ export default function DistribucionDetallePage() {
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Detalle de Distribución de Utilidades</h1>
-            <p className="text-gray-600">Gestión detallada de distribución de utilidades por persona</p>
+            <p className="text-gray-600">Gestión detallada de distribución de utilidades por usuario</p>  {/* ✅ Cambio: persona → usuario */}
           </div>
           <div className="flex space-x-2">
             <button
@@ -517,7 +517,7 @@ export default function DistribucionDetallePage() {
                   <Users className="h-6 w-6 text-yellow-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Personas</p>
+                  <p className="text-sm font-medium text-gray-600">Usuarios</p>  {/* ✅ Cambio: Personas → Usuarios */}
                   <p className="text-2xl font-bold text-gray-900">
                     {filteredDetalles.length}
                   </p>
@@ -544,7 +544,7 @@ export default function DistribucionDetallePage() {
         {/* Gráfico */}
         {filteredDetalles.length > 0 && (
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Distribución por Persona</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Distribución por Usuario</h3>  {/* ✅ Cambio: Persona → Usuario */}
             <div className="h-64">
               <canvas ref={chartRef} />
             </div>
@@ -712,17 +712,17 @@ export default function DistribucionDetallePage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Persona
+                  Usuario  {/* ✅ Cambio: Persona → Usuario */}
                 </label>
                 <select
-                  value={formData.personaId}
-                  onChange={e => setFormData(prev => ({ ...prev, personaId: e.target.value }))}
+                  value={formData.usuarioId}  {/* ✅ Cambio: personaId → usuarioId */}
+                  onChange={e => setFormData(prev => ({ ...prev, usuarioId: e.target.value }))}  {/* ✅ Cambio */}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">-- Seleccione persona --</option>
-                  {personas.filter(p => p.activo !== false).map(persona => (
-                    <option key={persona.id} value={persona.id}>
-                      {persona.nombre}
+                  <option value="">-- Seleccione usuario --</option>  {/* ✅ Cambio: persona → usuario */}
+                  {usuarios.filter(u => u.activo !== false).map(usuario => (  /* ✅ Cambio: personas → usuarios, persona → usuario */
+                    <option key={usuario.id} value={usuario.id}>  {/* ✅ Cambio */}
+                      {usuario.nombre}  {/* ✅ Cambio */}
                     </option>
                   ))}
                 </select>
