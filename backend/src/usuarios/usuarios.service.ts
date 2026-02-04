@@ -1,8 +1,47 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
+
+interface CreateUsuarioData {
+  email: string;
+  nombre: string;
+  rol: string;
+  activo?: boolean;
+  passwordHash: string;
+  negocioId: number;
+  // Campos migrados de Persona
+  rolId?: number;
+  participacionPorc?: number;
+  horasTotales?: number;
+  aportesTotales?: number;
+  valorHora?: number;
+  inversionHoras?: number;
+  inversionTotal?: number;
+  notas?: string;
+}
+
+interface UpdateUsuarioData {
+  email?: string;
+  nombre?: string;
+  rol?: string;
+  activo?: boolean;
+  passwordHash?: string;
+  // Campos migrados de Persona
+  rolId?: number;
+  participacionPorc?: number;
+  horasTotales?: number;
+  aportesTotales?: number;
+  valorHora?: number;
+  inversionHoras?: number;
+  inversionTotal?: number;
+  notas?: string;
+}
 
 @Injectable()
 export class UsuariosService {
+  private readonly logger = new Logger(UsuariosService.name);
+
   constructor(private prisma: PrismaService) {}
 
   async findAll(negocioId: number) {
@@ -11,7 +50,30 @@ export class UsuariosService {
         negocioId,
         activo: true,
       },
-      select: { id: true, email: true, nombre: true, rol: true, activo: true, createdAt: true },
+      select: {
+        id: true,
+        email: true,
+        nombre: true,
+        rol: true,
+        activo: true,
+        createdAt: true,
+        // Campos migrados de Persona
+        rolId: true,
+        participacionPorc: true,
+        horasTotales: true,
+        aportesTotales: true,
+        valorHora: true,
+        inversionTotal: true,
+        notas: true,
+        emailVerified: true,
+        // Relaciones
+        rolNegocio: {
+          select: {
+            id: true,
+            nombreRol: true,
+          },
+        },
+      },
       orderBy: { id: 'asc' },
     });
   }
@@ -23,7 +85,31 @@ export class UsuariosService {
         negocioId,
         activo: true,
       },
-      select: { id: true, email: true, nombre: true, rol: true, activo: true, createdAt: true },
+      select: {
+        id: true,
+        email: true,
+        nombre: true,
+        rol: true,
+        activo: true,
+        createdAt: true,
+        // Campos migrados de Persona
+        rolId: true,
+        participacionPorc: true,
+        horasTotales: true,
+        aportesTotales: true,
+        valorHora: true,
+        inversionHoras: true,
+        inversionTotal: true,
+        notas: true,
+        emailVerified: true,
+        // Relaciones
+        rolNegocio: {
+          select: {
+            id: true,
+            nombreRol: true,
+          },
+        },
+      },
     });
 
     if (!user) {
@@ -33,13 +119,49 @@ export class UsuariosService {
     return user;
   }
 
-  create(data: { email: string; nombre: string; rol: string; activo?: boolean; passwordHash: string; negocioId: number }) {
-    const { email, nombre, rol, activo = true, passwordHash, negocioId } = data;
-    return this.prisma.usuario.create({ data: { email, nombre, rol, activo, password: passwordHash, negocioId } });
+  async create(data: CreateUsuarioData) {
+    const { email, nombre, rol, activo = true, passwordHash, negocioId, participacionPorc = 0, ...rest } = data;
+
+    // Validar participación si se proporciona
+    if (participacionPorc > 0) {
+      await this.validateParticipacion(negocioId, participacionPorc);
+    }
+
+    return this.prisma.usuario.create({
+      data: {
+        email,
+        nombre,
+        rol,
+        activo,
+        password: passwordHash,
+        negocioId,
+        participacionPorc,
+        horasTotales: rest.horasTotales || 0,
+        aportesTotales: rest.aportesTotales || 0,
+        valorHora: rest.valorHora || 0,
+        inversionHoras: rest.inversionHoras || 0,
+        inversionTotal: rest.inversionTotal || 0,
+        rolId: rest.rolId,
+        notas: rest.notas,
+      },
+      include: {
+        rolNegocio: {
+          select: {
+            id: true,
+            nombreRol: true,
+          },
+        },
+      },
+    });
   }
 
-  async update(id: number, negocioId: number, data: Partial<{ email: string; nombre: string; rol: string; activo: boolean; passwordHash: string }>) {
+  async update(id: number, negocioId: number, data: UpdateUsuarioData) {
     await this.findOne(id, negocioId);
+
+    // Validar participación si se está actualizando
+    if (data.participacionPorc !== undefined) {
+      await this.validateParticipacion(negocioId, data.participacionPorc, id);
+    }
 
     return this.prisma.usuario.update({
       where: { id },
@@ -49,8 +171,33 @@ export class UsuariosService {
         rol: data.rol,
         activo: data.activo,
         password: data.passwordHash,
+        // Campos migrados de Persona
+        rolId: data.rolId,
+        participacionPorc: data.participacionPorc,
+        horasTotales: data.horasTotales,
+        aportesTotales: data.aportesTotales,
+        valorHora: data.valorHora,
+        inversionHoras: data.inversionHoras,
+        inversionTotal: data.inversionTotal,
+        notas: data.notas,
       },
-      select: { id: true, email: true, nombre: true, rol: true, activo: true, createdAt: true },
+      select: {
+        id: true,
+        email: true,
+        nombre: true,
+        rol: true,
+        activo: true,
+        createdAt: true,
+        participacionPorc: true,
+        horasTotales: true,
+        inversionTotal: true,
+        rolNegocio: {
+          select: {
+            id: true,
+            nombreRol: true,
+          },
+        },
+      },
     });
   }
 
@@ -64,6 +211,150 @@ export class UsuariosService {
 
     return { message: 'Usuario eliminado exitosamente' };
   }
-}
 
+  /**
+   * Validar que la suma de participaciones no exceda 100%
+   */
+  private async validateParticipacion(negocioId: number, nuevaParticipacion: number, usuarioIdExcluir?: number) {
+    const agregado = await this.prisma.usuario.aggregate({
+      where: {
+        negocioId,
+        activo: true,
+        id: usuarioIdExcluir ? { not: usuarioIdExcluir } : undefined,
+      },
+      _sum: {
+        participacionPorc: true,
+      },
+    });
+
+    const totalActual = agregado._sum.participacionPorc || 0;
+    const totalNuevo = totalActual + nuevaParticipacion;
+
+    if (totalNuevo > 100) {
+      throw new BadRequestException(
+        `Total de participación excedería 100% (actual: ${totalActual}%, nueva: ${nuevaParticipacion}%, total: ${totalNuevo}%)`,
+      );
+    }
+
+    this.logger.log(`Validación participación OK: ${totalActual}% + ${nuevaParticipacion}% = ${totalNuevo}%`);
+  }
+
+  /**
+   * Obtener resumen de usuarios con totales
+   */
+  async getSummary(negocioId: number) {
+    const usuarios = await this.findAll(negocioId);
+
+    const agregado = await this.prisma.usuario.aggregate({
+      where: { negocioId, activo: true },
+      _sum: {
+        participacionPorc: true,
+        horasTotales: true,
+        inversionTotal: true,
+      },
+    });
+
+    return {
+      usuarios,
+      totales: {
+        participacionTotal: agregado._sum.participacionPorc || 0,
+        horasTotales: agregado._sum.horasTotales || 0,
+        inversionTotal: agregado._sum.inversionTotal || 0,
+      },
+    };
+  }
+
+  /**
+   * Solicitar recuperación de contraseña
+   */
+  async requestPasswordReset(email: string) {
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { email },
+    });
+
+    if (!usuario) {
+      // No revelar si el email existe (seguridad)
+      return { message: 'Si el email existe, recibirás instrucciones de recuperación' };
+    }
+
+    // Generar token con expiración de 1 hora
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetExpires = new Date(Date.now() + 3600000); // 1 hora
+
+    await this.prisma.usuario.update({
+      where: { id: usuario.id },
+      data: {
+        resetPasswordToken: resetToken,
+        resetPasswordExpires: resetExpires,
+      },
+    });
+
+    this.logger.log(`Token de reset generado para: ${email}`);
+
+    // TODO: Enviar email con EmailService cuando esté implementado
+    // await this.emailService.sendPasswordResetEmail(usuario.email, usuario.nombre, resetToken);
+
+    return { message: 'Si el email existe, recibirás instrucciones de recuperación' };
+  }
+
+  /**
+   * Restablecer contraseña con token
+   */
+  async resetPassword(token: string, newPassword: string) {
+    const usuario = await this.prisma.usuario.findFirst({
+      where: {
+        resetPasswordToken: token,
+        resetPasswordExpires: { gte: new Date() }, // Token no expirado
+      },
+    });
+
+    if (!usuario) {
+      throw new BadRequestException('Token inválido o expirado');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await this.prisma.usuario.update({
+      where: { id: usuario.id },
+      data: {
+        password: hashedPassword,
+        resetPasswordToken: null,
+        resetPasswordExpires: null,
+      },
+    });
+
+    this.logger.log(`Contraseña actualizada para usuario ID: ${usuario.id}`);
+
+    return { message: 'Contraseña actualizada exitosamente' };
+  }
+
+  /**
+   * Activar cuenta con token
+   */
+  async activateAccount(token: string) {
+    const usuario = await this.prisma.usuario.findFirst({
+      where: { activationToken: token },
+    });
+
+    if (!usuario) {
+      throw new NotFoundException('Token de activación inválido');
+    }
+
+    await this.prisma.usuario.update({
+      where: { id: usuario.id },
+      data: {
+        emailVerified: true,
+        activationToken: null,
+        activo: true,
+      },
+    });
+
+    this.logger.log(`Cuenta activada para usuario ID: ${usuario.id}`);
+
+    // TODO: Enviar email de bienvenida cuando EmailService esté implementado
+    // await this.emailService.sendWelcomeEmail(usuario.email, usuario.nombre);
+
+    return { message: 'Cuenta activada exitosamente' };
+  }
+}
 
