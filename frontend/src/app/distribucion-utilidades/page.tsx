@@ -4,7 +4,7 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import MainLayout from '@/components/layout/MainLayout'
 import { useDistribuciones, useDistribucionStats, useCreateDistribucion, useUpdateDistribucion, useDeleteDistribucion, useDistribuirAutomaticamente } from '@/hooks/useDistribucionUtilidades'
-import { usePersonas } from '@/hooks/usePersonas'
+import { useUsuarios } from '@/hooks/useUsuarios'
 import { DistribucionUtilidades } from '@/types'
 import { createColumnHelper, flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, useReactTable, SortingState, ColumnFiltersState, getSortedRowModel } from '@tanstack/react-table'
 import { Plus, Search, Edit, Trash2, Download, TrendingUp, Eye, DollarSign } from 'lucide-react'
@@ -34,7 +34,7 @@ export default function DistribucionUtilidadesPage() {
   // Queries
   const { data: distribuciones = [], isLoading, error } = useDistribuciones()
   const { data: stats } = useDistribucionStats()
-  const { data: personas = [] } = usePersonas()
+  const { data: usuarios = [] } = useUsuarios()
 
   // Debug log para verificar datos
   console.log('🔍 Debug Distribución Utilidades:', {
@@ -42,7 +42,7 @@ export default function DistribucionUtilidadesPage() {
     isLoading,
     error,
     stats: !!stats,
-    personas: personas.length,
+    usuarios: usuarios.length,
     primeraDistribucion: distribuciones[0]
   });
 
@@ -288,7 +288,7 @@ export default function DistribucionUtilidadesPage() {
         })
 
         // Preguntar si quiere distribuir automáticamente
-        if (distribuirAutomaticamente && confirm('¿Desea distribuir automáticamente las utilidades entre las personas activas?')) {
+        if (distribuirAutomaticamente && confirm('¿Desea distribuir automáticamente las utilidades entre los usuarios activos?')) {
           distribuirAutomaticamente.mutate(nuevaDistribucion.id)
         }
       }
@@ -356,7 +356,7 @@ export default function DistribucionUtilidadesPage() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Distribución de Utilidades</h1>
-            <p className="text-gray-600">Gestión y cálculo de distribución de utilidades entre personas</p>
+            <p className="text-gray-600">Gestión y cálculo de distribución de utilidades entre usuarios</p>
           </div>
           <button
             onClick={() => setIsCreateModalOpen(true)}
