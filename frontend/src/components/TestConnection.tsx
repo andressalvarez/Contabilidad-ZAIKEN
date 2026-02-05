@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { TransaccionesService } from '@/services/transacciones.service';
-import { PersonasService } from '@/services/personas.service';
+import { UsuariosService } from '@/services/usuarios.service';
 import { CategoriasService } from '@/services/categorias.service';
 
 export default function TestConnection() {
@@ -25,13 +25,13 @@ export default function TestConnection() {
       }
 
       try {
-        // Test 2: Resumen de personas usando servicio
-        console.log('Probando endpoint de personas con servicio...');
-        const personasData = await PersonasService.getAll();
-        results.personas = { success: true, data: personasData };
+        // Test 2: Resumen de usuarios usando servicio
+        console.log('Probando endpoint de usuarios con servicio...');
+        const usuariosData = await UsuariosService.list();
+        results.usuarios = { success: true, data: usuariosData };
       } catch (error) {
-        console.error('❌ Error en personas:', error);
-        results.personas = { error: error.message, details: error };
+        console.error('❌ Error en usuarios:', error);
+        results.usuarios = { error: error.message, details: error };
       }
 
       try {
@@ -68,9 +68,9 @@ export default function TestConnection() {
         </div>
 
         <div>
-          <h4 className="font-semibold">Resumen de Personas:</h4>
+          <h4 className="font-semibold">Resumen de Usuarios:</h4>
           <pre className="bg-white p-2 rounded text-xs overflow-auto">
-            {JSON.stringify(testResults.personas, null, 2)}
+            {JSON.stringify(testResults.usuarios, null, 2)}
           </pre>
         </div>
 

@@ -183,7 +183,7 @@ export class CampanasService {
       negocioId,
     };
 
-    // ✅ Priorizar usuarioId, fallback a personaId para compatibilidad
+
     if (filters.usuarioId || filters.personaId) {
       where.transacciones = {
         some: {
@@ -214,7 +214,7 @@ export class CampanasService {
         transacciones: {
           where: {
             negocioId,
-            // ✅ Priorizar usuarioId, fallback a personaId para compatibilidad
+        
             ...(filters.usuarioId && { usuarioId: parseInt(filters.usuarioId) }),
             ...(filters.personaId && !filters.usuarioId && { personaId: parseInt(filters.personaId) }),
             ...(filters.fechaInicio || filters.fechaFin) && {

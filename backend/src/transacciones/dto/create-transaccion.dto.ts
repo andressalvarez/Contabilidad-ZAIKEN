@@ -44,7 +44,6 @@ export class CreateTransaccionDto {
   })
   categoriaId?: number;
 
-  // ✅ usuarioId es el nuevo campo principal
   @IsOptional()
   @IsInt({ message: 'El ID de usuario debe ser un número entero' })
   @Transform(({ value }) => {
@@ -57,7 +56,6 @@ export class CreateTransaccionDto {
   })
   usuarioId?: number;
 
-  // ⚠️ Deprecado - usar usuarioId (mantener para compatibilidad)
   @IsOptional()
   @IsInt({ message: 'El ID de persona debe ser un número entero' })
   @Transform(({ value }) => {

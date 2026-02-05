@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useTransacciones, useCreateTransaccion, useUpdateTransaccion, useDeleteTransaccion, useTendenciasMensuales, useResumenPorCategorias, useResumenPorTiposGasto, useTransaccionesStats } from '@/hooks/useTransacciones';
 import { useCategorias } from '@/hooks/useCategorias';
 import { useTiposTransaccion } from '@/hooks/useTiposTransaccion';
-import { useUsuarios } from '@/hooks/useUsuarios'; // ✅ Cambio: usePersonas → useUsuarios
+import { useUsuarios } from '@/hooks/useUsuarios';
 import { useRoles } from '@/hooks/useRoles';
 import { useCampanas } from '@/hooks/useCampanas';
 import { Transaccion } from '@/types';
@@ -45,7 +45,7 @@ export default function TransaccionesPage() {
   const [filters, setFilters] = useState({
     tipo: '',
     categoriaId: '',
-    usuarioId: '', // ✅ Cambio: usuarioId → usuarioId
+    usuarioId: '',
     campanaId: '',
     fechaInicio: '',
     fechaFin: ''
@@ -53,7 +53,7 @@ export default function TransaccionesPage() {
 
   // Filtros para gráficas
   const [chartFilters, setChartFilters] = useState({
-    usuarioId: '', // ✅ Cambio: usuarioId → usuarioId
+    usuarioId: '',
     fechaInicio: '',
     fechaFin: ''
   });
@@ -84,26 +84,26 @@ export default function TransaccionesPage() {
     fechaInicio: filters.fechaInicio || undefined,
     fechaFin: filters.fechaFin || undefined,
     tipo: filters.tipo || undefined,
-    usuarioId: filters.usuarioId ? Number(filters.usuarioId) : undefined, // ✅ Cambio: usuarioId → usuarioId
+    usuarioId: filters.usuarioId ? Number(filters.usuarioId) : undefined,
     campanaId: filters.campanaId ? Number(filters.campanaId) : undefined,
     categoria: filters.categoriaId ? categorias.find(c => c.id === Number(filters.categoriaId))?.nombre : undefined,
   });
   const { data: stats } = useTransaccionesStats({
     fechaInicio: filters.fechaInicio || undefined,
     fechaFin: filters.fechaFin || undefined,
-    usuarioId: filters.usuarioId ? Number(filters.usuarioId) : undefined, // ✅ Cambio: usuarioId → usuarioId
+    usuarioId: filters.usuarioId ? Number(filters.usuarioId) : undefined,
     campanaId: filters.campanaId ? Number(filters.campanaId) : undefined,
   });
   const { data: categorias = [], isLoading: categoriasLoading, error: categoriasError } = useCategorias();
   const { data: tiposTransaccion = [], isLoading: tiposTransaccionLoading } = useTiposTransaccion();
-  const { data: usuarios = [] } = useUsuarios(); // ✅ Cambio: usePersonas → useUsuarios
+  const { data: usuarios = [] } = useUsuarios();
   const { data: roles = [] } = useRoles();
   const { data: campanas = [] } = useCampanas();
   const { data: tendenciasMensuales = [], isLoading: loadingTendencias, refetch: refetchTendencias } = useTendenciasMensuales(añoActual);
   const { data: resumenTiposGasto = [], isLoading: loadingResumen, refetch: refetchResumen } = useResumenPorTiposGasto({
     fechaInicio: chartFilters.fechaInicio || undefined,
     fechaFin: chartFilters.fechaFin || undefined,
-    usuarioId: chartFilters.usuarioId || undefined, // ✅ Cambio: usuarioId → usuarioId
+    usuarioId: chartFilters.usuarioId || undefined,
   });
 
   // Formulario para nueva transacción
@@ -123,7 +123,7 @@ export default function TransaccionesPage() {
     categoriaId?: number;
     monto: string;
     moneda: string;
-    usuarioId?: number; // ✅ Cambio: usuarioId → usuarioId
+    usuarioId?: number;
     campanaId?: number;
     notas: string;
   };
@@ -135,7 +135,7 @@ export default function TransaccionesPage() {
     categoriaId: undefined,
     monto: '',
     moneda: 'COP',
-    usuarioId: undefined, // ✅ Cambio: usuarioId → usuarioId
+    usuarioId: undefined,
     campanaId: undefined,
     notas: ''
   });

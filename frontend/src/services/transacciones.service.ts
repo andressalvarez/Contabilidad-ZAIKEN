@@ -6,9 +6,7 @@ export interface FiltrosTransacciones {
   fechaFin?: string;
   tipo?: TipoTransaccion;
   categoria?: string;
-  // ✅ usuarioId es el nuevo campo principal
   usuarioId?: number;
-  // ⚠️ Deprecado - usar usuarioId
   personaId?: number;
   campanaId?: number;
   aprobado?: boolean;

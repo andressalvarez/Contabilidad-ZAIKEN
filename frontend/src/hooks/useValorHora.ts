@@ -10,7 +10,7 @@ export const valorHoraKeys = {
   list: (filters: string) => [...valorHoraKeys.lists(), { filters }] as const,
   details: () => [...valorHoraKeys.all, 'detail'] as const,
   detail: (id: number) => [...valorHoraKeys.details(), id] as const,
-  byPersona: (personaId: number) => [...valorHoraKeys.all, 'persona', personaId] as const,
+  byUsuario: (usuarioId: number) => [...valorHoraKeys.all, 'usuario', usuarioId] as const,
   stats: () => [...valorHoraKeys.all, 'stats'] as const,
 };
 
@@ -23,12 +23,12 @@ export function useValorHora() {
   });
 }
 
-// Hook para obtener valores por hora de una persona
-export function useValorHoraByPersona(personaId: number) {
+// ✅ Hook para obtener valores por hora de un usuario
+export function useValorHoraByUsuario(usuarioId: number) {
   return useQuery({
-    queryKey: valorHoraKeys.byPersona(personaId),
-    queryFn: () => ValorHoraService.getByPersonaId(personaId),
-    enabled: !!personaId,
+    queryKey: valorHoraKeys.byUsuario(usuarioId),
+    queryFn: () => ValorHoraService.getByUsuarioId(usuarioId),
+    enabled: !!usuarioId,
     staleTime: 1000 * 60 * 5,
   });
 }

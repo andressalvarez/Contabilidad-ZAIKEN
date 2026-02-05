@@ -7,33 +7,38 @@ export class RegistroHorasService {
   constructor(private prisma: PrismaService) {}
 
   async create(negocioId: number, createRegistroHorasDto: CreateRegistroHorasDto) {
-    // ✅ Priorizar usuarioId si está presente, sino usar personaId (compatibilidad)
     let usuarioId = createRegistroHorasDto.usuarioId;
     let personaId = createRegistroHorasDto.personaId;
 
     if (!usuarioId && personaId) {
-      // Obtener usuarioId desde persona (compatibilidad backward)
       const persona = await this.prisma.persona.findUnique({
         where: { id: personaId },
         select: { usuarioId: true }
       });
-      usuarioId = persona?.usuarioId;
+      usuarioId = persona?.usuarioId ?? undefined;
     }
 
     if (!usuarioId) {
       throw new NotFoundException('Usuario no encontrado para el registro de horas');
     }
 
-    // Verificar que el usuario existe y pertenece al negocio
     const usuario = await this.prisma.usuario.findUnique({
       where: { id: usuarioId },
+      include: { personas: { take: 1 } }
     });
 
     if (!usuario || usuario.negocioId !== negocioId) {
       throw new NotFoundException('Usuario no encontrado o no pertenece al negocio');
     }
 
-    // Verificar que la campaña existe si se proporciona
+    if (!personaId && usuario.personas[0]) {
+      personaId = usuario.personas[0].id;
+    }
+
+    if (!personaId) {
+      throw new NotFoundException('No se pudo determinar la persona asociada');
+    }
+
     if (createRegistroHorasDto.campanaId) {
       const campana = await this.prisma.campana.findUnique({
         where: { id: createRegistroHorasDto.campanaId }
@@ -48,7 +53,7 @@ export class RegistroHorasService {
       data: {
         negocioId,
         usuarioId,
-        personaId, // Mantener para compatibilidad
+        personaId,
         campanaId: createRegistroHorasDto.campanaId,
         fecha: new Date(createRegistroHorasDto.fecha),
         horas: createRegistroHorasDto.horas,
@@ -68,7 +73,7 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
       },
     });
   }
@@ -92,7 +97,7 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
       },
       orderBy: {
         fecha: 'desc',
@@ -120,7 +125,7 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
       },
     });
 
@@ -151,7 +156,7 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
       },
       orderBy: {
         fecha: 'desc',
@@ -159,9 +164,6 @@ export class RegistroHorasService {
     });
   }
 
-  /**
-   * ✅ Nuevo método para buscar por usuarioId
-   */
   async findByUsuarioId(negocioId: number, usuarioId: number) {
     return this.prisma.registroHoras.findMany({
       where: {
@@ -182,7 +184,7 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
       },
       orderBy: {
         fecha: 'desc',
@@ -196,11 +198,9 @@ export class RegistroHorasService {
 
     const updateData: any = {};
 
-    // ✅ Priorizar usuarioId, actualizar personaId si es necesario
     if (updateRegistroHorasDto.usuarioId !== undefined) {
       updateData.usuarioId = updateRegistroHorasDto.usuarioId;
 
-      // Sincronizar personaId desde usuarioId (para compatibilidad)
       const usuario = await this.prisma.usuario.findUnique({
         where: { id: updateRegistroHorasDto.usuarioId },
         include: { personas: { take: 1 } }
@@ -211,7 +211,6 @@ export class RegistroHorasService {
     } else if (updateRegistroHorasDto.personaId !== undefined) {
       updateData.personaId = updateRegistroHorasDto.personaId;
 
-      // Sincronizar usuarioId desde personaId (backward compatibility)
       const persona = await this.prisma.persona.findUnique({
         where: { id: updateRegistroHorasDto.personaId },
         select: { usuarioId: true }
@@ -254,7 +253,7 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
       },
     });
   }
@@ -280,10 +279,9 @@ export class RegistroHorasService {
     const totalRegistros = registrosHoras.length;
     const promedioHorasPorDia = totalRegistros > 0 ? totalHoras / totalRegistros : 0;
 
-    // ✅ Contar usuarios únicos que tienen registros (priorizar usuarioId)
     const usuariosUnicos = new Set(
       registrosHoras
-        .map(r => r.usuarioId || r.personaId) // Usar usuarioId, fallback a personaId
+        .map(r => r.usuarioId || r.personaId)
         .filter(id => id !== null)
     ).size;
 
@@ -291,22 +289,16 @@ export class RegistroHorasService {
       totalHoras,
       totalRegistros,
       promedioHorasPorDia,
-      personasActivas: usuariosUnicos, // Ahora cuenta usuarios únicos
+      personasActivas: usuariosUnicos,
     };
   }
 
   // ==================== TIMER METHODS ====================
 
-  /**
-   * Inicia un timer para un usuario
-   * @param usuarioId - ID del usuario (puede recibir personaId como fallback)
-   */
   async startTimer(negocioId: number, usuarioIdOrPersonaId: number, campanaId?: number, descripcion?: string) {
-    // ✅ Determinar si es usuarioId o personaId
     let usuarioId: number;
     let personaId: number | undefined;
 
-    // Intentar como usuarioId primero
     const usuario = await this.prisma.usuario.findFirst({
       where: { id: usuarioIdOrPersonaId, negocioId },
       include: { personas: { take: 1 } }
@@ -314,9 +306,8 @@ export class RegistroHorasService {
 
     if (usuario) {
       usuarioId = usuario.id;
-      personaId = usuario.personas?.[0]?.id; // Para compatibilidad
+      personaId = usuario.personas?.[0]?.id;
     } else {
-      // Intentar como personaId (backward compatibility)
       const persona = await this.prisma.persona.findFirst({
         where: { id: usuarioIdOrPersonaId, negocioId },
         select: { usuarioId: true, id: true }
@@ -330,7 +321,6 @@ export class RegistroHorasService {
       personaId = persona.id;
     }
 
-    // Verificar que no hay un timer activo para este usuario
     const timerActivo = await this.prisma.registroHoras.findFirst({
       where: {
         negocioId,
@@ -343,12 +333,11 @@ export class RegistroHorasService {
       throw new BadRequestException('Ya existe un timer activo para este usuario');
     }
 
-    // Crear nuevo registro con timer
     return this.prisma.registroHoras.create({
       data: {
         negocioId,
         usuarioId,
-        personaId, // Mantener para compatibilidad
+        personaId,
         campanaId,
         fecha: new Date(),
         horas: 0,
@@ -373,7 +362,7 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
         campana: true,
       },
     });
@@ -417,7 +406,7 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
         campana: true,
       },
     });
@@ -453,7 +442,7 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
         campana: true,
       },
     });
@@ -500,21 +489,15 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
         campana: true,
       },
     });
   }
 
-  /**
-   * Obtiene el timer activo de un usuario
-   * @param usuarioIdOrPersonaId - ID del usuario (puede recibir personaId como fallback)
-   */
   async getActiveTimer(negocioId: number, usuarioIdOrPersonaId: number) {
-    // ✅ Determinar si es usuarioId o personaId
     let usuarioId: number | undefined;
 
-    // Intentar como usuarioId primero
     const usuario = await this.prisma.usuario.findFirst({
       where: { id: usuarioIdOrPersonaId, negocioId },
       select: { id: true }
@@ -523,7 +506,6 @@ export class RegistroHorasService {
     if (usuario) {
       usuarioId = usuario.id;
     } else {
-      // Intentar como personaId (backward compatibility)
       const persona = await this.prisma.persona.findFirst({
         where: { id: usuarioIdOrPersonaId, negocioId },
         select: { usuarioId: true }
@@ -557,7 +539,7 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
         campana: true,
       },
     });
@@ -617,7 +599,7 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
         campana: true,
       },
     });
@@ -656,7 +638,7 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
         campana: true,
       },
     });
@@ -687,7 +669,7 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
         campana: true,
       },
       orderBy: {
@@ -719,7 +701,7 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
         campana: true,
       },
       orderBy: {

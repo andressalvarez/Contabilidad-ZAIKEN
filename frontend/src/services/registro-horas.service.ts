@@ -29,19 +29,7 @@ export class RegistroHorasService {
     }
   }
 
-  // ⚠️ Deprecado - usar getByUsuarioId
-  /** @deprecated Usar getByUsuarioId en su lugar */
-  static async getByPersonaId(personaId: number): Promise<RegistroHoras[]> {
-    try {
-      const response = await api.get(`${ENDPOINT}/persona/${personaId}`);
-      return response.data?.data || [];
-    } catch (error) {
-      console.error('Error fetching registro horas by persona:', error);
-      throw error;
-    }
-  }
-
-  // ✅ Obtener registros de horas de un usuario
+  // Obtener registros de horas de un usuario
   static async getByUsuarioId(usuarioId: number): Promise<RegistroHoras[]> {
     try {
       const response = await api.get(`${ENDPOINT}/usuario/${usuarioId}`);
@@ -111,10 +99,9 @@ export class RegistroHorasService {
 
   // ==================== TIMER METHODS ====================
 
-  // Iniciar un timer (acepta usuarioId o personaId)
+  // Iniciar un timer
   static async startTimer(data: {
     usuarioId?: number;
-    personaId?: number;
     campanaId?: number;
     descripcion?: string;
   }): Promise<RegistroHoras> {
@@ -174,19 +161,7 @@ export class RegistroHorasService {
     }
   }
 
-  // ⚠️ Deprecado - usar getActiveTimerByUsuario
-  /** @deprecated Usar getActiveTimerByUsuario en su lugar */
-  static async getActiveTimer(personaId: number): Promise<RegistroHoras | null> {
-    try {
-      const response = await api.get(`${ENDPOINT}/timer/active/${personaId}`);
-      return response.data?.data || null;
-    } catch (error) {
-      console.error('Error fetching active timer:', error);
-      throw error;
-    }
-  }
-
-  // ✅ Obtener timer activo de un usuario
+  // Obtener timer activo de un usuario
   static async getActiveTimerByUsuario(usuarioId: number): Promise<RegistroHoras | null> {
     try {
       const response = await api.get(`${ENDPOINT}/timer/active-usuario/${usuarioId}`);

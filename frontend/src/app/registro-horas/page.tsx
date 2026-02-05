@@ -44,7 +44,7 @@ export default function RegistroHorasPage() {
 
   // React Query hooks
   const { data: registrosHoras = [], isLoading, error, refetch } = useRegistroHoras();
-  const { data: usuarios = [] } = useUsuarios(); // ✅ Cambio: usePersonas → useUsuarios
+  const { data: usuarios = [] } = useUsuarios();
   const createMutation = useCreateRegistroHoras();
   const updateMutation = useUpdateRegistroHoras();
   const deleteMutation = useDeleteRegistroHoras();

@@ -11,12 +11,12 @@ export interface UseTimerReturn {
   loading: boolean;
   error: string | null;
   elapsedTime: number;
-  startTimer: (personaId: number, campanaId?: number, descripcion?: string) => Promise<void>;
+  startTimer: (usuarioId: number, campanaId?: number, descripcion?: string) => Promise<void>;
   pauseTimer: () => Promise<void>;
   resumeTimer: () => Promise<void>;
   stopTimer: (descripcion?: string) => Promise<void>;
   cancelTimer: () => Promise<void>;
-  refreshTimer: (personaId: number) => Promise<void>;
+  refreshTimer: (usuarioId: number) => Promise<void>;
 }
 
 /**
@@ -33,7 +33,7 @@ export interface UseTimerReturn {
  * } = useTimer();
  *
  * // Iniciar timer
- * await startTimer(personaId, campanaId, 'Trabajando en tarea X');
+ * await startTimer(usuarioId, campanaId, 'Trabajando en tarea X');
  *
  * // Pausar timer
  * await pauseTimer();
@@ -72,11 +72,11 @@ export function useTimer(): UseTimerReturn {
   }, [isPaused, activeTimer]);
 
   // Obtener timer activo
-  const refreshTimer = useCallback(async (personaId: number) => {
+  const refreshTimer = useCallback(async (usuarioId: number) => {
     try {
       setLoading(true);
       setError(null);
-      const timer = await RegistroHorasService.getActiveTimer(personaId);
+      const timer = await RegistroHorasService.getActiveTimerByUsuario(usuarioId);
       setActiveTimer(timer);
       if (timer) {
         setElapsedTime(timer.horas);
@@ -91,7 +91,7 @@ export function useTimer(): UseTimerReturn {
 
   // Iniciar timer
   const startTimer = useCallback(async (
-    personaId: number,
+    usuarioId: number,
     campanaId?: number,
     descripcion?: string
   ) => {
@@ -99,7 +99,7 @@ export function useTimer(): UseTimerReturn {
       setLoading(true);
       setError(null);
       const timer = await RegistroHorasService.startTimer({
-        personaId,
+        usuarioId,
         campanaId,
         descripcion,
       });

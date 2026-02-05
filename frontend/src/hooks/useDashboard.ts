@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { TransaccionesService } from '@/services/transacciones.service';
-import { PersonasService } from '@/services/personas.service';
+import { UsuariosService } from '@/services/usuarios.service';
 import { CategoriasService } from '@/services/categorias.service';
 import { CampanasService } from '@/services/campanas.service';
 
@@ -15,8 +15,8 @@ export interface DashboardData {
     promedioIngresos: number;
     promedioGastos: number;
   };
-  personas: {
-    totalPersonas: number;
+  usuarios: {
+    totalUsuarios: number;
     totalParticipacion: number;
     participacionDisponible: number;
     horasTotales: number;
@@ -51,7 +51,7 @@ export interface DashboardData {
 export const dashboardKeys = {
   all: ['dashboard'] as const,
   stats: (filtros: any) => [...dashboardKeys.all, 'stats', filtros] as const,
-  personas: () => [...dashboardKeys.all, 'personas'] as const,
+  usuarios: () => [...dashboardKeys.all, 'usuarios'] as const,
   categorias: () => [...dashboardKeys.all, 'categorias'] as const,
   campanas: () => [...dashboardKeys.all, 'campanas'] as const,
   resumenCategorias: (filtros: any) => [...dashboardKeys.all, 'resumen-categorias', filtros] as const,
@@ -82,14 +82,14 @@ export function useDashboard(filtros: { fechaInicio?: string; fechaFin?: string 
   console.log('Estadísticas obtenidas:', estadisticas);
   console.log('Error en estadísticas:', errorStats);
 
-  // Obtener resumen de personas usando el servicio
-  const { data: personasSummary, isLoading: loadingPersonas } = useQuery({
-    queryKey: dashboardKeys.personas(),
+  // Obtener resumen de usuarios usando el servicio
+  const { data: usuariosSummary, isLoading: loadingUsuarios } = useQuery({
+    queryKey: dashboardKeys.usuarios(),
     queryFn: async () => {
-      console.log('Ejecutando query de personas...');
+      console.log('Ejecutando query de usuarios...');
       try {
-        const data = await PersonasService.getSummary();
-        console.log('Personas data:', data);
+        const data = await UsuariosService.getSummary();
+        console.log('Usuarios data:', data);
         return data;
       } catch (error) {
         console.error('Error en getSummary:', error);
@@ -198,9 +198,9 @@ export function useDashboard(filtros: { fechaInicio?: string; fechaFin?: string 
     .sort((a, b) => b.monto - a.monto)
     .slice(0, 19) || []; // Limitar a 19 gastos para el gráfico
 
-  const isLoading = loadingStats || loadingPersonas || loadingCategorias || loadingCampanas || loadingResumenCategorias || loadingResumenCampanas;
+  const isLoading = loadingStats || loadingUsuarios || loadingCategorias || loadingCampanas || loadingResumenCategorias || loadingResumenCampanas;
 
-  const dashboardData: DashboardData | undefined = estadisticas && personasSummary && categorias && campanas && resumenCategorias && resumenCampanas
+  const dashboardData: DashboardData | undefined = estadisticas && usuariosSummary && categorias && campanas && resumenCategorias && resumenCampanas
     ? {
         estadisticas: {
           totalIngresos: estadisticas.ingresos ?? 0,
@@ -212,15 +212,15 @@ export function useDashboard(filtros: { fechaInicio?: string; fechaFin?: string 
           promedioIngresos: 0,
           promedioGastos: 0,
         },
-        personas: {
-          totalPersonas: personasSummary.totalPersonas ?? 0,
-          totalParticipacion: personasSummary.totalParticipacion ?? 0,
-          participacionDisponible: personasSummary.participacionDisponible ?? 0,
-          horasTotales: personasSummary.horasTotales ?? 0,
-          aportesTotales: personasSummary.aportesTotales ?? 0,
-          inversionTotal: personasSummary.inversionTotal ?? 0,
-          valorHoraPromedio: personasSummary.valorHoraPromedio ?? 0,
-          participacionPromedio: personasSummary.participacionPromedio ?? 0,
+        usuarios: {
+          totalUsuarios: usuariosSummary.totales?.totalUsuarios ?? 0,
+          totalParticipacion: usuariosSummary.totales?.totalParticipacion ?? 0,
+          participacionDisponible: usuariosSummary.totales?.participacionDisponible ?? 0,
+          horasTotales: usuariosSummary.totales?.horasTotales ?? 0,
+          aportesTotales: usuariosSummary.totales?.aportesTotales ?? 0,
+          inversionTotal: usuariosSummary.totales?.inversionTotal ?? 0,
+          valorHoraPromedio: usuariosSummary.totales?.valorHoraPromedio ?? 0,
+          participacionPromedio: usuariosSummary.totales?.participacionPromedio ?? 0,
         },
         categorias: {
           totalCategorias: categorias.length,

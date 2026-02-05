@@ -18,7 +18,7 @@ import {
   EyeOff
 } from 'lucide-react';
 import { useTransaccionesStats, useTransaccionesRecientes } from '@/hooks/useTransacciones';
-import { usePersonasSummary } from '@/hooks/usePersonas';
+import { useUsuariosSummary } from '@/hooks/useUsuarios';
 import { useRoles } from '@/hooks/useRoles';
 import { useCategorias } from '@/hooks/useCategorias';
 
@@ -33,7 +33,7 @@ export default function DashboardPage() {
 
   // React Query hooks
   const { data: stats, isLoading: statsLoading } = useTransaccionesStats({ fechaInicio, fechaFin });
-  const { data: personasSummary } = usePersonasSummary();
+  const { data: usuariosSummary } = useUsuariosSummary();
   const { data: transaccionesRecientes } = useTransaccionesRecientes(5);
   const { data: roles } = useRoles();
   const { data: categorias } = useCategorias();
@@ -203,8 +203,8 @@ export default function DashboardPage() {
 
         {/* Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Resumen de Personas */}
-          {personasSummary && (
+          {/* Resumen de Usuarios */}
+          {usuariosSummary && (
             <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
               <div className="flex items-center gap-3 mb-4">
                 <Users className="h-5 w-5 text-purple-600" />
@@ -212,24 +212,24 @@ export default function DashboardPage() {
               </div>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Total Personas</span>
-                  <span className="font-medium">{personasSummary.totalPersonas}</span>
+                  <span className="text-sm text-gray-600">Total Usuarios</span>
+                  <span className="font-medium">{usuariosSummary.usuarios.length}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Participación</span>
-                  <span className="font-medium">{personasSummary.totalParticipacion}%</span>
+                  <span className="font-medium">{usuariosSummary.totales.participacionTotal.toFixed(1)}%</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Horas Totales</span>
-                  <span className="font-medium">{personasSummary.horasTotales.toLocaleString()}</span>
+                  <span className="font-medium">{usuariosSummary.totales.horasTotales.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Inversión</span>
-                  <span className="font-medium">{formatCurrency(personasSummary.inversionTotal)}</span>
+                  <span className="font-medium">{formatCurrency(usuariosSummary.totales.inversionTotal)}</span>
                 </div>
               </div>
               <Link
-                href="/personas"
+                href="/usuarios"
                 className="block w-full mt-4 text-center text-purple-600 hover:text-purple-700 text-sm font-medium"
               >
                 Ver detalles →
@@ -253,8 +253,8 @@ export default function DashboardPage() {
                 <span className="font-medium">{categorias?.length || 0} activas</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Personas</span>
-                <span className="font-medium">{personasSummary?.totalPersonas || 0} registradas</span>
+                <span className="text-sm text-gray-600">Usuarios</span>
+                <span className="font-medium">{usuariosSummary?.usuarios.length || 0} registrados</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Transacciones</span>

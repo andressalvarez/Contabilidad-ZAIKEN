@@ -7,13 +7,12 @@ export class ValorHoraService {
   constructor(private prisma: PrismaService) {}
 
   async create(negocioId: number, createValorHoraDto: CreateValorHoraDto) {
-    // ✅ Priorizar usuarioId, fallback a personaId
+
     let usuarioId = createValorHoraDto.usuarioId;
     let personaId = createValorHoraDto.personaId;
-    let rolId: number;
+    let rolId: number | undefined;
 
     if (usuarioId) {
-      // Obtener el rol del usuario
       const usuario = await this.prisma.usuario.findFirst({
         where: { id: usuarioId, negocioId },
         include: { personas: { take: 1 } }
@@ -23,10 +22,9 @@ export class ValorHoraService {
         throw new NotFoundException('Usuario no encontrado');
       }
 
-      rolId = usuario.rolId;
-      personaId = usuario.personas?.[0]?.id; // Para compatibilidad
+      rolId = usuario.rolId ?? undefined;
+      personaId = usuario.personas?.[0]?.id;
     } else if (personaId) {
-      // Backward compatibility: obtener usuario desde persona
       const persona = await this.prisma.persona.findUnique({
         where: { id: personaId },
         include: { rol: true }
@@ -36,17 +34,37 @@ export class ValorHoraService {
         throw new NotFoundException('Persona no encontrada');
       }
 
-      usuarioId = persona.usuarioId;
+      usuarioId = persona.usuarioId ?? undefined;
       rolId = persona.rolId;
     } else {
       throw new NotFoundException('Debe proporcionar usuarioId o personaId');
+    }
+
+    if (!usuarioId) {
+      throw new NotFoundException('No se pudo determinar el usuario');
+    }
+
+    if (!rolId) {
+      throw new NotFoundException('No se pudo determinar el rol');
+    }
+
+    if (!personaId) {
+      const usuario = await this.prisma.usuario.findFirst({
+        where: { id: usuarioId, negocioId },
+        include: { personas: { take: 1 } }
+      });
+      personaId = usuario?.personas?.[0]?.id;
+    }
+
+    if (!personaId) {
+      throw new NotFoundException('No se pudo determinar la persona asociada');
     }
 
     return this.prisma.valorHora.create({
       data: {
         negocioId,
         usuarioId,
-        personaId, // Mantener para compatibilidad
+        personaId,
         rolId,
         valor: createValorHoraDto.valor,
         fechaInicio: new Date(createValorHoraDto.fechaInicio),
@@ -66,7 +84,7 @@ export class ValorHoraService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
         rol: true,
       },
     });
@@ -89,7 +107,7 @@ export class ValorHoraService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
         rol: true,
       },
       orderBy: {
@@ -118,7 +136,7 @@ export class ValorHoraService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
         rol: true,
       },
     });
@@ -130,7 +148,7 @@ export class ValorHoraService {
     return valorHora;
   }
 
-  // ⚠️ Deprecado - usar findByUsuarioId
+
   async findByPersonaId(personaId: number, negocioId: number) {
     return this.prisma.valorHora.findMany({
       where: {
@@ -151,7 +169,7 @@ export class ValorHoraService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
         rol: true,
       },
       orderBy: {
@@ -160,7 +178,7 @@ export class ValorHoraService {
     });
   }
 
-  // ✅ Nuevo método para buscar por usuarioId
+
   async findByUsuarioId(usuarioId: number, negocioId: number) {
     return this.prisma.valorHora.findMany({
       where: {
@@ -181,7 +199,7 @@ export class ValorHoraService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
         rol: true,
       },
       orderBy: {
@@ -225,7 +243,7 @@ export class ValorHoraService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
         rol: true,
       },
     });
@@ -254,7 +272,7 @@ export class ValorHoraService {
       : 0;
     const valorMaximo = valores.length > 0 ? Math.max(...valores) : 0;
 
-    // ✅ Contar usuarios únicos (priorizar usuarioId)
+
     const usuariosConValor = new Set(
       valoresHora
         .map(vh => vh.usuarioId || vh.personaId) // Usar usuarioId, fallback a personaId
@@ -264,7 +282,7 @@ export class ValorHoraService {
     return {
       valorPromedio,
       valorMaximo,
-      personasConValor: usuariosConValor, // Mantener nombre del campo para compatibilidad con frontend
+      personasConValor: usuariosConValor,
       totalValores: valoresHora.length,
     };
   }

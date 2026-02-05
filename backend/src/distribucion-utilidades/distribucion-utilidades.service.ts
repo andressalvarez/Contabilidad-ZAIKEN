@@ -33,7 +33,7 @@ export class DistribucionUtilidadesService {
                 },
               },
             },
-            persona: true, // Mantener para compatibilidad
+            persona: true,
           },
         },
       },
@@ -64,7 +64,7 @@ export class DistribucionUtilidadesService {
                 },
               },
             },
-            persona: true, // Mantener para compatibilidad
+            persona: true,
           },
         },
       },
@@ -99,7 +99,7 @@ export class DistribucionUtilidadesService {
                 },
               },
             },
-            persona: true, // Mantener para compatibilidad
+            persona: true,
           },
         },
       },
@@ -140,7 +140,7 @@ export class DistribucionUtilidadesService {
                 },
               },
             },
-            persona: true, // Mantener para compatibilidad
+            persona: true,
           },
         },
       },
@@ -172,7 +172,7 @@ export class DistribucionUtilidadesService {
       totalDistribuido,
       distribucionesPendientes,
       distribucionesCompletadas,
-      usuariosActivos, // ✅ Cambiado de personasActivas a usuariosActivos
+      usuariosActivos,
     ] = await Promise.all([
       this.prisma.distribucionUtilidades.count({
         where: { negocioId },
@@ -201,12 +201,12 @@ export class DistribucionUtilidadesService {
           estado: 'Distribuida',
         },
       }),
-      // ✅ Cambiar de persona a usuario
+
       this.prisma.usuario.count({
         where: {
           negocioId,
           activo: true,
-          participacionPorc: { gt: 0 }, // Solo usuarios con participación
+          participacionPorc: { gt: 0 },
         },
       }),
     ]);
@@ -222,7 +222,7 @@ export class DistribucionUtilidadesService {
         totalDistribuido: totalDistribuido._sum.montoDistribuido || 0,
         distribucionesPendientes,
         distribucionesCompletadas,
-        promedioPorPersona: promedioPorUsuario, // Mantener nombre del campo para compatibilidad con frontend
+        promedioPorPersona: promedioPorUsuario,
       },
     };
   }
@@ -240,16 +240,15 @@ export class DistribucionUtilidadesService {
       throw new NotFoundException(`Distribución con ID ${id} no encontrada`);
     }
 
-    // ✅ Obtener usuarios activos del negocio con participación > 0
     const usuarios = await this.prisma.usuario.findMany({
       where: {
         negocioId,
         activo: true,
-        participacionPorc: { gt: 0 }, // Solo usuarios con participación
+        participacionPorc: { gt: 0 },
       },
       include: {
         rolNegocio: true,
-        personas: { take: 1 }, // Obtener primera persona para compatibilidad backward
+        personas: { take: 1 },
       },
     });
 
@@ -257,22 +256,20 @@ export class DistribucionUtilidadesService {
       throw new Error('No hay usuarios activos con participación para distribuir utilidades');
     }
 
-    // ✅ Calcular distribución basada en participación (ahora desde Usuario)
     const totalParticipacion = usuarios.reduce((acc, usuario) => acc + usuario.participacionPorc, 0);
 
     if (totalParticipacion === 0) {
       throw new Error('No hay participación definida para los usuarios');
     }
 
-    // ✅ Crear detalles de distribución usando usuarioId
     const detalles = usuarios.map(usuario => {
       const porcentaje = usuario.participacionPorc / totalParticipacion;
       const montoDistribuido = distribucion.utilidadTotal * porcentaje;
 
       return {
         distribucionId: id,
-        usuarioId: usuario.id, // ✅ Usar usuarioId
-        personaId: usuario.personas[0]?.id, // Mantener personaId para compatibilidad
+        usuarioId: usuario.id,
+        personaId: usuario.personas[0]?.id,
         porcentajeParticipacion: porcentaje * 100,
         montoDistribuido,
       };

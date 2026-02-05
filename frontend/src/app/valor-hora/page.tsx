@@ -2,8 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useValorHora, useCreateValorHora, useUpdateValorHora, useDeleteValorHora, useValorHoraStats } from '@/hooks/useValorHora';
-import { useUsuarios } from '@/hooks/useUsuarios';  // ✅ Cambio: usePersonas → useUsuarios
-import MainLayout from '@/components/layout/MainLayout';
+import { useUsuarios } from '@/hooks/useUsuarios';import MainLayout from '@/components/layout/MainLayout';
 import {
   Plus,
   Download,
@@ -27,8 +26,7 @@ import { ValorHora, CreateValorHoraDto } from '@/types';
 import { toast } from 'react-hot-toast';
 
 interface FormData {
-  usuarioId: number;  // ✅ Cambio: personaId → usuarioId
-  valor: number;
+  usuarioId: number;  valor: number;
   fechaInicio: string;
   notas: string;
 }
@@ -40,8 +38,7 @@ interface CalculatorData {
 
 export default function ValorHoraPage() {
   const [formData, setFormData] = useState<FormData>({
-    usuarioId: 0,  // ✅ Cambio: personaId → usuarioId
-    valor: 0,
+    usuarioId: 0,    valor: 0,
     fechaInicio: new Date().toISOString().split('T')[0],
     notas: ''
   });
@@ -55,8 +52,7 @@ export default function ValorHoraPage() {
 
   // React Query hooks
   const { data: valoresHora = [], isLoading, error, refetch } = useValorHora();
-  const { data: usuarios = [] } = useUsuarios();  // ✅ Cambio: personas → usuarios, usePersonas → useUsuarios
-  const { data: stats } = useValorHoraStats();
+  const { data: usuarios = [] } = useUsuarios();  const { data: stats } = useValorHoraStats();
   const createMutation = useCreateValorHora();
   const updateMutation = useUpdateValorHora();
   const deleteMutation = useDeleteValorHora();
@@ -65,27 +61,26 @@ export default function ValorHoraPage() {
   useEffect(() => {
     console.log('ValorHoraPage - Debug Info:', {
       valoresHora,
-      usuarios,  // ✅ Cambio: personas → usuarios
+      usuarios,
       stats,
       isLoading,
       error,
       valoresHoraLength: valoresHora.length,
-      usuariosLength: usuarios?.length || 0  // ✅ Cambio: personasLength → usuariosLength
+      usuariosLength: usuarios?.length || 0
     });
-  }, [valoresHora, usuarios, stats, isLoading, error]);  // ✅ Cambio: personas → usuarios
+  }, [valoresHora, usuarios, stats, isLoading, error]);
 
   // Filtrar valores por hora por búsqueda
   const filteredValoresHora = useMemo(() => {
     if (!searchTerm) return valoresHora;
     return (valoresHora || []).filter(valorHora => {
-      // ✅ Priorizar usuarioId, fallback a personaId
       const usuarioId = valorHora.usuarioId || valorHora.personaId;
       const usuario = (usuarios || []).find(u => u.id === usuarioId);
       const nombreUsuario = usuario?.nombre || '';
       return nombreUsuario.toLowerCase().includes(searchTerm.toLowerCase()) ||
              valorHora.valor.toString().includes(searchTerm);
     });
-  }, [valoresHora, usuarios, searchTerm]);  // ✅ Cambio: personas → usuarios
+  }, [valoresHora, usuarios, searchTerm]);
 
   // Formatear moneda
   const formatCurrency = (amount: number) => {
@@ -97,10 +92,9 @@ export default function ValorHoraPage() {
   };
 
   // Obtener nombre del usuario (con backward compatibility)
-  const getUserName = (valorHora: ValorHora) => {  // ✅ Cambio: getPersonaName → getUserName, recibe objeto completo
-    const usuarioId = valorHora.usuarioId || valorHora.personaId;  // ✅ Fallback
-    const usuario = (usuarios || []).find(u => u.id === usuarioId);
-    return usuario?.nombre || 'Usuario no encontrado';  // ✅ Cambio
+  const getUserName = (valorHora: ValorHora) => {
+    const usuarioId = valorHora.usuarioId || valorHora.personaId;    const usuario = (usuarios || []).find(u => u.id === usuarioId);
+    return usuario?.nombre || 'Usuario no encontrado';
   };
 
   // Calcular resultado de la calculadora
@@ -112,26 +106,23 @@ export default function ValorHoraPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.usuarioId || !formData.valor || !formData.fechaInicio) {  // ✅ Cambio: personaId → usuarioId
-      toast.error('Debe completar todos los campos obligatorios');
+    if (!formData.usuarioId || !formData.valor || !formData.fechaInicio) {      toast.error('Debe completar todos los campos obligatorios');
       return;
     }
 
     // Verificar si ya existe un valor para este usuario en la misma fecha
     const existingValue = (valoresHora || []).find(vh => {
-      const vhUsuarioId = vh.usuarioId || vh.personaId;  // ✅ Fallback
-      return vhUsuarioId === formData.usuarioId && vh.fechaInicio === formData.fechaInicio;
+      const vhUsuarioId = vh.usuarioId || vh.personaId;      return vhUsuarioId === formData.usuarioId && vh.fechaInicio === formData.fechaInicio;
     });
 
     if (existingValue) {
-      toast.error('Ya existe un valor para este usuario en la fecha especificada');  // ✅ Cambio: persona → usuario
+      toast.error('Ya existe un valor para este usuario en la fecha especificada');
       return;
     }
 
     try {
       const createData: CreateValorHoraDto = {
-        usuarioId: formData.usuarioId,  // ✅ Cambio: personaId → usuarioId
-        valor: formData.valor,
+        usuarioId: formData.usuarioId,        valor: formData.valor,
         fechaInicio: formData.fechaInicio,
         notas: formData.notas
       };
@@ -140,8 +131,7 @@ export default function ValorHoraPage() {
 
       // Limpiar formulario
       setFormData({
-        usuarioId: 0,  // ✅ Cambio: personaId → usuarioId
-        valor: 0,
+        usuarioId: 0,        valor: 0,
         fechaInicio: new Date().toISOString().split('T')[0],
         notas: ''
       });
@@ -182,7 +172,7 @@ export default function ValorHoraPage() {
 
   // Eliminar valor hora
   const handleDelete = async (valorHora: ValorHora) => {
-    const confirmed = confirm(`¿Estás seguro de eliminar el valor por hora de "${getUserName(valorHora)}"?`);  // ✅ Cambio: getPersonaName → getUserName
+    const confirmed = confirm(`¿Estás seguro de eliminar el valor por hora de "${getUserName(valorHora)}"?`);
     if (!confirmed) return;
 
     try {
@@ -196,7 +186,7 @@ export default function ValorHoraPage() {
   const exportarValorHora = () => {
     const datosExportar = (valoresHora || []).map(vh => ({
       ID: vh.id,
-      Usuario: getUserName(vh),  // ✅ Cambio: Persona → Usuario, getPersonaName → getUserName
+      Usuario: getUserName(vh),
       'Valor por Hora': formatCurrency(vh.valor),
       'Fecha Inicio': vh.fechaInicio,
       Notas: vh.notas || ''
@@ -397,18 +387,17 @@ export default function ValorHoraPage() {
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                   <User className="h-4 w-4" />
-                  Usuario *  {/* ✅ Cambio: Persona → Usuario */}
+                  Usuario *  {}
                 </label>
                 <select
-                  value={formData.usuarioId}  {/* ✅ Cambio: personaId → usuarioId */}
-                  onChange={(e) => setFormData(prev => ({ ...prev, usuarioId: parseInt(e.target.value) || 0 }))}  {/* ✅ Cambio */}
+                  value={formData.usuarioId}                  onChange={(e) => setFormData(prev => ({ ...prev, usuarioId: parseInt(e.target.value) || 0 }))}  {}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
                   required
                 >
-                  <option value="">Seleccionar usuario</option>  {/* ✅ Cambio: persona → usuario */}
-                  {(usuarios || []).map(usuario => (  /* ✅ Cambio: personas → usuarios, persona → usuario */
-                    <option key={usuario.id} value={usuario.id}>  {/* ✅ Cambio */}
-                      {usuario.nombre}  {/* ✅ Cambio */}
+                  <option value="">Seleccionar usuario</option>  {}
+                  {(usuarios || []).map(usuario => (
+                    <option key={usuario.id} value={usuario.id}>  {}
+                      {usuario.nombre}  {}
                     </option>
                   ))}
                 </select>
@@ -550,7 +539,7 @@ export default function ValorHoraPage() {
                           <div className="p-1.5 bg-indigo-100 rounded">
                             <User className="h-3.5 w-3.5 text-indigo-600" />
                           </div>
-                          <span className="font-medium text-gray-900">{getUserName(valorHora)}</span>  {/* ✅ Cambio: getPersonaName → getUserName */}
+                          <span className="font-medium text-gray-900">{getUserName(valorHora)}</span>  {}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

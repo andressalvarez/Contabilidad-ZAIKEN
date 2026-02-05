@@ -91,30 +91,3 @@ export const useEstadisticasCampanas = (filters: any) => {
     enabled: true
   });
 };
-
-// Hook para estadísticas de personas
-export const useEstadisticasPersonas = (filters: any) => {
-  return useQuery({
-    queryKey: ['estadisticas-personas', filters],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters.fechaInicio) params.append('fechaInicio', filters.fechaInicio);
-      if (filters.fechaFin) params.append('fechaFin', filters.fechaFin);
-
-      // Usar el endpoint de personas directamente, no summary
-      const response = await api.get(`/personas?${params.toString()}`);
-      const data = response.data;
-      // Si la respuesta es un array directamente, úsala
-      if (Array.isArray(data)) {
-        return data;
-      } else if (data && Array.isArray(data.data)) {
-        return data.data;
-      } else if (data && data.data && typeof data.data === 'object' && data.data !== null) {
-        return Object.values(data.data);
-      } else {
-        return [];
-      }
-    },
-    enabled: true
-  });
-};

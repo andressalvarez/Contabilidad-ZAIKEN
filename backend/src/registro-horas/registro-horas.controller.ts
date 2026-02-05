@@ -44,7 +44,7 @@ export class RegistroHorasController {
     };
   }
 
-  // ✅ Nuevo endpoint para buscar por usuarioId
+
   @Get('usuario/:usuarioId')
   async findByUsuarioId(@NegocioId() negocioId: number, @Param('usuarioId', ParseIntPipe) usuarioId: number) {
     return {
@@ -90,7 +90,7 @@ export class RegistroHorasController {
     @NegocioId() negocioId: number,
     @Body() body: { usuarioId?: number; personaId?: number; campanaId?: number; descripcion?: string }
   ) {
-    // ✅ Priorizar usuarioId, fallback a personaId para compatibilidad
+
     const id = body.usuarioId || body.personaId;
     if (!id) {
       return {
@@ -155,7 +155,7 @@ export class RegistroHorasController {
     };
   }
 
-  // ✅ Nuevo endpoint para obtener timer activo por usuarioId
+
   @Get('timer/active-usuario/:usuarioId')
   async getActiveTimerByUsuario(
     @NegocioId() negocioId: number,

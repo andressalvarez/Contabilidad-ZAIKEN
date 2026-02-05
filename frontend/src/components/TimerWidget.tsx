@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 
 interface TimerWidgetProps {
-  personaId?: number;
+  usuarioId?: number;
   onStop?: () => void;
 }
 
@@ -18,9 +18,11 @@ interface TimerWidgetProps {
  * Se muestra cuando hay un timer activo
  *
  * @example
- * <TimerWidget personaId={1} onStop={() => refetch()} />
+ * <TimerWidget usuarioId={1} onStop={() => refetch()} />
  */
-export const TimerWidget: React.FC<TimerWidgetProps> = ({ personaId, onStop }) => {
+export const TimerWidget: React.FC<TimerWidgetProps> = ({ usuarioId, onStop }) => {
+  const effectiveId = usuarioId;
+
   const { user } = useUser();
   const {
     activeTimer,
@@ -39,21 +41,21 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ personaId, onStop }) =
 
   // Cargar timer activo al montar el componente
   useEffect(() => {
-    if (personaId) {
-      refreshTimer(personaId);
+    if (effectiveId) {
+      refreshTimer(effectiveId, isUsuarioId);
     }
-  }, [personaId, refreshTimer]);
+  }, [effectiveId, isUsuarioId, refreshTimer]);
 
   // Refrescar cada 30 segundos
   useEffect(() => {
-    if (!personaId) return;
+    if (!effectiveId) return;
 
     const interval = setInterval(() => {
-      refreshTimer(personaId);
+      refreshTimer(effectiveId, isUsuarioId);
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [personaId, refreshTimer]);
+  }, [effectiveId, isUsuarioId, refreshTimer]);
 
   // Formatear tiempo transcurrido
   const formatTime = (hours: number): string => {

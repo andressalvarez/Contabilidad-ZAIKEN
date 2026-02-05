@@ -27,7 +27,7 @@ import {
   useUpdateRol,
   useDeleteRol
 } from '@/hooks/useRoles';
-import { usePersonas } from '@/hooks/usePersonas';
+import { useUsuarios } from '@/hooks/useUsuarios';
 import { Rol, CreateRolDto } from '@/types';
 import MainLayout from '@/components/layout/MainLayout';
 
@@ -54,7 +54,7 @@ export default function RolesPage() {
 
   // React Query hooks
   const { data: roles = [], isLoading, error, refetch } = useRoles();
-  const { data: personas = [], isLoading: personasLoading } = usePersonas(true);
+  const { data: usuarios = [], isLoading: usuariosLoading } = useUsuarios();
   const createMutation = useCreateRol();
   const updateMutation = useUpdateRol();
   const deleteMutation = useDeleteRol();
@@ -63,14 +63,14 @@ export default function RolesPage() {
   useEffect(() => {
     console.log('RolesPage - Debug Info:', {
       roles,
-      personas,
+      usuarios,
       isLoading,
-      personasLoading,
+      usuariosLoading,
       error,
       rolesLength: roles.length,
-      personasLength: personas?.length || 0
+      usuariosLength: usuarios?.length || 0
     });
-  }, [roles, personas, isLoading, personasLoading, error]);
+  }, [roles, usuarios, isLoading, usuariosLoading, error]);
 
   // Filtrar roles por búsqueda
   const filteredRoles = useMemo(() => {
@@ -84,18 +84,18 @@ export default function RolesPage() {
   const stats = useMemo(() => {
     const totalRoles = roles.length;
     const importanciaTotal = roles.reduce((acc, rol) => acc + (rol.importancia || 0), 0);
-    const personasAsignadas = (personas || []).filter(p => p.rolId && p.rolId > 0).length;
+    const usuariosAsignados = (usuarios || []).filter(u => u.rolId && u.rolId > 0).length;
 
     return {
       totalRoles,
       importanciaTotal,
-      personasAsignadas
+      usuariosAsignados
     };
-  }, [roles, personas]);
+  }, [roles, usuarios]);
 
-  // Contar personas por rol
-  const getPersonasCount = (rolId: number) => {
-    return (personas || []).filter(p => p.rolId === rolId).length;
+  // Contar usuarios por rol
+  const getUsuariosCount = (rolId: number) => {
+    return (usuarios || []).filter(u => u.rolId === rolId).length;
   };
 
   // Agregar nuevo rol
@@ -175,11 +175,11 @@ export default function RolesPage() {
 
   // Eliminar rol
   const handleDelete = async (rol: Rol) => {
-    // Verificar si hay personas con este rol
-    const personasConRol = (personas || []).filter(p => p.rolId === rol.id);
+    // Verificar si hay usuarios con este rol
+    const usuariosConRol = (usuarios || []).filter(u => u.rolId === rol.id);
 
-    if (personasConRol.length > 0) {
-      alert(`No se puede eliminar: ${personasConRol.length} persona(s) tienen este rol asignado`);
+    if (usuariosConRol.length > 0) {
+      alert(`No se puede eliminar: ${usuariosConRol.length} usuario(s) tienen este rol asignado`);
       return;
     }
 
@@ -200,7 +200,7 @@ export default function RolesPage() {
       'Nombre del Rol': rol.nombreRol,
       'Importancia (%)': rol.importancia,
       'Descripción': rol.descripcion || '',
-      'Personas Asignadas': getPersonasCount(rol.id)
+      'Usuarios Asignados': getUsuariosCount(rol.id)
     }));
 
     // Crear CSV
@@ -310,8 +310,8 @@ export default function RolesPage() {
                 <Users className="text-amber-600" size={24} />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Personas Asignadas</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.personasAsignadas}</p>
+                <p className="text-sm text-gray-600">Usuarios Asignados</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.usuariosAsignados}</p>
               </div>
             </div>
           </div>
@@ -456,7 +456,7 @@ export default function RolesPage() {
                       Descripción
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Personas
+                      Usuarios
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Acciones
@@ -502,7 +502,7 @@ export default function RolesPage() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                             <Users className="h-3 w-3" />
-                            {getPersonasCount(rol.id)}
+                            {getUsuariosCount(rol.id)}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -541,10 +541,10 @@ export default function RolesPage() {
               <h3 className="text-lg font-semibold text-gray-900">Información sobre Roles</h3>
             </div>
             <div className="space-y-3 text-sm text-gray-600">
-              <p>• Los roles definen la importancia de cada persona en el negocio.</p>
+              <p>• Los roles definen la importancia de cada usuario en el negocio.</p>
               <p>• El porcentaje de importancia afecta directamente la distribución de utilidades.</p>
               <p>• La suma de importancias no necesariamente debe ser 100%.</p>
-              <p>• Cada persona debe tener un rol asignado para participar en distribuciones.</p>
+              <p>• Cada usuario debe tener un rol asignado para participar en distribuciones.</p>
             </div>
           </div>
 

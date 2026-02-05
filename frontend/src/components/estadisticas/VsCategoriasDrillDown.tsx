@@ -4,10 +4,10 @@ import { useState, useEffect, useRef, forwardRef, useImperativeHandle, useMemo }
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { createRoot } from 'react-dom/client';
 import { useTransacciones, useResumenPorCategorias } from '@/hooks/useTransacciones';
-import { usePersonas } from '@/hooks/usePersonas';
+import { useUsuarios } from '@/hooks/useUsuarios';
 import { useCategorias } from '@/hooks/useCategorias';
 import { VSCategoriasService, type VSCarpeta, type VSGrupo, type DatosGrafico } from '@/services/vs-categorias.service';
-import { Transaccion, Persona } from '@/types';
+import { Transaccion, Usuario } from '@/types';
 import { toast } from 'sonner';
 import {
   BarChart3,
@@ -225,7 +225,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
 
     // Hooks de datos
     const { data: resumenCategorias = [] } = useResumenPorCategorias(filters);
-    const { data: personas = [] } = usePersonas();
+    const { data: usuarios = [] } = useUsuarios();
     const { data: categorias = [] } = useCategorias();
     const { data: transacciones = [] } = useTransacciones(filters);
 
@@ -1933,9 +1933,9 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
                     onChange={(e) => setDetailFilters(prev => ({ ...prev, persona: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Todas las personas</option>
-                    {personas.map(p => (
-                      <option key={p.id} value={p.id.toString()}>{p.nombre}</option>
+                  <option value="">Todos los usuarios</option>
+                    {usuarios.map(u => (
+                      <option key={u.id} value={u.id.toString()}>{u.nombre}</option>
                     ))}
                 </select>
               </div>
@@ -1950,7 +1950,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
               console.log('🔍 Comparación viewToUse === "chart":', viewToUse === 'chart');
               console.log('🔍 forceView:', forceView, 'currentView:', currentView);
               return viewToUse === 'list' ? (
-                <DrillDownListView transactions={transactionsToShow} personas={personas} />
+                <DrillDownListView transactions={transactionsToShow} usuarios={usuarios} />
               ) : (
                 <DrillDownChartView transactions={transactionsToShow} segmentColor={segmentColor} />
               );
@@ -2038,10 +2038,10 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
     const renderDetailCharts = () => {
       const filteredTransactions = getFilteredTransactions();
 
-      // Gráfico por persona
-      const personaData = analyzeByPerson(filteredTransactions);
-      if (personaData.labels.length > 0) {
-        createTransactionDetailChart('personaChart', personaData);
+      // Gráfico por usuario
+      const usuarioData = analyzeByUser(filteredTransactions);
+      if (usuarioData.labels.length > 0) {
+        createTransactionDetailChart('usuarioChart', usuarioData);
       }
 
       // Gráfico temporal
@@ -2051,17 +2051,17 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       }
     };
 
-    // Analizar por persona
-    const analyzeByPerson = (transactions: Transaccion[]) => {
-      const personaMap = new Map<string, number>();
+    // Analizar por usuario
+    const analyzeByUser = (transactions: Transaccion[]) => {
+      const usuarioMap = new Map<string, number>();
 
       transactions.forEach(t => {
-        const persona = personas.find(p => p.id === t.personaId);
-        const nombre = persona?.nombre || 'Sin persona';
-        personaMap.set(nombre, (personaMap.get(nombre) || 0) + t.monto);
+        const usuario = usuarios.find(u => u.id === (t.usuarioId || t.personaId));
+        const nombre = usuario?.nombre || 'Sin usuario';
+        usuarioMap.set(nombre, (usuarioMap.get(nombre) || 0) + t.monto);
       });
 
-      const sorted = Array.from(personaMap.entries()).sort((a, b) => b[1] - a[1]);
+      const sorted = Array.from(usuarioMap.entries()).sort((a, b) => b[1] - a[1]);
 
       return {
         labels: sorted.map(([label]) => label),
@@ -3164,16 +3164,16 @@ const ManageModal = ({
 };
 
 // Componente Lista de Drill-down
-const DrillDownListView = ({ transactions, personas: personasProp }: { transactions: Transaccion[], personas?: any[] }) => {
+const DrillDownListView = ({ transactions, usuarios: usuariosProp }: { transactions: Transaccion[], usuarios?: any[] }) => {
   const [mounted, setMounted] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTipo, setSelectedTipo] = useState('');
-  const [selectedPersona, setSelectedPersona] = useState('');
+  const [selectedUsuario, setSelectedUsuario] = useState('');
   const [sortField, setSortField] = useState<keyof Transaccion>('fecha');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  // Usar personas del prop o array vacío
-  const personas = personasProp || [];
+  // Usar usuarios del prop o array vacío
+  const usuarios = usuariosProp || [];
 
   useEffect(() => {
     setMounted(true);
@@ -3210,7 +3210,7 @@ const DrillDownListView = ({ transactions, personas: personasProp }: { transacti
       transactionsType: typeof transactions,
       transactionsIsArray: Array.isArray(transactions),
       mounted,
-      personas: personas.length
+      usuarios: usuarios.length
     });
 
     return (
@@ -3257,16 +3257,16 @@ const DrillDownListView = ({ transactions, personas: personasProp }: { transacti
 
     // Filtrar transacciones (basado en lógica legacy getFilteredTransactions)
   const filteredTransactions = transactions.filter(transaction => {
-    // Filtro de búsqueda (equivalente al legacy que busca en concepto, persona y notas)
+    // Filtro de búsqueda (equivalente al legacy que busca en concepto, usuario y notas)
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
-      const persona = personas.find(p => p.id === transaction.personaId);
-      const personName = persona ? persona.nombre.toLowerCase() : '';
+      const usuario = usuarios.find(u => u.id === (transaction.usuarioId || transaction.personaId));
+      const userName = usuario ? usuario.nombre.toLowerCase() : '';
 
       const matchesSearch =
         (transaction.concepto || '').toLowerCase().includes(searchLower) ||
         (transaction.categoria?.nombre || '').toLowerCase().includes(searchLower) ||
-        personName.includes(searchLower) ||
+        userName.includes(searchLower) ||
         (transaction.notas || '').toLowerCase().includes(searchLower);
 
       if (!matchesSearch) return false;
@@ -3277,11 +3277,11 @@ const DrillDownListView = ({ transactions, personas: personasProp }: { transacti
       return false;
     }
 
-    // Filtro por persona (comparar con nombre de persona, no ID)
-    if (selectedPersona) {
-      const persona = personas.find(p => p.id === transaction.personaId);
-      const personName = persona ? persona.nombre : 'Sin persona';
-      if (personName !== selectedPersona) {
+    // Filtro por usuario (comparar con nombre de usuario, no ID)
+    if (selectedUsuario) {
+      const usuario = usuarios.find(u => u.id === (transaction.usuarioId || transaction.personaId));
+      const userName = usuario ? usuario.nombre : 'Sin usuario';
+      if (userName !== selectedUsuario) {
         return false;
       }
     }
@@ -3383,50 +3383,51 @@ const DrillDownListView = ({ transactions, personas: personasProp }: { transacti
             </select>
           </div>
 
-          {/* Filtro por persona */}
+          {/* Filtro por usuario */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Persona</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
             <select
-              value={selectedPersona}
-              onChange={(e) => setSelectedPersona(e.target.value)}
+              value={selectedUsuario}
+              onChange={(e) => setSelectedUsuario(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="">Todas las personas</option>
-              {/* Mostrar personas únicas de las transacciones actuales */}
+              <option value="">Todos los usuarios</option>
+              {/* Mostrar usuarios únicos de las transacciones actuales */}
               {(() => {
-                const personasEnTransacciones = new Set<string>();
+                const usuariosEnTransacciones = new Set<string>();
 
-                console.log('🔍 Analizando personas en transacciones:', {
+                console.log('🔍 Analizando usuarios en transacciones:', {
                   totalTransactions: transactions.length,
-                  samplePersonas: transactions.slice(0, 3).map(t => ({
+                  sampleUsuarios: transactions.slice(0, 3).map(t => ({
                     id: t.id,
-                    persona: t.persona,
+                    usuario: t.usuario,
+                    usuarioId: t.usuarioId,
                     personaId: t.personaId
                   }))
                 });
 
                 transactions.forEach(t => {
-                  if (t.persona?.nombre) {
-                    personasEnTransacciones.add(t.persona.nombre);
-                  } else if (t.personaId) {
-                    // Fallback: buscar en el array de personas si no viene el objeto completo
-                    const persona = personas.find(p => p.id === t.personaId);
-                    if (persona) {
-                      personasEnTransacciones.add(persona.nombre);
+                  if (t.usuario?.nombre) {
+                    usuariosEnTransacciones.add(t.usuario.nombre);
+                  } else if (t.usuarioId || t.personaId) {
+                    // Fallback: buscar en el array de usuarios si no viene el objeto completo
+                    const usuario = usuarios.find(u => u.id === (t.usuarioId || t.personaId));
+                    if (usuario) {
+                      usuariosEnTransacciones.add(usuario.nombre);
                     } else {
-                      personasEnTransacciones.add('Sin persona');
+                      usuariosEnTransacciones.add('Sin usuario');
                     }
                   } else {
-                    personasEnTransacciones.add('Sin persona');
+                    usuariosEnTransacciones.add('Sin usuario');
                   }
                 });
 
-                const personasList = Array.from(personasEnTransacciones).sort();
-                console.log('👥 Personas encontradas en transacciones:', personasList);
+                const usuariosList = Array.from(usuariosEnTransacciones).sort();
+                console.log('👥 Usuarios encontrados en transacciones:', usuariosList);
 
-                return personasList.map(personName => (
-                  <option key={personName} value={personName}>
-                    {personName}
+                return usuariosList.map(userName => (
+                  <option key={userName} value={userName}>
+                    {userName}
                   </option>
                 ));
               })()}
@@ -3439,7 +3440,7 @@ const DrillDownListView = ({ transactions, personas: personasProp }: { transacti
               onClick={() => {
                 setSearchTerm('');
                 setSelectedTipo('');
-                setSelectedPersona('');
+                setSelectedUsuario('');
               }}
               className="w-full px-3 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
             >
@@ -3528,14 +3529,14 @@ const DrillDownListView = ({ transactions, personas: personasProp }: { transacti
                     )}
                   </div>
                 </th>
-            <th className="px-6 py-3">Persona</th>
+            <th className="px-6 py-3">Usuario</th>
             <th className="px-6 py-3">Tipo</th>
                 <th className="px-6 py-3">Categoría</th>
           </tr>
         </thead>
         <tbody>
               {filteredTransactions.map((transaction, index) => {
-            const persona = personas.find(p => p.id === transaction.personaId);
+            const usuario = usuarios.find(u => u.id === (transaction.usuarioId || transaction.personaId));
 
             return (
               <tr key={transaction.id || index} className="bg-white border-b hover:bg-gray-50">
@@ -3556,7 +3557,7 @@ const DrillDownListView = ({ transactions, personas: personasProp }: { transacti
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                   {transaction.persona?.nombre || 'N/A'}
+                   {transaction.usuario?.nombre || usuario?.nombre || 'N/A'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -3782,18 +3783,18 @@ const DrillDownChartView = ({
     setMounted(true);
   }, []);
 
-  // Analizar transacciones por persona (basado en legacy)
-  const analyzeByPerson = () => {
-    const personData: Record<string, number> = {};
+  // Analizar transacciones por usuario (basado en legacy)
+  const analyzeByUser = () => {
+    const userData: Record<string, number> = {};
     transactions.forEach(t => {
-      const personName = t.persona?.nombre || 'Sin persona';
-      if (!personData[personName]) {
-        personData[personName] = 0;
+      const userName = t.usuario?.nombre || 'Sin usuario';
+      if (!userData[userName]) {
+        userData[userName] = 0;
       }
-      personData[personName] += t.monto || 0;
+      userData[userName] += t.monto || 0;
     });
 
-    return Object.entries(personData).map(([name, amount]) => ({ name, amount }));
+    return Object.entries(userData).map(([name, amount]) => ({ name, amount }));
   };
 
   // Analizar transacciones por mes (basado en legacy)
@@ -3831,14 +3832,14 @@ const DrillDownChartView = ({
   // Analizar detalles de transacciones individuales para visualización granular (basado en legacy)
   const analyzeTransactionDetails = (transactions: Transaccion[]) => {
     return transactions.map((t, index) => {
-      const personName = t.persona?.nombre || 'Sin persona';
+      const userName = t.usuario?.nombre || 'Sin usuario';
 
       return {
         id: index,
         concepto: t.concepto || 'Sin concepto',
         monto: t.monto || 0,
         fecha: t.fecha || '',
-        persona: personName,
+        usuario: userName,
         tipo: t.tipo?.nombre || 'N/A',
         categoria: t.categoria?.nombre || '',
         notas: t.notas || ''
@@ -3971,7 +3972,7 @@ const DrillDownChartView = ({
                   `Monto: $${point.y.toLocaleString()}`,
                   `Concepto: ${point.concepto}`,
                   `Tipo: ${point.tipo}`,
-                  `Persona: ${point.persona}`,
+                  `Usuario: ${point.usuario}`,
                   `Fecha: ${point.fecha}`,
                   ...(point.notas ? [`Notas: ${point.notas}`] : [])
                 ];

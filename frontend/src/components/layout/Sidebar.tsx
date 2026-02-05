@@ -60,19 +60,6 @@ export default function Sidebar() {
           <ul className="space-y-1">
             <li>
               <Link
-                href="/personas"
-                className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg ${
-                  isActive('/personas')
-                    ? 'text-indigo-600 bg-indigo-50'
-                    : 'text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                <i className="bi bi-people-fill"></i>
-                <span>Personas</span>
-              </Link>
-            </li>
-            <li>
-              <Link
                 href="/roles"
                 className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg ${
                   isActive('/roles')

@@ -1,6 +1,5 @@
 export { AuthService } from './auth.service';
 export { RolesService } from './roles.service';
-export { PersonasService } from './personas.service';
 export { TransaccionesService } from './transacciones.service';
 export { CategoriasService } from './categorias.service';
 export { TiposTransaccionService } from './tipos-transaccion.service';

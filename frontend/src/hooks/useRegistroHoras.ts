@@ -10,7 +10,7 @@ export const registroHorasKeys = {
   list: (filters: string) => [...registroHorasKeys.lists(), { filters }] as const,
   details: () => [...registroHorasKeys.all, 'detail'] as const,
   detail: (id: number) => [...registroHorasKeys.details(), id] as const,
-  byPersona: (personaId: number) => [...registroHorasKeys.all, 'persona', personaId] as const,
+  byUsuario: (usuarioId: number) => [...registroHorasKeys.all, 'usuario', usuarioId] as const,
   stats: () => [...registroHorasKeys.all, 'stats'] as const,
 };
 
@@ -23,12 +23,11 @@ export function useRegistroHoras() {
   });
 }
 
-// Hook para obtener registros de horas de una persona
-export function useRegistroHorasByPersona(personaId: number) {
+export function useRegistroHorasByUsuario(usuarioId: number) {
   return useQuery({
-    queryKey: registroHorasKeys.byPersona(personaId),
-    queryFn: () => RegistroHorasService.getByPersonaId(personaId),
-    enabled: !!personaId,
+    queryKey: registroHorasKeys.byUsuario(usuarioId),
+    queryFn: () => RegistroHorasService.getByUsuarioId(usuarioId),
+    enabled: !!usuarioId,
     staleTime: 1000 * 60 * 5,
   });
 }

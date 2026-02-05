@@ -50,7 +50,7 @@ export class ValorHoraController {
     };
   }
 
-  // ✅ Nuevo endpoint para buscar por usuarioId
+
   @Get('usuario/:usuarioId')
   async findByUsuarioId(
     @Param('usuarioId', ParseIntPipe) usuarioId: number,

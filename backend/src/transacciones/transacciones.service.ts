@@ -13,8 +13,8 @@ export interface FiltrosTransacciones {
   categoria?: string;
   categoriaId?: number;
   categoriasIds?: number[];
-  usuarioId?: number; // ✅ Nuevo campo principal
-  personaId?: number; // ⚠️ Deprecado - mantener para compatibilidad
+  usuarioId?: number;
+  personaId?: number;
   campanaId?: number;
   aprobado?: boolean;
 }
@@ -67,7 +67,7 @@ export class TransaccionesService {
   // Crear transacción
   async create(negocioId: number, createTransaccionDto: CreateTransaccionDto): Promise<any> {
     try {
-      // ✅ Validar usuarioId si se proporciona (prioridad)
+  
       if (createTransaccionDto.usuarioId) {
         await this.validateUsuario(createTransaccionDto.usuarioId, negocioId);
       } else if (createTransaccionDto.personaId) {
@@ -104,7 +104,7 @@ export class TransaccionesService {
               },
             },
           },
-          persona: true, // Mantener para compatibilidad
+          persona: true,
           campana: true,
           categoria: true,
         },
@@ -151,7 +151,7 @@ export class TransaccionesService {
       where.categoriaId = { in: filtros.categoriasIds };
     }
 
-    // ✅ Priorizar usuarioId, fallback a personaId
+
     if (filtros.usuarioId) {
       where.usuarioId = filtros.usuarioId;
     } else if (filtros.personaId) {
@@ -183,7 +183,7 @@ export class TransaccionesService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
         campana: true,
         categoria: true,
       },
@@ -211,7 +211,7 @@ export class TransaccionesService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
         campana: true,
       },
       orderBy: { createdAt: 'desc' },
@@ -240,7 +240,7 @@ export class TransaccionesService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
         campana: true,
       },
       orderBy: { fecha: 'desc' },
@@ -269,7 +269,7 @@ export class TransaccionesService {
             },
           },
         },
-        persona: true, // Mantener para compatibilidad
+        persona: true,
         campana: true,
         categoria: true,
       },
@@ -288,7 +288,7 @@ export class TransaccionesService {
       // Verificar que existe
       const transaccionExistente = await this.findOne(id, negocioId);
 
-      // ✅ Validar usuarioId si se proporciona (prioridad)
+  
       if (updateTransaccionDto.usuarioId) {
         await this.validateUsuario(updateTransaccionDto.usuarioId, negocioId);
       } else if (updateTransaccionDto.personaId) {
@@ -326,7 +326,7 @@ export class TransaccionesService {
               },
             },
           },
-          persona: true, // Mantener para compatibilidad
+          persona: true,
           campana: true,
           categoria: true,
         },
@@ -917,7 +917,7 @@ export class TransaccionesService {
     }
   }
 
-  // ✅ Nuevo método para validar usuario
+
   private async validateUsuario(usuarioId: number, negocioId: number): Promise<void> {
     const usuario = await this.prisma.usuario.findFirst({
       where: {
@@ -930,7 +930,7 @@ export class TransaccionesService {
     }
   }
 
-  // ⚠️ Deprecado - usar validateUsuario
+
   private async validatePersona(personaId: number, negocioId: number): Promise<void> {
     const persona = await this.prisma.persona.findFirst({
       where: {
