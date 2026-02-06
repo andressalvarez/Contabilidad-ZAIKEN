@@ -28,7 +28,7 @@ import {
   EyeOff
 } from 'lucide-react';
 
-// Importar Chart.js dinámicamente
+// Import Chart.js dynamically
 import dynamic from 'next/dynamic';
 
 const Chart = dynamic(() => import('chart.js/auto'), {
@@ -64,7 +64,7 @@ export default function GastosPage() {
   const chartIngGast = useRef<any>(null);
   const chartRentabilidad = useRef<any>(null);
 
-  // Filtrar campañas
+  // Filter campaigns
   const filteredCampanas = useMemo(() => {
     return campanas.filter(campana => {
       const matchesSearch = campana.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -79,7 +79,7 @@ export default function GastosPage() {
     });
   }, [campanas, searchTerm, filterStatus]);
 
-  // Calcular estadísticas
+  // Calculate statistics
   const stats = useMemo(() => {
     const total = campanas.length;
     const rentables = campanas.filter(c => (c.rentabilidadReal || 0) >= 0).length;
@@ -103,7 +103,7 @@ export default function GastosPage() {
     };
   }, [campanas]);
 
-  // Formatear moneda
+  // Format currency
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -112,12 +112,12 @@ export default function GastosPage() {
     }).format(amount);
   };
 
-  // Formatear fecha
+  // Format date
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-CO');
   };
 
-  // Validar fechas
+  // Validate dates
   const validateDates = (fechaInicio: string, fechaFin: string) => {
     if (fechaInicio && fechaFin && new Date(fechaInicio) > new Date(fechaFin)) {
       toast.error('La fecha de inicio no puede ser posterior a la fecha de fin');
@@ -126,17 +126,17 @@ export default function GastosPage() {
     return true;
   };
 
-  // Configurar gráficos
+  // Configure charts
   useEffect(() => {
     if (!campanas.length || !chartIngGastRef.current || !chartRentabilidadRef.current || !showCharts) return;
 
-    // Verificar que Chart esté disponible
+    // Check if Chart is available
     if (typeof Chart === 'undefined') {
       console.log('Chart.js no está disponible aún');
       return;
     }
 
-    // Destruir gráficos existentes
+    // Destroy existing charts
     if (chartIngGast.current && typeof chartIngGast.current.destroy === 'function') {
       chartIngGast.current.destroy();
     }
@@ -144,7 +144,7 @@ export default function GastosPage() {
       chartRentabilidad.current.destroy();
     }
 
-    // Gráfico Ingresos vs Gastos
+    // Income vs Expenses chart
     const ctxIG = chartIngGastRef.current.getContext('2d');
     if (ctxIG) {
       const labels = campanas.map(c => c.nombre);
@@ -196,7 +196,7 @@ export default function GastosPage() {
       });
     }
 
-    // Gráfico Rentabilidad
+    // Profitability chart
     const ctxRent = chartRentabilidadRef.current.getContext('2d');
     if (ctxRent) {
       const labels = campanas.map(c => c.nombre);
@@ -250,7 +250,7 @@ export default function GastosPage() {
     };
   }, [campanas, showCharts]);
 
-  // Agregar nueva campaña
+  // Add new campaign
   const handleAgregarCampana = () => {
     const { nombre, fechaInicio, fechaFin, presupuesto, objetivoIngresos, descripcion } = formData;
 
@@ -268,7 +268,7 @@ export default function GastosPage() {
       return;
     }
 
-    // Verificar duplicados
+    // Check for duplicates
     const existe = campanas.some(c => c.nombre.toLowerCase() === nombre.toLowerCase());
     if (existe) {
       toast.error('Ya existe una campaña con ese nombre');
@@ -284,7 +284,7 @@ export default function GastosPage() {
       descripcion: descripcion.trim()
     });
 
-    // Limpiar formulario
+    // Clear form
     setFormData({
       nombre: '',
       fechaInicio: '',
@@ -295,7 +295,7 @@ export default function GastosPage() {
     });
   };
 
-  // Iniciar edición
+  // Start editing
   const handleEdit = (campana: any) => {
     setEditingId(campana.id);
     setEditingData({
@@ -308,7 +308,7 @@ export default function GastosPage() {
     });
   };
 
-  // Guardar edición
+  // Save edit
   const handleSaveEdit = (id: number) => {
     const { nombre, fechaInicio, fechaFin, presupuesto, objetivoIngresos, descripcion } = editingData;
 
@@ -342,18 +342,18 @@ export default function GastosPage() {
     setEditingData({});
   };
 
-  // Cancelar edición
+  // Cancel edit
   const handleCancelEdit = () => {
     setEditingId(null);
     setEditingData({});
   };
 
-  // Mostrar modal de eliminación
+  // Show delete modal
   const handleDelete = (campana: any) => {
     setDeletingCampana(campana);
   };
 
-  // Confirmar eliminación
+  // Confirm delete
   const confirmDelete = () => {
     if (deletingCampana) {
       deleteCampana.mutate(deletingCampana.id, {
@@ -364,7 +364,7 @@ export default function GastosPage() {
     }
   };
 
-  // Exportar campañas
+  // Export campaigns
   const handleExportar = () => {
     const datosExportar = campanas.map(c => ({
       ID: c.id,

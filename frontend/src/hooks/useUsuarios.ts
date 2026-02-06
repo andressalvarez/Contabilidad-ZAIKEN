@@ -8,21 +8,21 @@ export const usuariosKeys = {
   summary: () => [...usuariosKeys.all, 'summary'] as const,
 };
 
-// Hook para obtener todos los usuarios
+// Hook to get all users
 export function useUsuarios() {
   return useQuery({
     queryKey: usuariosKeys.lists(),
     queryFn: UsuariosService.list,
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: true,
   });
 }
 
-// Hook para obtener resumen de usuarios
+// Hook to get users summary
 export function useUsuariosSummary() {
   return useQuery({
     queryKey: usuariosKeys.summary(),
     queryFn: UsuariosService.getSummary,
-    staleTime: 1000 * 60 * 2, // 2 minutos
+    staleTime: 1000 * 60 * 2, // 2 minutes
   });
 }

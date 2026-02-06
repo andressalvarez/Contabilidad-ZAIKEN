@@ -11,7 +11,7 @@ interface CanProps {
 }
 
 /**
- * Componente para mostrar contenido condicionalmente basado en permisos CASL
+ * Component to conditionally render content based on CASL permissions
  *
  * @example
  * <Can I={Action.Create} a="Campana">
@@ -34,12 +34,12 @@ export const Can: React.FC<CanProps> = ({ I, a, children, fallback = null }) => 
 };
 
 /**
- * Hook para verificar permisos
+ * Hook to verify permissions
  *
  * @example
  * const canCreateCampana = useCan(Action.Create, 'Campana');
  * if (canCreateCampana) {
- *   // Mostrar botón
+ *   // Show button
  * }
  */
 export const useCan = (action: Action, subject: Subjects): boolean => {

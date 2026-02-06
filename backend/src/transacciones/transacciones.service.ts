@@ -426,9 +426,9 @@ export class TransaccionesService {
 
     const utilidad = ingresos - gastos;
 
-    // Estadísticas por persona
-    const statsPorPersona = await this.prisma.persona.findMany({
-      where: { negocioId },
+    // Estadísticas por usuario
+    const statsPorUsuario = await this.prisma.usuario.findMany({
+      where: { negocioId, activo: true },
       include: {
         transacciones: {
           where,
@@ -450,23 +450,23 @@ export class TransaccionesService {
       }
     });
 
-    const personas = statsPorPersona.map(persona => {
-      const aportes = persona.transacciones
+    const usuarios = statsPorUsuario.map(usuario => {
+      const aportes = usuario.transacciones
         .filter(t => t.tipo?.nombre === 'INGRESO')
         .reduce((sum, t) => sum + t.monto, 0);
 
-      const gastosPersona = persona.transacciones
+      const gastosUsuario = usuario.transacciones
         .filter(t => t.tipo?.nombre === 'GASTO')
         .reduce((sum, t) => sum + t.monto, 0);
 
-      const utilidades = persona.valorHoras
+      const utilidades = usuario.valorHoras
         .reduce((sum, vh) => sum + vh.valor, 0);
 
       return {
-        personaId: persona.id,
-        nombre: persona.nombre,
+        usuarioId: usuario.id,
+        nombre: usuario.nombre,
         aportes,
-        gastos: gastosPersona,
+        gastos: gastosUsuario,
         utilidades
       };
     });
@@ -509,7 +509,7 @@ export class TransaccionesService {
       ingresos,
       gastos,
       utilidad,
-      personas,
+      usuarios,
       campanas
     };
   }

@@ -51,7 +51,7 @@ export default function DistribucionUtilidadesPage() {
   const deleteDistribucion = useDeleteDistribucion()
   const distribuirAutomaticamente = useDistribuirAutomaticamente()
 
-  // Configurar período actual por defecto
+  // Set current period as default
   useEffect(() => {
     if (!formData.periodo) {
       const ahora = new Date()
@@ -64,14 +64,14 @@ export default function DistribucionUtilidadesPage() {
     }
   }, [formData.periodo])
 
-  // Configurar gráfico
+  // Configure chart
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Chart && distribuciones.length > 0 && chartRef.current) {
       console.log('🔍 Iniciando configuración del gráfico');
       console.log('📊 Distribuciones disponibles:', distribuciones.length);
       console.log('🎨 Chart ref:', chartRef.current);
 
-      // Destruir gráfico existente
+      // Destroy existing chart
       const existingChart = window.Chart.getChart(chartRef.current);
       if (existingChart) {
         console.log('🗑️ Destruyendo gráfico anterior');
@@ -86,7 +86,7 @@ export default function DistribucionUtilidadesPage() {
 
       console.log('✅ Contexto 2D obtenido correctamente');
 
-      // Preparar datos para el gráfico
+      // Prepare data for the chart
       const ultimas5 = distribuciones.slice(-5).reverse()
       const labels = ultimas5.map(d => d.periodo)
       const utilidades = ultimas5.map(d => d.utilidadTotal)
@@ -101,7 +101,7 @@ export default function DistribucionUtilidadesPage() {
         distribuidas
       });
 
-      // Crear el gráfico
+      // Create the chart
       new window.Chart(ctx, {
         type: 'bar',
         data: {
@@ -153,7 +153,7 @@ export default function DistribucionUtilidadesPage() {
     }
   }, [distribuciones])
 
-  // Definir columnas de la tabla
+  // Define table columns
   const columns = useMemo(() => [
     columnHelper.accessor('id', {
       header: 'ID',
@@ -228,7 +228,7 @@ export default function DistribucionUtilidadesPage() {
     })
   ], [])
 
-  // Configurar tabla
+  // Configure table
   const table = useReactTable({
     data: distribuciones,
     columns,
@@ -262,7 +262,7 @@ export default function DistribucionUtilidadesPage() {
       return
     }
 
-    // Verificar duplicados por período
+    // Check for duplicates by period
     const existe = distribuciones.some(d =>
       d.periodo.toLowerCase() === periodo.toLowerCase()
     )
@@ -287,7 +287,7 @@ export default function DistribucionUtilidadesPage() {
           utilidadTotal: ''
         })
 
-        // Preguntar si quiere distribuir automáticamente
+        // Ask if user wants to distribute automatically
         if (distribuirAutomaticamente && confirm('¿Desea distribuir automáticamente las utilidades entre los usuarios activos?')) {
           distribuirAutomaticamente.mutate(nuevaDistribucion.id)
         }
@@ -296,7 +296,7 @@ export default function DistribucionUtilidadesPage() {
   }
 
   const handleVerDetalle = (distribucion: DistribucionUtilidades) => {
-    // Redirigir a la vista de distribución detalle con filtro
+    // Redirect to distribution detail view with filter
     router.push(`/distribucion-detalle?distribucionId=${distribucion.id}`)
   }
 

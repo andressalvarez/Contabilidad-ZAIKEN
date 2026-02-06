@@ -1,22 +1,22 @@
 import axios from 'axios';
 
-// Configuración base de la API - más robusta
+// Base API configuration - robust approach
 const getApiBaseUrl = () => {
-  // Primero intentar la variable de entorno
+  // First try the environment variable
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
   }
 
-  // Fallback para desarrollo
+  // Fallback for development
   if (typeof window !== 'undefined') {
-    // En el navegador, usar la URL actual
+    // In the browser, use the current URL
     const protocol = window.location.protocol;
     const hostname = window.location.hostname;
-    const port = '3004'; // Puerto del backend
+    const port = '3004'; // Backend port
     return `${protocol}//${hostname}:${port}/api/v1`;
   }
 
-  // Fallback final
+  // Final fallback
   return 'http://localhost:3004/api/v1';
 };
 
@@ -29,23 +29,23 @@ console.log('🔧 API Configuration:', {
   isBrowser: typeof window !== 'undefined'
 });
 
-// Crear instancia de axios con mejor manejo de errores
+// Create axios instance with better error handling
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000, // 30 segundos
+  timeout: 30000, // 30 seconds
   headers: {
     'Content-Type': 'application/json',
   },
-  // Configuración adicional para mejor manejo de errores
+  // Additional configuration for better error handling
   validateStatus: (status) => {
-    return status >= 200 && status < 300; // Solo aceptar 2xx
+    return status >= 200 && status < 300; // Only accept 2xx
   },
   withCredentials: false,
 });
 
 console.log('🚀 API Instance created with baseURL:', API_BASE_URL);
 
-// Interceptor para requests
+// Request interceptor
 api.interceptors.request.use(
   (config) => {
     console.log('📤 API Request:', {
@@ -55,7 +55,7 @@ api.interceptors.request.use(
       fullURL: `${config.baseURL}${config.url}`
     });
 
-    // Agregar token de autenticación si existe
+    // Add authentication token if it exists
     const token = localStorage.getItem('auth_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -68,7 +68,7 @@ api.interceptors.request.use(
   }
 );
 
-// Interceptor para responses con mejor manejo de JSON
+// Response interceptor with better JSON handling
 api.interceptors.response.use(
   (response) => {
     console.log('📥 API Response:', {
@@ -78,7 +78,7 @@ api.interceptors.response.use(
       hasData: !!response.data
     });
 
-    // Verificar que la respuesta sea JSON válido
+    // Verify response is valid JSON
     if (response.data === null || response.data === undefined) {
       console.warn('⚠️ Empty response data');
       return response;
@@ -97,39 +97,42 @@ api.interceptors.response.use(
       isJsonError: error.message?.includes('JSON')
     });
 
-    // Manejo específico de errores de JSON
+    // Specific handling for JSON errors
     if (error.message?.includes('JSON') || error.message?.includes('Unexpected end of JSON input')) {
       console.error('🔴 JSON Parse Error - Response might be empty or malformed');
       return Promise.reject(new Error('Error al procesar la respuesta del servidor. Intente nuevamente.'));
     }
 
-    // Manejo de errores de red
+    // Network error handling
     if (!error.response) {
       console.error('🔴 Network Error - Server might be down');
       return Promise.reject(new Error('Error de conexión. Verifique que el servidor esté funcionando.'));
     }
 
-    // Manejo de errores HTTP
+    // HTTP error handling
     if (error.response?.status === 401) {
-      // Token expirado o inválido
+      // Expired or invalid token - only redirect if NOT already on login/register
       localStorage.removeItem('auth_token');
-      window.location.href = '/login';
+      const currentPath = window.location.pathname;
+      if (currentPath !== '/login' && currentPath !== '/register') {
+        window.location.href = '/login';
+      }
     }
 
-    // Devolver mensaje de error formateado
+    // Return formatted error message
     const errorMessage = error.response?.data?.message || error.message || 'Error desconocido';
     return Promise.reject(new Error(errorMessage));
   }
 );
 
-// Tipos de respuesta de la API
+// API response types
 export interface ApiResponse<T = any> {
   success: boolean;
   message: string;
   data?: T;
 }
 
-// Función helper para manejar errores
+// Helper function to handle errors
 export const handleApiError = (error: any): string => {
   if (error.response?.data?.message) {
     return Array.isArray(error.response.data.message)

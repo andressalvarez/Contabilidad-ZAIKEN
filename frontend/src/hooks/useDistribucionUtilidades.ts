@@ -14,16 +14,16 @@ const DISTRIBUCION_KEYS = {
   detalles: (distribucionId: number) => [...DISTRIBUCION_KEYS.all, 'detalles', distribucionId] as const,
 };
 
-// Hook para obtener todas las distribuciones
+// Hook to get all distributions
 export const useDistribuciones = () => {
   return useQuery({
     queryKey: DISTRIBUCION_KEYS.lists(),
     queryFn: () => DistribucionUtilidadesService.getAll(),
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 
-// Hook para obtener una distribución por ID
+// Hook to get a distribution by ID
 export const useDistribucion = (id: number) => {
   return useQuery({
     queryKey: DISTRIBUCION_KEYS.detail(id),
@@ -33,16 +33,16 @@ export const useDistribucion = (id: number) => {
   });
 };
 
-// Hook para obtener estadísticas
+// Hook to get statistics
 export const useDistribucionStats = () => {
   return useQuery({
     queryKey: DISTRIBUCION_KEYS.stats(),
     queryFn: () => DistribucionUtilidadesService.getStats(),
-    staleTime: 2 * 60 * 1000, // 2 minutos
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 };
 
-// Hook para obtener detalles de una distribución
+// Hook to get distribution details
 export const useDistribucionDetalles = (distribucionId: number) => {
   return useQuery({
     queryKey: DISTRIBUCION_KEYS.detalles(distribucionId),
@@ -52,7 +52,7 @@ export const useDistribucionDetalles = (distribucionId: number) => {
   });
 };
 
-// Hook para crear distribución
+// Hook to create distribution
 export const useCreateDistribucion = () => {
   const queryClient = useQueryClient();
 
@@ -71,7 +71,7 @@ export const useCreateDistribucion = () => {
   });
 };
 
-// Hook para actualizar distribución
+// Hook to update distribution
 export const useUpdateDistribucion = () => {
   const queryClient = useQueryClient();
 
@@ -91,7 +91,7 @@ export const useUpdateDistribucion = () => {
   });
 };
 
-// Hook para eliminar distribución
+// Hook to delete distribution
 export const useDeleteDistribucion = () => {
   const queryClient = useQueryClient();
 
@@ -110,7 +110,7 @@ export const useDeleteDistribucion = () => {
   });
 };
 
-// Hook para distribuir automáticamente
+// Hook to distribute automatically
 export const useDistribuirAutomaticamente = () => {
   const queryClient = useQueryClient();
 
@@ -131,7 +131,7 @@ export const useDistribuirAutomaticamente = () => {
   });
 };
 
-// Hook para crear detalle de distribución
+// Hook to create distribution detail
 export const useCreateDistribucionDetalle = () => {
   const queryClient = useQueryClient();
 
@@ -148,7 +148,7 @@ export const useCreateDistribucionDetalle = () => {
   });
 };
 
-// Hook para actualizar detalle de distribución
+// Hook to update distribution detail
 export const useUpdateDistribucionDetalle = () => {
   const queryClient = useQueryClient();
 
@@ -166,14 +166,14 @@ export const useUpdateDistribucionDetalle = () => {
   });
 };
 
-// Hook para eliminar detalle de distribución
+// Hook to delete distribution detail
 export const useDeleteDistribucionDetalle = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: number) => DistribucionUtilidadesService.deleteDetalle(id),
     onSuccess: (_, deletedId) => {
-      // Necesitamos invalidar todas las consultas de detalles ya que no tenemos el distribucionId
+      // We need to invalidate all detail queries since we don't have the distribucionId
       queryClient.invalidateQueries({ queryKey: DISTRIBUCION_KEYS.all });
       toast.success('Detalle de distribución eliminado exitosamente');
     },

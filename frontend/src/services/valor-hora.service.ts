@@ -4,7 +4,7 @@ import { ValorHora, CreateValorHoraDto, UpdateValorHoraDto } from '@/types';
 const ENDPOINT = '/valor-hora';
 
 export class ValorHoraService {
-  // Obtener todos los valores por hora
+  // Get all hourly rates
   static async getAll(): Promise<ValorHora[]> {
     try {
       const response = await api.get(ENDPOINT);
@@ -15,7 +15,7 @@ export class ValorHoraService {
     }
   }
 
-  // Obtener valor por hora por ID
+  // Get hourly rate by ID
   static async getById(id: number): Promise<ValorHora> {
     try {
       const response = await api.get(`${ENDPOINT}/${id}`);
@@ -29,7 +29,7 @@ export class ValorHoraService {
     }
   }
 
-  // Obtener valores por hora de un usuario
+  // Get hourly rates by user ID
   static async getByUsuarioId(usuarioId: number): Promise<ValorHora[]> {
     try {
       const response = await api.get(`${ENDPOINT}/usuario/${usuarioId}`);
@@ -40,7 +40,7 @@ export class ValorHoraService {
     }
   }
 
-  // Crear un nuevo valor por hora
+  // Create a new hourly rate
   static async create(data: CreateValorHoraDto): Promise<ValorHora> {
     try {
       const response = await api.post(ENDPOINT, data);
@@ -54,7 +54,7 @@ export class ValorHoraService {
     }
   }
 
-  // Actualizar un valor por hora
+  // Update an hourly rate
   static async update(id: number, data: UpdateValorHoraDto): Promise<ValorHora> {
     try {
       const response = await api.patch(`${ENDPOINT}/${id}`, data);
@@ -68,7 +68,7 @@ export class ValorHoraService {
     }
   }
 
-  // Eliminar un valor por hora
+  // Delete an hourly rate
   static async delete(id: number): Promise<void> {
     try {
       await api.delete(`${ENDPOINT}/${id}`);
@@ -78,11 +78,11 @@ export class ValorHoraService {
     }
   }
 
-  // Obtener estadísticas de valores por hora
+  // Get hourly rate statistics
   static async getStats(): Promise<{
     valorPromedio: number;
     valorMaximo: number;
-    personasConValor: number;
+    usuariosConValor: number;
     totalValores: number;
   }> {
     try {

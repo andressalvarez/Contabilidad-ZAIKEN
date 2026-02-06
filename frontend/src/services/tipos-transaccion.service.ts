@@ -24,13 +24,13 @@ export interface UpdateTipoTransaccionDto {
 export class TiposTransaccionService {
   private static readonly endpoint = '/tipos-transaccion';
 
-  // Obtener todos los tipos de transacción
+  // Get all transaction types
   static async getAll(): Promise<TipoTransaccion[]> {
     const response: ApiResponse<TipoTransaccion[]> = await api.get(TiposTransaccionService.endpoint);
     return response.data?.data || [];
   }
 
-  // Obtener un tipo de transacción por ID
+  // Get a transaction type by ID
   static async getById(id: number): Promise<TipoTransaccion> {
     const response: ApiResponse<TipoTransaccion> = await api.get(`${TiposTransaccionService.endpoint}/${id}`);
     if (!response.data) {
@@ -39,7 +39,7 @@ export class TiposTransaccionService {
     return response.data;
   }
 
-  // Crear un nuevo tipo de transacción
+  // Create a new transaction type
   static async create(data: CreateTipoTransaccionDto): Promise<TipoTransaccion> {
     const response: ApiResponse<TipoTransaccion> = await api.post(TiposTransaccionService.endpoint, data);
     if (!response.data) {
@@ -48,7 +48,7 @@ export class TiposTransaccionService {
     return response.data;
   }
 
-  // Actualizar un tipo de transacción
+  // Update a transaction type
   static async update(id: number, data: UpdateTipoTransaccionDto): Promise<TipoTransaccion> {
     const response: ApiResponse<TipoTransaccion> = await api.patch(`${TiposTransaccionService.endpoint}/${id}`, data);
     if (!response.data) {
@@ -57,7 +57,7 @@ export class TiposTransaccionService {
     return response.data;
   }
 
-  // Eliminar un tipo de transacción
+  // Delete a transaction type
   static async delete(id: number): Promise<void> {
     await api.delete(`${TiposTransaccionService.endpoint}/${id}`);
   }

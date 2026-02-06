@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { api } from '@/lib/api'
 import { setAuthToken } from '@/lib/auth'
-import MainLayout from '@/components/layout/MainLayout'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -32,28 +31,32 @@ export default function LoginPage() {
   }
 
   return (
-    <MainLayout>
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <form onSubmit={onSubmit} className="bg-white p-6 rounded shadow w-full max-w-sm space-y-4">
-          <h1 className="text-xl font-semibold">Iniciar sesión</h1>
-          {error && <div className="text-red-600 text-sm">{error}</div>}
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <img src="/zaiken.png" alt="Zaiken" className="h-16 w-16 mx-auto mb-4 rounded-full shadow" />
+          <h1 className="text-2xl font-bold text-gray-900">Sistema Zaiken</h1>
+        </div>
+        <form onSubmit={onSubmit} className="bg-white p-8 rounded-xl shadow-lg space-y-6">
+          <h2 className="text-xl font-semibold text-gray-800">Iniciar sesión</h2>
+          {error && <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg">{error}</div>}
           <div>
-            <label className="block text-sm mb-1">Email</label>
-            <input type="email" className="w-full border rounded px-3 py-2" value={email} onChange={e=>setEmail(e.target.value)} required />
+            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+            <input type="email" className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" value={email} onChange={e=>setEmail(e.target.value)} required />
           </div>
           <div>
-            <label className="block text-sm mb-1">Contraseña</label>
-            <input type="password" className="w-full border rounded px-3 py-2" value={password} onChange={e=>setPassword(e.target.value)} required />
+            <label className="block text-sm font-medium text-gray-700 mb-2">Contraseña</label>
+            <input type="password" className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" value={password} onChange={e=>setPassword(e.target.value)} required />
           </div>
-          <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white rounded py-2 hover:bg-blue-700 disabled:opacity-50">
+          <button type="submit" disabled={loading} className="w-full bg-indigo-600 text-white rounded-lg py-3 font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors">
             {loading ? 'Ingresando...' : 'Ingresar'}
           </button>
-          <div className="text-center text-sm">
-            <a href="/register" className="text-blue-600 hover:underline">Crear cuenta</a>
+          <div className="text-center text-sm text-gray-600">
+            ¿No tienes cuenta? <a href="/register" className="text-indigo-600 hover:underline font-medium">Crear cuenta</a>
           </div>
         </form>
       </div>
-    </MainLayout>
+    </div>
   )
 }
 

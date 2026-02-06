@@ -13,8 +13,8 @@ interface StopTimerModalProps {
 }
 
 /**
- * Modal para detener el timer y guardar el registro de horas
- * Permite agregar una descripción final antes de guardar
+ * Modal to stop the timer and save the time record
+ * Allows adding a final description before saving
  *
  * @example
  * <StopTimerModal
@@ -31,7 +31,26 @@ export const StopTimerModal: React.FC<StopTimerModalProps> = ({
   const { stopTimer, loading, elapsedTime } = useTimer();
   const [descripcion, setDescripcion] = useState(activeTimer.descripcion || '');
 
-  // Formatear tiempo transcurrido
+  // Initialize start and end times from activeTimer
+  const formatDateTimeLocal = (date: string | null | undefined) => {
+    if (!date) return '';
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  const [startTime, setStartTime] = useState(
+    formatDateTimeLocal(activeTimer.timerInicio) || formatDateTimeLocal(new Date().toISOString())
+  );
+  const [endTime, setEndTime] = useState(
+    formatDateTimeLocal(new Date().toISOString())
+  );
+
+  // Format elapsed time
   const formatTime = (hours: number): string => {
     const totalMinutes = Math.floor(hours * 60);
     const h = Math.floor(totalMinutes / 60);
@@ -42,8 +61,30 @@ export const StopTimerModal: React.FC<StopTimerModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validate times
+    if (!startTime || !endTime) {
+      toast.error('Debe especificar hora de inicio y fin');
+      return;
+    }
+
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+
+    console.log('⏰ Datos del timer:', {
+      startTime,
+      endTime,
+      start: start.toISOString(),
+      end: end.toISOString(),
+      diffHours: (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+    });
+
+    if (end <= start) {
+      toast.error('La hora de fin debe ser posterior a la hora de inicio');
+      return;
+    }
+
     try {
-      await stopTimer(descripcion);
+      await stopTimer(descripcion, start.toISOString(), end.toISOString());
       toast.success('Timer detenido y registro guardado');
       onSuccess?.();
     } catch (error: any) {
@@ -73,7 +114,7 @@ export const StopTimerModal: React.FC<StopTimerModalProps> = ({
             backgroundColor: 'white',
             borderRadius: '0.75rem',
             boxShadow: '0 20px 25px rgba(0, 0, 0, 0.15)',
-            maxWidth: '500px',
+            maxWidth: '600px',
             width: '90%',
             maxHeight: '90vh',
             overflow: 'auto',
@@ -197,6 +238,107 @@ export const StopTimerModal: React.FC<StopTimerModalProps> = ({
                   </p>
                 </div>
               )}
+
+              {/* Horarios */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h3
+                  style={{
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    color: '#111827',
+                    marginBottom: '1rem',
+                    paddingBottom: '0.5rem',
+                    borderBottom: '2px solid #E5E7EB',
+                  }}
+                >
+                  🕐 Ajustar Horario
+                </h3>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '1rem',
+                  }}
+                >
+                <div>
+                  <label
+                    htmlFor="startTime"
+                    style={{
+                      display: 'block',
+                      fontSize: '0.875rem',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '0.5rem',
+                    }}
+                  >
+                    Hora de Inicio *
+                  </label>
+                  <input
+                    type="datetime-local"
+                    id="startTime"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '1px solid #D1D5DB',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
+                      outline: 'none',
+                      transition: 'all 0.2s',
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = '#3B82F6';
+                      e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = '#D1D5DB';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="endTime"
+                    style={{
+                      display: 'block',
+                      fontSize: '0.875rem',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '0.5rem',
+                    }}
+                  >
+                    Hora de Fin *
+                  </label>
+                  <input
+                    type="datetime-local"
+                    id="endTime"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '1px solid #D1D5DB',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
+                      outline: 'none',
+                      transition: 'all 0.2s',
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = '#3B82F6';
+                      e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = '#D1D5DB';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+                </div>
+              </div>
 
               {/* Descripción */}
               <div style={{ marginBottom: '1.5rem' }}>

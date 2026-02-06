@@ -7,6 +7,11 @@ export class RegistroHorasService {
   constructor(private prisma: PrismaService) {}
 
   async create(negocioId: number, createRegistroHorasDto: CreateRegistroHorasDto) {
+    // VALIDACIÓN: Límite de 16 horas por registro
+    if (createRegistroHorasDto.horas > 16) {
+      throw new BadRequestException('El máximo permitido es 16 horas por registro.');
+    }
+
     let usuarioId = createRegistroHorasDto.usuarioId;
     let personaId = createRegistroHorasDto.personaId;
 
@@ -192,11 +197,31 @@ export class RegistroHorasService {
     });
   }
 
-  async update(id: number, negocioId: number, updateRegistroHorasDto: UpdateRegistroHorasDto) {
+  async update(id: number, negocioId: number, updateRegistroHorasDto: UpdateRegistroHorasDto, editorUserId?: number) {
     // Verificar que existe y pertenece al negocio
-    await this.findOne(id, negocioId);
+    const registro = await this.findOne(id, negocioId);
+
+    // SEGURIDAD: No permitir editar registros ya aprobados
+    if (registro.aprobado) {
+      throw new BadRequestException('No se puede editar un registro ya aprobado. Contacte al administrador.');
+    }
+
+    // VALIDACIÓN: Límite de 16 horas por registro
+    if (updateRegistroHorasDto.horas !== undefined && updateRegistroHorasDto.horas > 16) {
+      throw new BadRequestException('El máximo permitido es 16 horas por registro.');
+    }
 
     const updateData: any = {};
+
+    // Guardar auditoría si se están cambiando las horas
+    if (updateRegistroHorasDto.horas !== undefined && updateRegistroHorasDto.horas !== registro.horas) {
+      // Solo guardar horasOriginales la primera vez que se edita
+      if (registro.horasOriginales === null) {
+        updateData.horasOriginales = registro.horas;
+      }
+      updateData.editadoPor = editorUserId;
+      updateData.fechaEdicion = new Date();
+    }
 
     if (updateRegistroHorasDto.usuarioId !== undefined) {
       updateData.usuarioId = updateRegistroHorasDto.usuarioId;
@@ -289,7 +314,7 @@ export class RegistroHorasService {
       totalHoras,
       totalRegistros,
       promedioHorasPorDia,
-      personasActivas: usuariosUnicos,
+      usuariosActivos: usuariosUnicos,
     };
   }
 
@@ -451,7 +476,13 @@ export class RegistroHorasService {
   /**
    * Detiene un timer y lo marca como completado
    */
-  async stopTimer(negocioId: number, id: number, descripcion?: string) {
+  async stopTimer(
+    negocioId: number,
+    id: number,
+    descripcion?: string,
+    timerInicio?: string,
+    timerFin?: string
+  ) {
     const registro = await this.findOne(id, negocioId);
 
     if (registro.estado !== 'RUNNING' && registro.estado !== 'PAUSADO') {
@@ -459,19 +490,38 @@ export class RegistroHorasService {
     }
 
     let horasFinales = registro.horas;
+    let startDate = registro.timerInicio;
+    let endDate = new Date();
 
-    // Si está corriendo, calcular tiempo adicional
-    if (registro.estado === 'RUNNING' && registro.timerInicio) {
-      const ahora = new Date();
-      const horasTranscurridas = (ahora.getTime() - registro.timerInicio.getTime()) / (1000 * 60 * 60);
+    // Si se proveen timerInicio y timerFin personalizados, usarlos
+    if (timerInicio && timerFin) {
+      startDate = new Date(timerInicio);
+      endDate = new Date(timerFin);
+
+      // Validar que la fecha de fin sea posterior a la de inicio
+      if (endDate <= startDate) {
+        throw new BadRequestException('La hora de fin debe ser posterior a la hora de inicio');
+      }
+
+      // Recalcular horas basándose en los nuevos tiempos
+      horasFinales = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
+    } else if (registro.estado === 'RUNNING' && startDate) {
+      // Comportamiento original: Si está corriendo, calcular tiempo adicional
+      const horasTranscurridas = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
       horasFinales += horasTranscurridas;
+    }
+
+    // Validación: Límite de 16 horas
+    if (horasFinales > 16) {
+      throw new BadRequestException('El máximo permitido es 16 horas por registro');
     }
 
     return this.prisma.registroHoras.update({
       where: { id },
       data: {
         estado: 'COMPLETADO',
-        timerFin: new Date(),
+        timerInicio: startDate,
+        timerFin: endDate,
         horas: horasFinales,
         ...(descripcion && { descripcion }),
       },
@@ -706,6 +756,230 @@ export class RegistroHorasService {
       },
       orderBy: {
         fecha: 'desc',
+      },
+    });
+  }
+
+  // ==================== TIME EDITING METHODS ====================
+
+  /**
+   * Actualiza los tiempos de inicio/fin de un registro y recalcula las horas
+   * Solo para registros de tipo TIMER que NO están aprobados
+   */
+  async updateTimerTimes(
+    negocioId: number,
+    id: number,
+    timerInicio?: Date,
+    timerFin?: Date,
+    editorUserId?: number
+  ) {
+    const registro = await this.findOne(id, negocioId);
+
+    // Validar que sea un registro de timer
+    if (registro.origen !== 'TIMER') {
+      throw new BadRequestException('Solo se pueden editar tiempos en registros de tipo TIMER');
+    }
+
+    // No permitir editar registros aprobados
+    if (registro.aprobado) {
+      throw new BadRequestException('No se puede editar un registro ya aprobado');
+    }
+
+    const updateData: any = {
+      editadoPor: editorUserId,
+      fechaEdicion: new Date(),
+    };
+
+    // Guardar inicio original la primera vez
+    if (timerInicio && !registro.timerInicioOriginal) {
+      updateData.timerInicioOriginal = registro.timerInicio;
+    }
+
+    // Guardar horas originales la primera vez
+    if (!registro.horasOriginales) {
+      updateData.horasOriginales = registro.horas;
+    }
+
+    // Actualizar tiempos
+    if (timerInicio) {
+      updateData.timerInicio = timerInicio;
+    }
+    if (timerFin) {
+      updateData.timerFin = timerFin;
+    }
+
+    // Recalcular horas basado en los nuevos tiempos
+    const inicio = timerInicio || registro.timerInicio;
+    const fin = timerFin || registro.timerFin;
+
+    if (inicio && fin) {
+      const horasCalculadas = (fin.getTime() - inicio.getTime()) / (1000 * 60 * 60);
+
+      // Validar que no sea negativo ni exceda 16 horas
+      if (horasCalculadas < 0) {
+        throw new BadRequestException('La hora de fin debe ser posterior a la hora de inicio');
+      }
+      if (horasCalculadas > 16) {
+        throw new BadRequestException('El máximo permitido es 16 horas por registro');
+      }
+
+      updateData.horas = Math.round(horasCalculadas * 100) / 100; // Redondear a 2 decimales
+    }
+
+    return this.prisma.registroHoras.update({
+      where: { id },
+      data: updateData,
+      include: {
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true,
+        campana: true,
+      },
+    });
+  }
+
+  /**
+   * Re-envía un registro rechazado para nueva revisión
+   * Limpia el estado de rechazo y lo pone como pendiente
+   */
+  async resubmit(negocioId: number, id: number) {
+    const registro = await this.findOne(id, negocioId);
+
+    if (!registro.rechazado) {
+      throw new BadRequestException('Solo se pueden re-enviar registros rechazados');
+    }
+
+    if (registro.aprobado) {
+      throw new BadRequestException('Este registro ya está aprobado');
+    }
+
+    return this.prisma.registroHoras.update({
+      where: { id },
+      data: {
+        rechazado: false,
+        motivoRechazo: null,
+        // Mantener estado COMPLETADO para que aparezca en pendientes
+        estado: 'COMPLETADO',
+      },
+      include: {
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true,
+        campana: true,
+      },
+    });
+  }
+
+  /**
+   * Obtiene timers "huérfanos" - RUNNING por más de X horas sin actividad
+   * Útil para que el admin detecte timers olvidados
+   */
+  async getOrphanedTimers(negocioId: number, hoursThreshold: number = 12) {
+    const thresholdDate = new Date(Date.now() - hoursThreshold * 60 * 60 * 1000);
+
+    return this.prisma.registroHoras.findMany({
+      where: {
+        negocioId,
+        estado: 'RUNNING',
+        timerInicio: {
+          lt: thresholdDate,
+        },
+      },
+      include: {
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true,
+        campana: true,
+      },
+      orderBy: {
+        timerInicio: 'asc',
+      },
+    });
+  }
+
+  /**
+   * Cierra forzadamente un timer (para timers huérfanos)
+   * Solo admin debería poder usar esto
+   */
+  async forceCloseTimer(negocioId: number, id: number, adminUserId: number) {
+    const registro = await this.findOne(id, negocioId);
+
+    if (registro.estado !== 'RUNNING' && registro.estado !== 'PAUSADO') {
+      throw new BadRequestException('El timer no está activo');
+    }
+
+    // Calcular horas hasta ahora
+    let horasFinales = registro.horas;
+    if (registro.estado === 'RUNNING' && registro.timerInicio) {
+      const ahora = new Date();
+      const horasTranscurridas = (ahora.getTime() - registro.timerInicio.getTime()) / (1000 * 60 * 60);
+      horasFinales += horasTranscurridas;
+    }
+
+    // Limitar a 16 horas máximo
+    horasFinales = Math.min(horasFinales, 16);
+
+    return this.prisma.registroHoras.update({
+      where: { id },
+      data: {
+        estado: 'COMPLETADO',
+        timerFin: new Date(),
+        horas: Math.round(horasFinales * 100) / 100,
+        descripcion: registro.descripcion
+          ? `${registro.descripcion} (Cerrado por admin)`
+          : 'Timer cerrado por administrador',
+        editadoPor: adminUserId,
+        fechaEdicion: new Date(),
+      },
+      include: {
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
+              },
+            },
+          },
+        },
+        persona: true,
+        campana: true,
       },
     });
   }

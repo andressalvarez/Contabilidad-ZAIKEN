@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 
-// Hook para estadísticas generales
+// Hook for general statistics
 export const useEstadisticas = (filters: any) => {
   return useQuery({
     queryKey: ['estadisticas', filters],
@@ -14,13 +14,13 @@ export const useEstadisticas = (filters: any) => {
 
       const response = await api.get(`/transacciones/stats?${params.toString()}`);
       console.log('DEBUG useEstadisticas - response:', response.data);
-      return response.data.data; // Corregido: devolver response.data.data
+      return response.data.data; // Return response.data.data
     },
     enabled: true
   });
 };
 
-// Hook para tendencias mensuales
+// Hook for monthly trends
 export const useTendenciasMensuales = (año: number, filters: any) => {
   return useQuery({
     queryKey: ['tendencias-mensuales', año, filters],
@@ -39,7 +39,7 @@ export const useTendenciasMensuales = (año: number, filters: any) => {
   });
 };
 
-// Hook para resumen por categorías
+// Hook for category summary
 export const useResumenPorCategorias = (filters: any) => {
   return useQuery({
     queryKey: ['resumen-categorias', filters],
@@ -55,7 +55,7 @@ export const useResumenPorCategorias = (filters: any) => {
       if (data && Array.isArray(data.data)) {
         return data.data;
       } else if (data && data.data && typeof data.data === 'object' && data.data !== null) {
-        // Si es objeto, retorna los valores como array
+        // If object, return values as array
         return Object.values(data.data);
       } else {
         return [];
@@ -65,7 +65,7 @@ export const useResumenPorCategorias = (filters: any) => {
   });
 };
 
-// Hook para estadísticas de campañas
+// Hook for campaign statistics
 export const useEstadisticasCampanas = (filters: any) => {
   return useQuery({
     queryKey: ['estadisticas-campanas', filters],
@@ -77,7 +77,7 @@ export const useEstadisticasCampanas = (filters: any) => {
 
       const response = await api.get(`/campanas/stats?${params.toString()}`);
       const data = response.data;
-      // Puede ser un array directamente o un objeto con .data
+      // Can be an array directly or an object with .data
       if (Array.isArray(data)) {
         return data;
       } else if (data && Array.isArray(data.data)) {

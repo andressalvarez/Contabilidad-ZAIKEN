@@ -187,12 +187,12 @@ export class VSCategoriasService {
   }) {
     const params = new URLSearchParams();
 
-    // Si es una categoría específica
+    // If it's a specific category
     if (filtros.categoriaId) {
       params.append('categoriaId', filtros.categoriaId.toString());
     }
 
-    // Si son múltiples categorías (grupo)
+    // If multiple categories (group)
     if (filtros.categoriasIds && filtros.categoriasIds.length > 0) {
       filtros.categoriasIds.forEach(id => params.append('categoriasIds', id.toString()));
     }
@@ -201,7 +201,7 @@ export class VSCategoriasService {
     if (filtros.fechaInicio) params.append('fechaInicio', filtros.fechaInicio);
     if (filtros.fechaFin) params.append('fechaFin', filtros.fechaFin);
 
-    // Lógica mejorada para el filtro de tipo
+    // Improved logic for type filter
     if (filtros.tipo && filtros.tipo !== 'Todos') {
       // Mapear tipo a tipoId si es necesario
       const tipoMapping: Record<string, number> = {
@@ -213,7 +213,7 @@ export class VSCategoriasService {
       if (tipoId) {
         params.append('tipoId', tipoId.toString());
         // Agregar ignorarTipo=true para permitir que el backend ignore el tipo
-        // si no hay transacciones que coincidan con el tipo específico
+        // if there are no transactions matching the specific type
         params.append('ignorarTipo', 'true');
       }
     }

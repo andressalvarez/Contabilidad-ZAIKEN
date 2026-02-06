@@ -70,7 +70,7 @@ export default function ValorHoraPage() {
     });
   }, [valoresHora, usuarios, stats, isLoading, error]);
 
-  // Filtrar valores por hora por búsqueda
+  // Filter hourly rates by search
   const filteredValoresHora = useMemo(() => {
     if (!searchTerm) return valoresHora;
     return (valoresHora || []).filter(valorHora => {
@@ -82,7 +82,7 @@ export default function ValorHoraPage() {
     });
   }, [valoresHora, usuarios, searchTerm]);
 
-  // Formatear moneda
+  // Format currency
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -91,18 +91,18 @@ export default function ValorHoraPage() {
     }).format(amount);
   };
 
-  // Obtener nombre del usuario (con backward compatibility)
+  // Get user name (with backward compatibility)
   const getUserName = (valorHora: ValorHora) => {
     const usuarioId = valorHora.usuarioId || valorHora.personaId;    const usuario = (usuarios || []).find(u => u.id === usuarioId);
     return usuario?.nombre || 'Usuario no encontrado';
   };
 
-  // Calcular resultado de la calculadora
+  // Calculate calculator result
   const calculatorResult = useMemo(() => {
     return calculatorData.horas * calculatorData.valor;
   }, [calculatorData]);
 
-  // Agregar nuevo valor hora
+  // Add new hourly rate
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -110,7 +110,7 @@ export default function ValorHoraPage() {
       return;
     }
 
-    // Verificar si ya existe un valor para este usuario en la misma fecha
+    // Check if there's already a value for this user on the same date
     const existingValue = (valoresHora || []).find(vh => {
       const vhUsuarioId = vh.usuarioId || vh.personaId;      return vhUsuarioId === formData.usuarioId && vh.fechaInicio === formData.fechaInicio;
     });
@@ -129,7 +129,7 @@ export default function ValorHoraPage() {
 
       await createMutation.mutateAsync(createData);
 
-      // Limpiar formulario
+      // Clear form
       setFormData({
         usuarioId: 0,        valor: 0,
         fechaInicio: new Date().toISOString().split('T')[0],
@@ -140,7 +140,7 @@ export default function ValorHoraPage() {
     }
   };
 
-  // Iniciar edición
+  // Start editing
   const handleEdit = (valorHora: ValorHora) => {
     setEditingId(valorHora.id);
     setEditingData({
@@ -150,7 +150,7 @@ export default function ValorHoraPage() {
     });
   };
 
-  // Guardar edición
+  // Save edit
   const handleSaveEdit = async (valorHora: ValorHora) => {
     try {
       await updateMutation.mutateAsync({
@@ -164,13 +164,13 @@ export default function ValorHoraPage() {
     }
   };
 
-  // Cancelar edición
+  // Cancel edit
   const handleCancelEdit = () => {
     setEditingId(null);
     setEditingData({});
   };
 
-  // Eliminar valor hora
+  // Delete hourly rate
   const handleDelete = async (valorHora: ValorHora) => {
     const confirmed = confirm(`¿Estás seguro de eliminar el valor por hora de "${getUserName(valorHora)}"?`);
     if (!confirmed) return;
@@ -182,7 +182,7 @@ export default function ValorHoraPage() {
     }
   };
 
-  // Exportar a CSV
+  // Export to CSV
   const exportarValorHora = () => {
     const datosExportar = (valoresHora || []).map(vh => ({
       ID: vh.id,
@@ -192,7 +192,7 @@ export default function ValorHoraPage() {
       Notas: vh.notas || ''
     }));
 
-    // Crear CSV
+    // Create CSV
     const headers = Object.keys(datosExportar[0] || {});
     const csvContent = [
       headers.join(','),
@@ -213,7 +213,7 @@ export default function ValorHoraPage() {
     document.body.removeChild(link);
   };
 
-  // Recalcular todo
+  // Recalculate all
   const recalcularTodo = async () => {
     try {
       await refetch();
@@ -297,9 +297,9 @@ export default function ValorHoraPage() {
                 <Users className="text-green-600" size={24} />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Personas con Valor</p>
+                <p className="text-sm text-gray-600">Usuarios con Valor</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {stats ? stats.personasConValor : 'Cargando...'}
+                  {stats ? stats.usuariosConValor : 'Cargando...'}
                 </p>
               </div>
             </div>
@@ -387,17 +387,17 @@ export default function ValorHoraPage() {
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                   <User className="h-4 w-4" />
-                  Usuario *  {}
+                  Usuario *
                 </label>
                 <select
-                  value={formData.usuarioId}                  onChange={(e) => setFormData(prev => ({ ...prev, usuarioId: parseInt(e.target.value) || 0 }))}  {}
+                  value={formData.usuarioId}                  onChange={(e) => setFormData(prev => ({ ...prev, usuarioId: parseInt(e.target.value) || 0 }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
                   required
                 >
-                  <option value="">Seleccionar usuario</option>  {}
+                  <option value="">Seleccionar usuario</option>
                   {(usuarios || []).map(usuario => (
-                    <option key={usuario.id} value={usuario.id}>  {}
-                      {usuario.nombre}  {}
+                    <option key={usuario.id} value={usuario.id}>
+                      {usuario.nombre}
                     </option>
                   ))}
                 </select>
@@ -539,7 +539,7 @@ export default function ValorHoraPage() {
                           <div className="p-1.5 bg-indigo-100 rounded">
                             <User className="h-3.5 w-3.5 text-indigo-600" />
                           </div>
-                          <span className="font-medium text-gray-900">{getUserName(valorHora)}</span>  {}
+                          <span className="font-medium text-gray-900">{getUserName(valorHora)}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

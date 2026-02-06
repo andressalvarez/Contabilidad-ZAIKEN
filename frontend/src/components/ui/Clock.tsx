@@ -11,7 +11,7 @@ export default function Clock({ showSeconds = true, className = '' }: ClockProps
   const [currentTime, setCurrentTime] = useState<string>('--:--');
 
   useEffect(() => {
-    // Función para actualizar la hora
+    // Function to update the time
     const updateTime = () => {
       const timeString = new Date().toLocaleTimeString('es-ES', {
         hour: '2-digit',
@@ -22,13 +22,13 @@ export default function Clock({ showSeconds = true, className = '' }: ClockProps
       setCurrentTime(timeString);
     };
 
-    // Actualizar inmediatamente
+    // Update immediately
     updateTime();
 
-    // Actualizar cada segundo si se muestran los segundos, cada minuto si no
+    // Update every second if showing seconds, every minute if not
     const interval = setInterval(updateTime, showSeconds ? 1000 : 60000);
 
-    // Limpiar el intervalo cuando el componente se desmonte
+    // Clean up the interval when the component unmounts
     return () => clearInterval(interval);
   }, [showSeconds]);
 

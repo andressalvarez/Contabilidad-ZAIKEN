@@ -4,7 +4,7 @@ import { Rol, CreateRolDto, UpdateRolDto, EstadisticasRol } from '@/types';
 const ENDPOINT = '/roles';
 
 export class RolesService {
-  // Obtener todos los roles
+  // Get all roles
   static async getAll(): Promise<Rol[]> {
     try {
       const response = await api.get(ENDPOINT);
@@ -15,7 +15,7 @@ export class RolesService {
     }
   }
 
-  // Obtener roles activos
+  // Get active roles
   static async getActive(): Promise<Rol[]> {
     try {
       const response = await api.get(`${ENDPOINT}/active`);
@@ -26,7 +26,7 @@ export class RolesService {
     }
   }
 
-  // Obtener un rol por ID
+  // Get a role by ID
   static async getById(id: number): Promise<Rol> {
     try {
       const response = await api.get(`${ENDPOINT}/${id}`);
@@ -40,7 +40,7 @@ export class RolesService {
     }
   }
 
-  // Obtener estadísticas de un rol
+  // Get role statistics
   static async getStats(id: number): Promise<EstadisticasRol> {
     try {
       const response = await api.get(`${ENDPOINT}/${id}/stats`);
@@ -54,7 +54,7 @@ export class RolesService {
     }
   }
 
-  // Crear un nuevo rol
+  // Create a new role
   static async create(data: CreateRolDto): Promise<Rol> {
     try {
       const response = await api.post(ENDPOINT, data);
@@ -68,7 +68,7 @@ export class RolesService {
     }
   }
 
-  // Actualizar un rol
+  // Update a role
   static async update(id: number, data: UpdateRolDto): Promise<Rol> {
     try {
       const response = await api.patch(`${ENDPOINT}/${id}`, data);
@@ -82,7 +82,7 @@ export class RolesService {
     }
   }
 
-  // Eliminar un rol
+  // Delete a role
   static async delete(id: number): Promise<void> {
     try {
       await api.delete(`${ENDPOINT}/${id}`);

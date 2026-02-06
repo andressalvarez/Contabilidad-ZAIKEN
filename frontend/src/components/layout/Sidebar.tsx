@@ -11,7 +11,7 @@ export default function Sidebar() {
   const { data: registrosHoras = [] } = useRegistroHoras()
   const canApprove = useCan(Action.Approve, 'RegistroHoras')
 
-  // Contar horas pendientes de aprobación
+  // Count hours pending approval
   const pendingCount = registrosHoras.filter(
     (r) => !r.aprobado && !r.rechazado
   ).length

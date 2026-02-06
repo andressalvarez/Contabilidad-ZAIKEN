@@ -24,44 +24,44 @@ export const transaccionesKeys = {
   tendencias: (año?: number, personaId?: number) => [...transaccionesKeys.all, 'tendencias', año, personaId] as const,
 };
 
-// Hook para obtener transacciones con filtros
+// Hook to get transactions with filters
 export function useTransacciones(filtros: FiltrosTransacciones = {}) {
   return useQuery({
     queryKey: transaccionesKeys.list(filtros),
     queryFn: () => TransaccionesService.getAll(filtros),
-    staleTime: 1000 * 30, // 30 segundos
+    staleTime: 1000 * 30, // 30 seconds
     refetchOnWindowFocus: true,
   });
 }
 
-// Hook para obtener transacciones recientes
+// Hook to get recent transactions
 export function useTransaccionesRecientes(limit = 10) {
   return useQuery({
     queryKey: transaccionesKeys.recent(limit),
     queryFn: () => TransaccionesService.getRecent(limit),
-    staleTime: 1000 * 60 * 1, // 1 minuto
+    staleTime: 1000 * 60 * 1, // 1 minute
   });
 }
 
-// Hook para obtener transacciones pendientes
+// Hook to get pending transactions
 export function useTransaccionesPendientes() {
   return useQuery({
     queryKey: transaccionesKeys.pending(),
     queryFn: TransaccionesService.getPending,
-    staleTime: 1000 * 30, // 30 segundos
+    staleTime: 1000 * 30, // 30 seconds
   });
 }
 
-// Hook para obtener estadísticas
+// Hook to get statistics
 export function useTransaccionesStats(filtros: FiltrosTransacciones = {}) {
   return useQuery({
     queryKey: transaccionesKeys.stats(filtros),
     queryFn: () => TransaccionesService.getStats(filtros),
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
 
-// Hook para obtener resumen por categorías
+// Hook to get summary by categories
 export function useResumenPorCategorias(filtros: { fechaInicio?: string; fechaFin?: string } = {}) {
   return useQuery({
     queryKey: transaccionesKeys.resumenCategorias(filtros),
@@ -70,16 +70,16 @@ export function useResumenPorCategorias(filtros: { fechaInicio?: string; fechaFi
   });
 }
 
-// Hook para obtener tendencias mensuales
+// Hook to get monthly trends
 export function useTendenciasMensuales(año?: number) {
   return useQuery({
     queryKey: transaccionesKeys.tendencias(año),
     queryFn: () => TransaccionesService.getTendenciasMensuales(año),
-    staleTime: 1000 * 60 * 10, // 10 minutos
+    staleTime: 1000 * 60 * 10, // 10 minutes
   });
 }
 
-// Hook para obtener una transacción específica
+// Hook to get a specific transaction
 export function useTransaccion(id: number) {
   return useQuery({
     queryKey: transaccionesKeys.detail(id),
@@ -88,7 +88,7 @@ export function useTransaccion(id: number) {
   });
 }
 
-// Hook para crear una transacción
+// Hook to create a transaction
 export function useCreateTransaccion() {
   const queryClient = useQueryClient();
 
@@ -97,7 +97,7 @@ export function useCreateTransaccion() {
     retry: 2,
     retryDelay: 1000,
     onSuccess: (newTransaccion) => {
-      // Invalidar todas las consultas relacionadas
+      // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey: transaccionesKeys.lists() });
       queryClient.invalidateQueries({ queryKey: transaccionesKeys.all });
 
@@ -109,7 +109,7 @@ export function useCreateTransaccion() {
   });
 }
 
-// Hook para actualizar una transacción
+// Hook to update a transaction
 export function useUpdateTransaccion() {
   const queryClient = useQueryClient();
 
@@ -119,7 +119,7 @@ export function useUpdateTransaccion() {
     retry: 2,
     retryDelay: 1000,
     onSuccess: (updatedTransaccion) => {
-      // Invalidar queries relacionadas
+      // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: transaccionesKeys.lists() });
       queryClient.invalidateQueries({ queryKey: transaccionesKeys.all });
       queryClient.setQueryData(transaccionesKeys.detail(updatedTransaccion.id), updatedTransaccion);
@@ -132,7 +132,7 @@ export function useUpdateTransaccion() {
   });
 }
 
-// Hook para aprobar transacción
+// Hook to approve a transaction
 export function useApproveTransaccion() {
   const queryClient = useQueryClient();
 
@@ -150,7 +150,7 @@ export function useApproveTransaccion() {
   });
 }
 
-// Hook para rechazar transacción
+// Hook to reject a transaction
 export function useRejectTransaccion() {
   const queryClient = useQueryClient();
 
@@ -168,7 +168,7 @@ export function useRejectTransaccion() {
   });
 }
 
-// Hook para eliminar una transacción
+// Hook to delete a transaction
 export function useDeleteTransaccion() {
   const queryClient = useQueryClient();
 
@@ -177,10 +177,10 @@ export function useDeleteTransaccion() {
     retry: 2,
     retryDelay: 1000,
     onSuccess: (_, deletedId) => {
-      // Invalidar todas las consultas
+      // Invalidate all queries
       queryClient.invalidateQueries({ queryKey: transaccionesKeys.all });
 
-      // Remover la transacción específica del cache
+      // Remove specific transaction from cache
       queryClient.removeQueries({ queryKey: transaccionesKeys.detail(deletedId) });
 
       toast.success('Transacción eliminada exitosamente');
@@ -191,7 +191,7 @@ export function useDeleteTransaccion() {
   });
 }
 
-// Hook para obtener resumen por tipos de gasto
+// Hook to get summary by expense types
 export function useResumenPorTiposGasto(filtros: any = {}) {
   return useQuery({
     queryKey: ['resumen-tipos-gasto', filtros],

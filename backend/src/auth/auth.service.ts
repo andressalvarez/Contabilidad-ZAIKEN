@@ -108,7 +108,6 @@ export class AuthService {
       where: { id: userId },
       include: {
         negocio: true,
-        personas: true,
       },
     });
 

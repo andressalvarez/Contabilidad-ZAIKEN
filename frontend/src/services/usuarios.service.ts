@@ -4,17 +4,17 @@ import { Usuario, CreateUsuarioDto, UpdateUsuarioDto } from '@/types'
 export const UsuariosService = {
   list: async (): Promise<Usuario[]> => {
     const { data } = await api.get('/usuarios')
-    return data
+    return data?.data || []
   },
 
   create: async (payload: CreateUsuarioDto) => {
     const { data } = await api.post('/usuarios', payload)
-    return data
+    return data?.data
   },
 
   update: async (id: number, payload: UpdateUsuarioDto) => {
     const { data } = await api.patch(`/usuarios/${id}`, payload)
-    return data
+    return data?.data
   },
 
   remove: async (id: number) => {
@@ -24,10 +24,10 @@ export const UsuariosService = {
 
   updateMe: async (payload: Partial<{ nombre: string; email: string; password: string }>) => {
     const { data } = await api.patch('/usuarios/me', payload)
-    return data
+    return data?.data
   },
 
-  // ✅ Nuevo método: Obtener resumen con totales
+  // Get summary with totals
   getSummary: async (): Promise<{
     usuarios: Usuario[];
     totales: {
@@ -37,10 +37,10 @@ export const UsuariosService = {
     };
   }> => {
     const { data } = await api.get('/usuarios/summary')
-    return data
+    return data?.data || { usuarios: [], totales: { participacionTotal: 0, horasTotales: 0, inversionTotal: 0 } }
   },
 
-  // ✅ Métodos de autenticación y recuperación de contraseña (para FASE 8)
+  // Authentication and password recovery methods
   requestPasswordReset: async (email: string) => {
     const { data } = await api.post('/auth/request-password-reset', { email })
     return data

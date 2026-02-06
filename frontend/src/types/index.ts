@@ -1,4 +1,4 @@
-// Tipos base del sistema
+// Base system types
 export interface Rol {
   id: number;
   nombreRol: string;
@@ -6,16 +6,14 @@ export interface Rol {
   descripcion?: string;
   createdAt: string;
   updatedAt: string;
-  personas?: Persona[];
   usuarios?: Usuario[];
   _count?: {
-    personas: number;
     usuarios: number;
     valorHoras: number;
   };
 }
 
-// ✅ Usuario - Entidad principal consolidada
+// User - Main consolidated entity
 export interface Usuario {
   id: number;
   negocioId: number;
@@ -24,7 +22,7 @@ export interface Usuario {
   rol: 'ADMIN_NEGOCIO' | 'USER' | 'EMPLEADO';
   activo: boolean;
 
-  // Campos migrados de Persona
+  // Fields migrated from Persona
   rolId?: number;
   rolNegocio?: Rol;
   participacionPorc: number;
@@ -35,7 +33,7 @@ export interface Usuario {
   inversionTotal: number;
   notas?: string;
 
-  // Campos de autenticación (SMTP)
+  // Authentication fields (SMTP)
   emailVerified?: boolean;
   activationToken?: string;
   resetPasswordToken?: string;
@@ -43,9 +41,6 @@ export interface Usuario {
 
   createdAt: string;
   updatedAt: string;
-
-  // Relaciones
-  personas?: Persona[]; // Para compatibilidad temporal
 }
 
 export interface Categoria {
@@ -126,16 +121,26 @@ export interface RegistroHoras {
   usuario?: Usuario;
   personaId?: number;
   campanaId?: number;
+  campana?: Campana;
   fecha: string;
   horas: number;
   descripcion?: string;
   aprobado: boolean;
+  aprobadoPor?: number;
+  fechaAprobacion?: string;
   rechazado?: boolean;
   motivoRechazo?: string;
   origen?: string; // 'MANUAL' | 'TIMER'
   timerInicio?: string;
   timerFin?: string;
   estado?: string; // 'RUNNING' | 'PAUSADO' | 'COMPLETADO'
+
+  // Audit fields for time editing
+  timerInicioOriginal?: string; // Actual start before editing
+  horasOriginales?: number; // Hours before manual editing
+  editadoPor?: number; // ID of user who edited
+  fechaEdicion?: string; // When it was edited
+
   createdAt: string;
   updatedAt: string;
 }
@@ -164,7 +169,7 @@ export interface DistribucionDetalle {
   distribucion?: DistribucionUtilidades;
 }
 
-// DTOs para formularios
+// DTOs for forms
 export interface CreateRolDto {
   nombreRol: string;
   importancia: number;
@@ -173,14 +178,14 @@ export interface CreateRolDto {
 
 export interface UpdateRolDto extends Partial<CreateRolDto> {}
 
-// DTOs para Usuario
+// DTOs for Usuario
 export interface CreateUsuarioDto {
   email: string;
   password: string;
   nombre: string;
   rol: 'ADMIN_NEGOCIO' | 'USER' | 'EMPLEADO';
   activo?: boolean;
-  // Campos migrados de Persona
+  // Fields migrated from Persona
   rolId?: number;
   participacionPorc?: number;
   horasTotales?: number;
@@ -227,7 +232,7 @@ export interface CreateRegistroHorasDto {
 
 export interface UpdateRegistroHorasDto extends Partial<CreateRegistroHorasDto> {}
 
-// Tipos para filtros y consultas
+// Types for filters and queries
 export interface FiltroFecha {
   startDate?: string;
   endDate?: string;
@@ -236,7 +241,7 @@ export interface FiltroFecha {
 export interface EstadisticasRol {
   rol: Rol;
   estadisticas: {
-    totalPersonas: number;
+    totalUsuarios: number;
     horasTotales: number;
     aportesTotales: number;
     inversionTotal: number;
@@ -245,7 +250,7 @@ export interface EstadisticasRol {
   };
 }
 
-// Tipos para UI
+// Types for UI
 export interface TablaColumna {
   key: string;
   header: string;
@@ -259,7 +264,7 @@ export interface PaginacionInfo {
   total: number;
   totalPages: number;
 }
-// DTOs para Campañas
+// DTOs for Campaigns
 export interface CreateCampanaDto {
   nombre: string;
   fechaInicio: string;
@@ -272,7 +277,7 @@ export interface CreateCampanaDto {
 
 export interface UpdateCampanaDto extends Partial<CreateCampanaDto> {}
 
-// Extender la interfaz Campana existente con métricas calculadas
+// Extend the existing Campaign interface with calculated metrics
 export interface CampanaConMetricas extends Campana {
   horasInvertidas?: number;
   gastoTotalReal?: number;

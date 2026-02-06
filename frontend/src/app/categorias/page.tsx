@@ -23,11 +23,11 @@ export default function CategoriasPage() {
   const createCategoriaMutation = useCreateCategoria();
   const deleteCategoriaMutation = useDeleteCategoria();
 
-  // Calcular uso en transacciones por categoriaId
+  // Calculate usage in transactions by categoriaId
   const getUso = (categoriaId: number) =>
     transacciones.filter((t: any) => t.categoriaId === categoriaId).length;
 
-  // Agregar categoría
+  // Add category
   const handleAdd = () => {
     const nombre = inputValue.trim();
     if (!nombre) {
@@ -54,7 +54,7 @@ export default function CategoriasPage() {
     });
   };
 
-  // Eliminar categoría
+  // Delete category
   const handleDelete = (categoria: any) => {
     const uso = getUso(categoria.id);
     if (uso > 0) {
@@ -66,7 +66,7 @@ export default function CategoriasPage() {
     }
   };
 
-  // Columnas de la tabla
+  // Table columns
   const columns = useMemo(
     () => [
       {
@@ -123,7 +123,7 @@ export default function CategoriasPage() {
     [categorias, transacciones, deleteCategoriaMutation.isPending]
   );
 
-  // Configuración de la tabla
+  // Table configuration
   const table = useReactTable({
     data: categorias,
     columns,

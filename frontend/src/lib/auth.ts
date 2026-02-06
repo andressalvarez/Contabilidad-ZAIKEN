@@ -4,7 +4,7 @@ export function setAuthToken(token: string) {
   try {
     if (typeof window !== 'undefined') {
       localStorage.setItem('auth_token', token);
-      // Cookie accesible por middleware (no httpOnly)
+      // Cookie accessible by middleware (not httpOnly)
       const isSecure = window.location.protocol === 'https:';
       document.cookie = `${AUTH_COOKIE}=${token}; Path=/; SameSite=Lax; Max-Age=${60 * 60 * 24 * 7};${
         isSecure ? ' Secure;' : ''
@@ -27,6 +27,3 @@ export function getTokenFromCookies(): string | null {
   const match = document.cookie.match(new RegExp(`(?:^|; )${AUTH_COOKIE}=([^;]*)`));
   return match ? decodeURIComponent(match[1]) : null;
 }
-
-
-

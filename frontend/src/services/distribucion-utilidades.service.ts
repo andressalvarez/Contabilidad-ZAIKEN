@@ -32,7 +32,7 @@ const ENDPOINT_DISTRIBUCION = '/distribucion-utilidades';
 const ENDPOINT_DETALLE = '/distribucion-detalle';
 
 export class DistribucionUtilidadesService {
-  // Obtener todas las distribuciones
+  // Get all distributions
   static async getAll(): Promise<DistribucionUtilidades[]> {
     try {
       const response = await api.get(ENDPOINT_DISTRIBUCION);
@@ -43,7 +43,7 @@ export class DistribucionUtilidadesService {
     }
   }
 
-  // Obtener una distribución por ID
+  // Get a distribution by ID
   static async getById(id: number): Promise<DistribucionUtilidades> {
     try {
       const response = await api.get(`${ENDPOINT_DISTRIBUCION}/${id}`);
@@ -57,7 +57,7 @@ export class DistribucionUtilidadesService {
     }
   }
 
-  // Crear una nueva distribución
+  // Create a new distribution
   static async create(data: CreateDistribucionUtilidadesDto): Promise<DistribucionUtilidades> {
     try {
       const response = await api.post(ENDPOINT_DISTRIBUCION, data);
@@ -71,7 +71,7 @@ export class DistribucionUtilidadesService {
     }
   }
 
-  // Actualizar una distribución
+  // Update a distribution
   static async update(id: number, data: UpdateDistribucionUtilidadesDto): Promise<DistribucionUtilidades> {
     try {
       const response = await api.patch(`${ENDPOINT_DISTRIBUCION}/${id}`, data);
@@ -85,7 +85,7 @@ export class DistribucionUtilidadesService {
     }
   }
 
-  // Eliminar una distribución
+  // Delete a distribution
   static async delete(id: number): Promise<void> {
     try {
       await api.delete(`${ENDPOINT_DISTRIBUCION}/${id}`);
@@ -95,7 +95,7 @@ export class DistribucionUtilidadesService {
     }
   }
 
-  // Obtener estadísticas
+  // Get statistics
   static async getStats(): Promise<EstadisticasDistribucion> {
     try {
       const response = await api.get(`${ENDPOINT_DISTRIBUCION}/stats`);
@@ -109,7 +109,7 @@ export class DistribucionUtilidadesService {
     }
   }
 
-  // Distribuir automáticamente
+  // Distribute automatically
   static async distribuirAutomaticamente(distribucionId: number): Promise<void> {
     try {
       await api.post(`${ENDPOINT_DISTRIBUCION}/${distribucionId}/distribuir-automatico`);
@@ -119,7 +119,7 @@ export class DistribucionUtilidadesService {
     }
   }
 
-  // Obtener detalles de una distribución
+  // Get distribution details
   static async getDetalles(distribucionId: number): Promise<DistribucionDetalle[]> {
     try {
       const response = await api.get(`${ENDPOINT_DETALLE}?distribucionId=${distribucionId}`);
@@ -130,7 +130,7 @@ export class DistribucionUtilidadesService {
     }
   }
 
-  // Crear detalle de distribución
+  // Create distribution detail
   static async createDetalle(data: CreateDistribucionDetalleDto): Promise<DistribucionDetalle> {
     try {
       const response = await api.post(ENDPOINT_DETALLE, data);
@@ -144,7 +144,7 @@ export class DistribucionUtilidadesService {
     }
   }
 
-  // Actualizar detalle de distribución
+  // Update distribution detail
   static async updateDetalle(id: number, data: UpdateDistribucionDetalleDto): Promise<DistribucionDetalle> {
     try {
       const response = await api.patch(`${ENDPOINT_DETALLE}/${id}`, data);
@@ -158,7 +158,7 @@ export class DistribucionUtilidadesService {
     }
   }
 
-  // Eliminar detalle de distribución
+  // Delete distribution detail
   static async deleteDetalle(id: number): Promise<void> {
     try {
       await api.delete(`${ENDPOINT_DETALLE}/${id}`);

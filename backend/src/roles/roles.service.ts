@@ -27,7 +27,7 @@ export class RolesService {
       include: {
         _count: {
           select: {
-            personas: true,
+            usuarios: true,
           },
         },
       },
@@ -38,7 +38,7 @@ export class RolesService {
   async findActive(): Promise<Rol[]> {
     return this.prisma.rol.findMany({
       where: {
-        personas: {
+        usuarios: {
           some: {
             activo: true,
           },
@@ -53,7 +53,7 @@ export class RolesService {
     const rol = await this.prisma.rol.findUnique({
       where: { id },
       include: {
-        personas: {
+        usuarios: {
           select: {
             id: true,
             nombre: true,
@@ -62,7 +62,7 @@ export class RolesService {
         },
         _count: {
           select: {
-            personas: true,
+            usuarios: true,
             valorHoras: true,
           },
         },
@@ -95,18 +95,18 @@ export class RolesService {
     }
   }
 
-  // Eliminar un rol (soft delete si tiene personas asociadas)
+  // Eliminar un rol (soft delete si tiene usuarios asociados)
   async remove(id: number): Promise<{ message: string }> {
     const rol = await this.findOne(id);
 
-    // Verificar si tiene personas asociadas
-    const personasCount = await this.prisma.persona.count({
+    // Verificar si tiene usuarios asociados
+    const usuariosCount = await this.prisma.usuario.count({
       where: { rolId: id },
     });
 
-    if (personasCount > 0) {
+    if (usuariosCount > 0) {
       throw new ConflictException(
-        `No se puede eliminar el rol porque tiene ${personasCount} persona(s) asociada(s)`
+        `No se puede eliminar el rol porque tiene ${usuariosCount} usuario(s) asociado(s)`
       );
     }
 
@@ -121,7 +121,7 @@ export class RolesService {
   async getStats(id: number) {
     const rol = await this.findOne(id);
 
-    const stats = await this.prisma.persona.aggregate({
+    const stats = await this.prisma.usuario.aggregate({
       where: { rolId: id, activo: true },
       _sum: {
         horasTotales: true,
@@ -138,7 +138,7 @@ export class RolesService {
     return {
       rol,
       estadisticas: {
-        totalPersonas: stats._count,
+        totalUsuarios: stats._count,
         horasTotales: stats._sum.horasTotales || 0,
         aportesTotales: stats._sum.aportesTotales || 0,
         inversionTotal: stats._sum.inversionTotal || 0,

@@ -19,7 +19,7 @@ export default function HorasPendientesPage() {
 
   const canApprove = useCan(Action.Approve, 'RegistroHoras');
 
-  // Cargar datos
+  // Load data
   const loadData = async () => {
     try {
       setLoading(true);
@@ -40,7 +40,7 @@ export default function HorasPendientesPage() {
     loadData();
   }, []);
 
-  // Aprobar registro
+  // Approve record
   const handleApprove = async (id: number) => {
     if (!confirm('¿Está seguro de aprobar este registro de horas?')) {
       return;
@@ -55,7 +55,7 @@ export default function HorasPendientesPage() {
     }
   };
 
-  // Rechazar registro
+  // Reject record
   const handleReject = async (id: number) => {
     if (!rejectReason.trim()) {
       toast.error('Debe ingresar un motivo de rechazo');
@@ -73,7 +73,7 @@ export default function HorasPendientesPage() {
     }
   };
 
-  // Formatear fecha
+  // Format date
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-CO', {
       year: 'numeric',
@@ -84,11 +84,29 @@ export default function HorasPendientesPage() {
     });
   };
 
-  // Formatear horas
+  // Format hours
   const formatHours = (hours: number) => {
     const h = Math.floor(hours);
     const m = Math.round((hours - h) * 60);
     return `${h}h ${m}m`;
+  };
+
+  // Format time range
+  const formatTimeRange = (startTime: string | null | undefined, endTime: string | null | undefined) => {
+    if (!startTime || !endTime) return null;
+
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+
+    const formatTime = (date: Date) => {
+      return date.toLocaleTimeString('es-CO', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      });
+    };
+
+    return `${formatTime(start)} - ${formatTime(end)}`;
   };
 
   if (!canApprove) {
@@ -292,6 +310,12 @@ export default function HorasPendientesPage() {
                           <div>
                             <strong>Fecha:</strong> {formatDate(record.fecha)}
                           </div>
+                          {record.origen === 'TIMER' && formatTimeRange(record.timerInicio, record.timerFin) && (
+                            <div style={{ color: '#3B82F6', fontWeight: '600' }}>
+                              <Clock size={14} style={{ display: 'inline', marginRight: '0.25rem' }} />
+                              <strong>Horario:</strong> {formatTimeRange(record.timerInicio, record.timerFin)}
+                            </div>
+                          )}
                           {record.campana && (
                             <div>
                               <strong>Campaña:</strong> {record.campana.nombre}
@@ -476,13 +500,28 @@ export default function HorasPendientesPage() {
                           {formatHours(record.horas)}
                         </span>
                       </div>
-                      <div style={{ fontSize: '0.875rem', color: '#6B7280' }}>
-                        <strong>Fecha:</strong> {formatDate(record.fecha)}
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: '1rem',
+                          fontSize: '0.875rem',
+                          color: '#6B7280',
+                        }}
+                      >
+                        <div>
+                          <strong>Fecha:</strong> {formatDate(record.fecha)}
+                        </div>
+                        {record.origen === 'TIMER' && formatTimeRange(record.timerInicio, record.timerFin) && (
+                          <div style={{ color: '#EF4444', fontWeight: '600' }}>
+                            <Clock size={14} style={{ display: 'inline', marginRight: '0.25rem' }} />
+                            <strong>Horario:</strong> {formatTimeRange(record.timerInicio, record.timerFin)}
+                          </div>
+                        )}
                         {record.campana && (
-                          <>
-                            {' | '}
+                          <div>
                             <strong>Campaña:</strong> {record.campana.nombre}
-                          </>
+                          </div>
                         )}
                       </div>
                     </div>

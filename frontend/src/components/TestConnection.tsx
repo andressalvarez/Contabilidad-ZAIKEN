@@ -14,7 +14,7 @@ export default function TestConnection() {
       const results: any = {};
 
       try {
-        // Test 1: Estadísticas de transacciones usando servicio
+        // Test 1: Transaction statistics using service
         console.log('Probando endpoint de estadísticas con servicio...');
         const statsData = await TransaccionesService.getStats({});
         console.log('Stats data:', statsData);
@@ -35,7 +35,7 @@ export default function TestConnection() {
       }
 
       try {
-        // Test 3: Categorías usando servicio
+        // Test 3: Categories using service
         console.log('Probando endpoint de categorías con servicio...');
         const categoriasData = await CategoriasService.getAll();
         results.categorias = { success: true, data: categoriasData };

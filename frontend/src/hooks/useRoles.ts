@@ -13,16 +13,16 @@ export const rolesKeys = {
   stats: (id: number) => [...rolesKeys.detail(id), 'stats'] as const,
 };
 
-// Hook para obtener todos los roles
+// Hook to get all roles
 export function useRoles() {
   return useQuery({
     queryKey: rolesKeys.lists(),
     queryFn: RolesService.getAll,
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
 
-// Hook para obtener roles activos
+// Hook to get active roles
 export function useActiveRoles() {
   return useQuery({
     queryKey: rolesKeys.list('active'),
@@ -31,7 +31,7 @@ export function useActiveRoles() {
   });
 }
 
-// Hook para obtener un rol específico
+// Hook to get a specific role
 export function useRol(id: number) {
   return useQuery({
     queryKey: rolesKeys.detail(id),
@@ -40,7 +40,7 @@ export function useRol(id: number) {
   });
 }
 
-// Hook para obtener estadísticas de un rol
+// Hook to get role statistics
 export function useRolStats(id: number) {
   return useQuery({
     queryKey: rolesKeys.stats(id),
@@ -49,17 +49,17 @@ export function useRolStats(id: number) {
   });
 }
 
-// Hook para crear un rol
+// Hook to create a role
 export function useCreateRol() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (data: CreateRolDto) => RolesService.create(data),
     onSuccess: (newRol) => {
-      // Invalidar y refetch las listas de roles
+      // Invalidate and refetch role lists
       queryClient.invalidateQueries({ queryKey: rolesKeys.lists() });
 
-      // Optimistamente actualizar el cache
+      // Optimistically update cache
       queryClient.setQueryData(rolesKeys.detail(newRol.id), newRol);
 
       toast.success('Rol creado exitosamente');
@@ -70,7 +70,7 @@ export function useCreateRol() {
   });
 }
 
-// Hook para actualizar un rol
+// Hook to update a role
 export function useUpdateRol() {
   const queryClient = useQueryClient();
 
@@ -78,7 +78,7 @@ export function useUpdateRol() {
     mutationFn: ({ id, data }: { id: number; data: UpdateRolDto }) =>
       RolesService.update(id, data),
     onSuccess: (updatedRol) => {
-      // Invalidar queries relacionadas
+      // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: rolesKeys.lists() });
       queryClient.setQueryData(rolesKeys.detail(updatedRol.id), updatedRol);
 
@@ -90,17 +90,17 @@ export function useUpdateRol() {
   });
 }
 
-// Hook para eliminar un rol
+// Hook to delete a role
 export function useDeleteRol() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: number) => RolesService.delete(id),
     onSuccess: (_, deletedId) => {
-      // Invalidar listas
+      // Invalidate lists
       queryClient.invalidateQueries({ queryKey: rolesKeys.lists() });
 
-      // Remover el rol específico del cache
+      // Remove specific role from cache
       queryClient.removeQueries({ queryKey: rolesKeys.detail(deletedId) });
 
       toast.success('Rol eliminado exitosamente');

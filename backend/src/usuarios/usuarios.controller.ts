@@ -16,7 +16,7 @@ import { Roles } from '../auth/roles.decorator';
 import { NegocioId } from '../auth/negocio-id.decorator';
 import * as bcrypt from 'bcrypt';
 
-@Controller('api/v1/usuarios')
+@Controller('usuarios')
 export class UsuariosController {
   constructor(private readonly service: UsuariosService) {}
 
@@ -27,6 +27,15 @@ export class UsuariosController {
       success: true,
       message: 'Usuarios obtenidos exitosamente',
       data: await this.service.findAll(negocioId),
+    };
+  }
+
+  @Get('summary')
+  async getSummary(@NegocioId() negocioId: number) {
+    return {
+      success: true,
+      message: 'Resumen de usuarios obtenido exitosamente',
+      data: await this.service.getSummary(negocioId),
     };
   }
 

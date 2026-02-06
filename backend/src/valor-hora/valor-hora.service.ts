@@ -282,7 +282,7 @@ export class ValorHoraService {
     return {
       valorPromedio,
       valorMaximo,
-      personasConValor: usuariosConValor,
+      usuariosConValor: usuariosConValor,
       totalValores: valoresHora.length,
     };
   }

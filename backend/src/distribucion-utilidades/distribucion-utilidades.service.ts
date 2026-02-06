@@ -39,7 +39,7 @@ export class DistribucionUtilidadesService {
       },
     });
 
-    return { data: distribucion };
+    return distribucion;
   }
 
   async findAll(negocioId: number) {
@@ -73,7 +73,7 @@ export class DistribucionUtilidadesService {
       },
     });
 
-    return { data: distribuciones };
+    return distribuciones;
   }
 
   async findOne(id: number, negocioId: number) {
@@ -109,7 +109,7 @@ export class DistribucionUtilidadesService {
       throw new NotFoundException(`Distribución con ID ${id} no encontrada`);
     }
 
-    return { data: distribucion };
+    return distribucion;
   }
 
   async update(id: number, negocioId: number, updateDistribucionUtilidadesDto: UpdateDistribucionUtilidadesDto) {
@@ -146,7 +146,7 @@ export class DistribucionUtilidadesService {
       },
     });
 
-    return { data: distribucion };
+    return distribucion;
   }
 
   async remove(id: number, negocioId: number) {
@@ -216,14 +216,12 @@ export class DistribucionUtilidadesService {
       : 0;
 
     return {
-      data: {
-        totalDistribuciones,
-        totalUtilidades: totalUtilidades._sum.utilidadTotal || 0,
-        totalDistribuido: totalDistribuido._sum.montoDistribuido || 0,
-        distribucionesPendientes,
-        distribucionesCompletadas,
-        promedioPorPersona: promedioPorUsuario,
-      },
+      totalDistribuciones,
+      totalUtilidades: totalUtilidades._sum.utilidadTotal || 0,
+      totalDistribuido: totalDistribuido._sum.montoDistribuido || 0,
+      distribucionesPendientes,
+      distribucionesCompletadas,
+      promedioPorPersona: promedioPorUsuario,
     };
   }
 
@@ -248,7 +246,7 @@ export class DistribucionUtilidadesService {
       },
       include: {
         rolNegocio: true,
-        personas: { take: 1 },
+        personas: { take: 1 }, // Necesario temporalmente hasta eliminar personaId del schema
       },
     });
 
@@ -265,11 +263,13 @@ export class DistribucionUtilidadesService {
     const detalles = usuarios.map(usuario => {
       const porcentaje = usuario.participacionPorc / totalParticipacion;
       const montoDistribuido = distribucion.utilidadTotal * porcentaje;
+      // personaId temporalmente requerido hasta migración completa
+      const personaId = usuario.personas?.[0]?.id || usuario.id;
 
       return {
         distribucionId: id,
         usuarioId: usuario.id,
-        personaId: usuario.personas[0]?.id,
+        personaId,
         porcentajeParticipacion: porcentaje * 100,
         montoDistribuido,
       };

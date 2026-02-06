@@ -14,8 +14,8 @@ interface TimerWidgetProps {
 }
 
 /**
- * Widget flotante para controlar el timer de horas
- * Se muestra cuando hay un timer activo
+ * Floating widget to control the hours timer
+ * Shows when there's an active timer
  *
  * @example
  * <TimerWidget usuarioId={1} onStop={() => refetch()} />
@@ -39,25 +39,25 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ usuarioId, onStop }) =
   const [showStopModal, setShowStopModal] = useState(false);
   const [minimized, setMinimized] = useState(false);
 
-  // Cargar timer activo al montar el componente
+  // Load active timer on component mount
   useEffect(() => {
     if (effectiveId) {
-      refreshTimer(effectiveId, isUsuarioId);
+      refreshTimer(effectiveId);
     }
-  }, [effectiveId, isUsuarioId, refreshTimer]);
+  }, [effectiveId, refreshTimer]);
 
-  // Refrescar cada 30 segundos
+  // Refresh every 30 seconds
   useEffect(() => {
     if (!effectiveId) return;
 
     const interval = setInterval(() => {
-      refreshTimer(effectiveId, isUsuarioId);
+      refreshTimer(effectiveId);
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [effectiveId, isUsuarioId, refreshTimer]);
+  }, [effectiveId, refreshTimer]);
 
-  // Formatear tiempo transcurrido
+  // Format elapsed time
   const formatTime = (hours: number): string => {
     const totalMinutes = Math.floor(hours * 60);
     const h = Math.floor(totalMinutes / 60);
@@ -93,7 +93,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ usuarioId, onStop }) =
     }
   };
 
-  // No mostrar si no hay timer activo
+  // Don't show if no active timer
   if (!activeTimer) {
     return null;
   }
@@ -103,7 +103,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ usuarioId, onStop }) =
 
   return (
     <>
-      {/* Widget flotante */}
+      {/* Floating Widget */}
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -144,7 +144,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ usuarioId, onStop }) =
               className="overflow-hidden"
             >
               <div className="p-6">
-                {/* Reloj animado central */}
+                {/* Animated central clock */}
                 <div className="flex flex-col items-center mb-6">
                   <motion.div
                     animate={{
@@ -164,7 +164,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ usuarioId, onStop }) =
                     />
                   </motion.div>
 
-                  {/* Tiempo transcurrido */}
+                  {/* Elapsed time */}
                   <motion.div
                     key={formatTime(elapsedTime)}
                     initial={{ scale: 1.1 }}
@@ -175,7 +175,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ usuarioId, onStop }) =
                     {formatTime(elapsedTime)}
                   </motion.div>
 
-                  {/* Descripción */}
+                  {/* Description */}
                   {activeTimer.descripcion && (
                     <p className="text-sm opacity-90 text-center px-2">
                       {activeTimer.descripcion}
@@ -183,9 +183,9 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ usuarioId, onStop }) =
                   )}
                 </div>
 
-                {/* Botones de control circulares */}
+                {/* Circular control buttons */}
                 <div className="flex justify-center items-center gap-3">
-                  {/* Pausar/Reanudar */}
+                  {/* Pause/Resume */}
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -200,7 +200,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ usuarioId, onStop }) =
                     </span>
                   </motion.button>
 
-                  {/* Detener */}
+                  {/* Stop */}
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -213,7 +213,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ usuarioId, onStop }) =
                     <span className="text-xs mt-1 font-medium">Detener</span>
                   </motion.button>
 
-                  {/* Cancelar */}
+                  {/* Cancel */}
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -244,7 +244,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ usuarioId, onStop }) =
         )}
       </motion.div>
 
-      {/* Modal para detener */}
+      {/* Stop modal */}
       {showStopModal && (
         <StopTimerModal
           activeTimer={activeTimer}

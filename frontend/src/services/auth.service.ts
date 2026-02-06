@@ -14,20 +14,15 @@ export interface UserProfile {
     nombre: string;
     descripcion?: string;
   };
-  personas?: Array<{
-    id: number;
-    nombre: string;
-    email?: string;
-  }>;
 }
 
 export const AuthService = {
-  // Obtener información del usuario actual
+  // Get current user information
   getMe: async (): Promise<UserProfile> => {
     try {
       const response = await api.get('/auth/me');
       if (!response.data?.data) {
-        throw new Error('No se pudo obtener la información del usuario');
+        throw new Error('Could not get user information');
       }
       return response.data.data;
     } catch (error) {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useTransacciones } from '@/hooks/useTransacciones';
-import { useEstadisticas, useTendenciasMensuales, useResumenPorCategorias, useEstadisticasCampanas, useEstadisticasUsuarios } from '@/hooks/useEstadisticas';
+import { useEstadisticas, useTendenciasMensuales, useResumenPorCategorias, useEstadisticasCampanas } from '@/hooks/useEstadisticas';
 import { useUsuarios } from '@/hooks/useUsuarios';
 import { useCampanas } from '@/hooks/useCampanas';
 import { useRoles } from '@/hooks/useRoles';
@@ -55,7 +55,7 @@ export default function EstadisticasPage() {
     tipo: ''
   });
 
-  // Estados para VS Categorías
+  // States for VS Categories
   const [vsCategoriasConfig, setVsCategoriasConfig] = useState({
     carpetas: {},
     grupos: {},
@@ -63,14 +63,14 @@ export default function EstadisticasPage() {
     configuracion: {}
   });
 
-  // Referencias para los charts
+  // References for charts
   const chartsRef = useRef<{ [key: string]: Chart }>({});
   const vsCategoriasRef = useRef<any>(null);
 
-  // Año actual para las tendencias
+  // Current year for trends
   const añoActual = new Date().getFullYear();
 
-  // Hooks de datos
+  // Data hooks
   const { data: stats } = useEstadisticas(filters);
   const { data: usuarios = [] } = useUsuarios();
   const { data: campanas = [] } = useCampanas();
@@ -78,9 +78,8 @@ export default function EstadisticasPage() {
   const { data: tendenciasMensuales = [], isLoading: loadingTendencias } = useTendenciasMensuales(añoActual, filters);
   const { data: resumenCategorias = [], isLoading: loadingCategorias } = useResumenPorCategorias(filters);
   const { data: estadisticasCampanas } = useEstadisticasCampanas(filters);
-  const { data: estadisticasUsuarios } = useEstadisticasUsuarios(filters);
 
-  // Generar colores para gráficos
+  // Generate colors for charts
   const generateColors = (count: number) => {
     const colors = [
       '#6366f1', '#f59e42', '#10b981', '#ef4444', '#fbbf24',
@@ -90,17 +89,17 @@ export default function EstadisticasPage() {
     return colors.slice(0, count);
   };
 
-  // Función para crear gráficos responsivos
+  // Function to create responsive charts
   const createResponsiveChart = (canvasId: string, config: any) => {
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
     if (!canvas) return null;
 
-    // Destruir chart existente si existe
+    // Destroy existing chart if it exists
     if (chartsRef.current[canvasId]) {
       chartsRef.current[canvasId].destroy();
     }
 
-    // Configuración base responsive
+    // Responsive base configuration
     const defaultOptions = {
       responsive: true,
       maintainAspectRatio: false,
@@ -139,7 +138,7 @@ export default function EstadisticasPage() {
     return chart;
   };
 
-  // Crear leyenda externa limpia
+  // Create clean external legend
   const createCleanExternalLegend = (container: HTMLElement, data: any[], title: string) => {
     const legendContainer = document.createElement('div');
     legendContainer.className = 'chart-legend';
@@ -160,7 +159,7 @@ export default function EstadisticasPage() {
     container.appendChild(legendContainer);
   };
 
-  // Renderizar gráfico de Ingresos vs Gastos
+  // Render Income vs Expenses chart
   const renderIngresosGastos = () => {
     console.log('DEBUG renderIngresosGastos - stats:', stats);
     if (!stats) {
@@ -252,7 +251,7 @@ export default function EstadisticasPage() {
       }
     });
 
-    // Crear leyenda externa mejorada
+    // Create improved external legend
     const container = document.getElementById('ingresosGastosContainer');
     if (container) {
       const existingLegend = container.querySelector('.chart-legend');
@@ -286,14 +285,14 @@ export default function EstadisticasPage() {
     }
   };
 
-  // Renderizar gráfico de Gastos por Categoría
+  // Render Expenses by Category chart
   const renderGastosCategoria = () => {
     console.log('DEBUG resumenCategorias:', resumenCategorias);
     if (!resumenCategorias || resumenCategorias.length === 0) return;
 
     const top10 = resumenCategorias.slice(0, 10);
     const colors = generateColors(top10.length);
-    // Usar totalGastos como campo principal
+    // Use totalGastos as main field
     const total = top10.reduce((sum, item) => sum + (item.totalGastos ?? 0), 0);
 
     const chart = createResponsiveChart('gastosCategoriaChart', {
@@ -339,7 +338,7 @@ export default function EstadisticasPage() {
       }
     });
 
-    // Crear leyenda externa mejorada
+    // Create improved external legend
     const container = document.getElementById('gastosCategoriaContainer');
     if (container) {
       const existingLegend = container.querySelector('.chart-legend');
@@ -375,14 +374,14 @@ export default function EstadisticasPage() {
     }
   };
 
-  // Renderizar gráfico de Performance de Campañas
+  // Render Campaign Performance chart
   const renderCampanasPerformance = () => {
-    // Usar el hook específico de estadísticas de campañas
+    // Use specific campaign statistics hook
     const campanasConStats = estadisticasCampanas || [];
     console.log('DEBUG campanas desde estadisticasCampanas:', campanasConStats);
 
     if (!Array.isArray(campanasConStats) || campanasConStats.length === 0) {
-      // Mostrar mensaje de sin datos
+      // Show no data message
       const container = document.getElementById('campanasPerformanceContainer');
       if (container) {
         const canvas = container.querySelector('canvas');
@@ -403,14 +402,14 @@ export default function EstadisticasPage() {
       return;
     }
 
-    // Mostrar todas las campañas con actividad (ingresos o gastos > 0) y ordenar por gastos
+    // Show all campaigns with activity (income or expenses > 0) and sort by expenses
     const campanasConActividad = campanasConStats
       .filter((c: any) => (c.ingresos > 0 || c.gastos > 0))
       .sort((a: any, b: any) => b.gastos - a.gastos)
       .slice(0, 10);
 
     if (campanasConActividad.length === 0) {
-      // Mostrar mensaje si no hay campañas con actividad
+      // Show message if no campaigns with activity
       const container = document.getElementById('campanasPerformanceContainer');
       if (container) {
         let msg = container.querySelector('.chart-legend');
@@ -499,7 +498,7 @@ export default function EstadisticasPage() {
       }
     });
 
-    // Crear leyenda externa mejorada
+    // Create improved external legend
     const container = document.getElementById('campanasPerformanceContainer');
     if (container) {
       const existingLegend = container.querySelector('.chart-legend');
@@ -548,13 +547,13 @@ export default function EstadisticasPage() {
     }
   };
 
-  // Renderizar gráfico de Aportes y Utilidades
+  // Render Contributions and Profits chart
   const renderAportesUtilidades = () => {
-    // Usar directamente los datos básicos de usuarios que ya tienen los datos correctos
+    // Use basic user data directly as it already has the correct data
     const datosUsuarios = usuarios || [];
     console.log('DEBUG datosUsuarios desde usuarios:', datosUsuarios);
 
-    // Filtrar usuarios con cualquier actividad financiera
+    // Filter users with any financial activity
     const usuariosConActividad = datosUsuarios.filter((u: any) =>
       (u.aportesTotales > 0 || u.inversionTotal > 0 || u.horasTotales > 0)
     );
@@ -562,7 +561,7 @@ export default function EstadisticasPage() {
     console.log('DEBUG usuariosConActividad filtradas:', usuariosConActividad);
 
     if (!Array.isArray(usuariosConActividad) || usuariosConActividad.length === 0) {
-      // Mostrar mensaje de sin datos o limpiar el canvas
+      // Show no data message or clear the canvas
       const container = document.getElementById('aportesUtilidadesContainer');
       if (container) {
         const canvas = container.querySelector('canvas');
@@ -578,7 +577,7 @@ export default function EstadisticasPage() {
           msg.className = 'chart-legend mt-6';
           container.appendChild(msg);
         }
-        msg.innerHTML = `<div class='text-center text-gray-500 py-8'>Sin datos de aportes/utilidades por usuario</div>`;  {}
+        msg.innerHTML = `<div class='text-center text-gray-500 py-8'>Sin datos de aportes/utilidades por usuario</div>`;
       }
       return;
     }
@@ -659,7 +658,7 @@ export default function EstadisticasPage() {
       }
     });
 
-    // Crear leyenda externa mejorada
+    // Create improved external legend
     const container = document.getElementById('aportesUtilidadesContainer');
     if (container) {
       const existingLegend = container.querySelector('.chart-legend');
@@ -674,10 +673,10 @@ export default function EstadisticasPage() {
 
       legendContainer.innerHTML = `
         <div class="legend-header mb-4">
-          <h3 class="text-lg font-semibold text-gray-800">Aportes por Usuario</h3>  {}
+          <h3 class="text-lg font-semibold text-gray-800">Aportes por Usuario</h3>
           <div class="flex gap-4 text-sm text-gray-600">
             <span>Total Aportes: $${totalAportes.toLocaleString()}</span>
-            <span>Usuarios: ${usuariosConActividad.length}</span>  {}
+            <span>Usuarios: ${usuariosConActividad.length}</span>
           </div>
         </div>
         <div class="legend-items space-y-2 max-h-64 overflow-y-auto">
@@ -688,7 +687,7 @@ export default function EstadisticasPage() {
               <div class="legend-item flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <div class="flex items-center gap-3">
                   <div class="w-4 h-4 rounded-full" style="background-color: ${colors[index]}"></div>
-                  <span class="text-sm font-medium text-gray-800">${usuario.nombre}</span>  {}
+                  <span class="text-sm font-medium text-gray-800">${usuario.nombre}</span>
                 </div>
                 <div class="text-right">
                   <div class="text-sm font-semibold text-gray-900">
@@ -707,7 +706,7 @@ export default function EstadisticasPage() {
     }
   };
 
-  // Renderizar todas las gráficas
+  // Render all charts
   const renderGraficas = () => {
     renderIngresosGastos();
     renderGastosCategoria();
@@ -715,13 +714,13 @@ export default function EstadisticasPage() {
     renderAportesUtilidades();
   };
 
-  // Recargar gráficos
+  // Reload charts
   const recargarGraficos = () => {
     toast.success('Recargando gráficos...');
     renderGraficas();
   };
 
-  // Limpiar charts al desmontar
+  // Clean up charts on unmount
   useEffect(() => {
     return () => {
       Object.values(chartsRef.current).forEach(chart => {
@@ -730,7 +729,7 @@ export default function EstadisticasPage() {
     };
   }, []);
 
-  // Renderizar gráficas cuando cambien los datos
+  // Render charts when data changes
   useEffect(() => {
     if (showCharts) {
       setTimeout(() => {
@@ -788,16 +787,16 @@ export default function EstadisticasPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <User size={16} className="inline mr-1" />
-                Usuario  {}
+                Usuario
               </label>
               <select
-                value={filters.usuarioId}  {}
-                onChange={(e) => setFilters(prev => ({ ...prev, usuarioId: e.target.value }))}  {}
+                value={filters.usuarioId}
+                onChange={(e) => setFilters(prev => ({ ...prev, usuarioId: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
               >
-                <option value="">Todos los usuarios</option>  {}
+                <option value="">Todos los usuarios</option>
                 {usuarios.map(usuario => (
-                  <option key={usuario.id} value={usuario.id}>{usuario.nombre}</option>  {}
+                  <option key={usuario.id} value={usuario.id}>{usuario.nombre}</option>
                 ))}
               </select>
             </div>
@@ -902,15 +901,15 @@ export default function EstadisticasPage() {
                 </div>
               </div>
 
-              {/* Aportes por Usuario */}  {}
+              {/* Aportes por Usuario */}
               <div id="aportesUtilidadesContainer" className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-2 bg-purple-100 rounded-lg">
                     <Users className="text-purple-600" size={24} />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-800">Aportes por Usuario</h3>  {}
-                    <p className="text-sm text-gray-600">Contribuciones totales por usuario</p>  {}
+                    <h3 className="text-xl font-bold text-gray-800">Aportes por Usuario</h3>
+                    <p className="text-sm text-gray-600">Contribuciones totales por usuario</p>
                   </div>
                 </div>
                 <div className="relative h-80">

@@ -41,7 +41,7 @@ export default function TransaccionesPage() {
   const [selectedTransaccion, setSelectedTransaccion] = useState<Transaccion | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
 
-  // Cambia el estado inicial y el formulario para usar categoriaId
+  // Change initial state and form to use categoriaId
   const [filters, setFilters] = useState({
     tipo: '',
     categoriaId: '',
@@ -51,14 +51,14 @@ export default function TransaccionesPage() {
     fechaFin: ''
   });
 
-  // Filtros para gráficas
+  // Filters for charts
   const [chartFilters, setChartFilters] = useState({
     usuarioId: '',
     fechaInicio: '',
     fechaFin: ''
   });
 
-  // Helpers de fecha sin timezone
+  // Date helpers without timezone
   const toISODate = (value: string | Date) => {
     if (!value) return '';
     if (typeof value === 'string') return value.slice(0, 10);
@@ -76,7 +76,7 @@ export default function TransaccionesPage() {
     return `${d}/${m}/${y}`;
   };
 
-  // Año actual para las tendencias
+  // Current year for trends
   const añoActual = new Date().getFullYear();
 
   // Hooks de datos - pass ALL filters to backend
@@ -106,8 +106,8 @@ export default function TransaccionesPage() {
     usuarioId: chartFilters.usuarioId || undefined,
   });
 
-  // Formulario para nueva transacción
-  // Cambia el estado inicial y el formulario para usar categoriaId
+  // Form for new transaction
+  // Change initial state and form to use categoriaId
   const getTodayLocal = () => {
     const d = new Date();
     const y = d.getFullYear();
@@ -155,7 +155,7 @@ export default function TransaccionesPage() {
   const updateTransaccion = useUpdateTransaccion();
   const deleteTransaccion = useDeleteTransaccion();
 
-  // Función para agregar transacción
+  // Function to add transaction
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.fecha || !formData.concepto || !formData.monto || parseFloat(formData.monto) <= 0) {
@@ -215,7 +215,7 @@ export default function TransaccionesPage() {
     }
   };
 
-  // Función para eliminar transacción
+  // Function to delete transaction
   const handleDelete = async (id: number) => {
     if (!confirm('¿Estás seguro de que quieres eliminar esta transacción?')) {
       return;
@@ -319,7 +319,7 @@ export default function TransaccionesPage() {
     }));
   };
 
-  // Función para exportar a CSV
+  // Function to export to CSV
   const handleExport = () => {
     const headers = [
       'ID', 'Fecha', 'Tipo', 'Concepto', 'Categoría', 'Monto', 'Moneda',
@@ -355,7 +355,7 @@ export default function TransaccionesPage() {
     toast.success('Archivo CSV exportado exitosamente');
   };
 
-  // Referencias para gráficos
+  // References for charts
   const chartMensualRef = useRef<HTMLCanvasElement>(null);
   const chartGastosCatRef = useRef<HTMLCanvasElement>(null);
   const chartMensualInstance = useRef<any>(null);
@@ -374,7 +374,7 @@ export default function TransaccionesPage() {
     });
   }, [transacciones, debouncedSearchTerm]);
 
-  // Calcular estadísticas
+  // Calculate statistics
   const estadisticas = useMemo(() => {
     const ingresos = filteredTransacciones
       .filter(t => t.tipo?.nombre === 'INGRESO')
@@ -396,11 +396,11 @@ export default function TransaccionesPage() {
     };
   }, [filteredTransacciones]);
 
-  // Configurar gráficos usando la metodología que funciona
+  // Configure charts using the working methodology
   useEffect(() => {
     if (!showCharts || typeof window === 'undefined' || !window.Chart) return;
 
-    // Destruir gráficos existentes
+    // Destroy existing charts
     if (chartMensualRef.current) {
       const existingChart = window.Chart.getChart(chartMensualRef.current);
       if (existingChart) {
@@ -415,7 +415,7 @@ export default function TransaccionesPage() {
       }
     }
 
-    // Gráfico mensual (línea)
+    // Monthly chart (line)
     if (chartMensualRef.current) {
       const ctx = chartMensualRef.current.getContext('2d');
       if (!ctx) {
@@ -425,7 +425,7 @@ export default function TransaccionesPage() {
       const meses = tendenciasMensuales.map(t => t.nombre);
       const dataIng = tendenciasMensuales.map(t => t.ingresos);
       const dataGast = tendenciasMensuales.map(t => t.gastos);
-      // Si el backend no provee 'aportes' en la tendencia, no renderizamos esa serie
+      // If backend doesn't provide 'aportes' in trend, we don't render that series
       // const dataAport = tendenciasMensuales.map(() => 0);
 
       new window.Chart(ctx, {
@@ -473,7 +473,7 @@ export default function TransaccionesPage() {
       });
     }
 
-    // Gráfico de gastos por tipo de gasto (barras)
+    // Expenses by expense type chart (bars)
     if (chartGastosCatRef.current) {
       const ctx = chartGastosCatRef.current.getContext('2d');
       if (!ctx) {
@@ -524,7 +524,7 @@ export default function TransaccionesPage() {
     }
   }, [showCharts, tendenciasMensuales, resumenTiposGasto]);
 
-  // Función para generar colores
+  // Function to generate colors
   const generateColors = (count: number) => {
     const colors = [
       '#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6',
@@ -533,13 +533,13 @@ export default function TransaccionesPage() {
     return colors.slice(0, count);
   };
 
-  // Efecto para actualizar gráficos cuando cambien los filtros
+  // Effect to update charts when filters change
   useEffect(() => {
     refetchTendencias();
     refetchResumen();
   }, [chartFilters, refetchTendencias, refetchResumen]);
 
-  // Función para recargar gráficos
+  // Function to reload charts
   const recargarGraficos = () => {
     refetchTendencias();
     refetchResumen();
@@ -876,9 +876,9 @@ export default function TransaccionesPage() {
                   onChange={(e) => setFilters({...filters, usuarioId: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Todas las personas</option>
-                  {usuarios.map(persona => (
-                    <option key={persona.id} value={persona.id}>{persona.nombre}</option>
+                  <option value="">Todos los usuarios</option>
+                  {usuarios.map(usuario => (
+                    <option key={usuario.id} value={usuario.id}>{usuario.nombre}</option>
                   ))}
                 </select>
               </div>

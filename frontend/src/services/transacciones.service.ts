@@ -47,7 +47,7 @@ export interface TendenciaMensual {
 const ENDPOINT = '/transacciones';
 
 export class TransaccionesService {
-  // Obtener todas las transacciones con filtros
+  // Get all transactions with filters
   static async getAll(filtros: FiltrosTransacciones = {}): Promise<Transaccion[]> {
     try {
       const params = new URLSearchParams();
@@ -68,7 +68,7 @@ export class TransaccionesService {
     }
   }
 
-  // Obtener transacciones recientes
+  // Get recent transactions
   static async getRecent(limit = 10): Promise<Transaccion[]> {
     try {
       const response = await api.get(`${ENDPOINT}/recent?limit=${limit}`);
@@ -79,7 +79,7 @@ export class TransaccionesService {
     }
   }
 
-  // Obtener transacciones pendientes
+  // Get pending transactions
   static async getPending(): Promise<Transaccion[]> {
     try {
       const response = await api.get(`${ENDPOINT}/pending`);
@@ -90,10 +90,10 @@ export class TransaccionesService {
     }
   }
 
-  // Obtener estadísticas
+  // Get statistics
   static async getStats(filtros: FiltrosTransacciones = {}): Promise<EstadisticasTransacciones> {
     try {
-      console.log('TransaccionesService.getStats - Filtros:', filtros);
+      console.log('TransaccionesService.getStats - Filters:', filtros);
 
       const params = new URLSearchParams();
 
@@ -104,17 +104,17 @@ export class TransaccionesService {
       });
 
       const url = `${ENDPOINT}/stats${params.toString() ? `?${params.toString()}` : ''}`;
-      console.log('URL de la petición:', url);
+      console.log('Request URL:', url);
 
       const response = await api.get(url);
-      console.log('Respuesta completa:', response);
+      console.log('Complete response:', response);
 
       if (!response.data?.data) {
-        console.error('No hay datos en la respuesta');
+        console.error('No data in response');
         throw new Error('Estadísticas no encontradas');
       }
 
-      console.log('Datos de estadísticas:', response.data.data);
+      console.log('Statistics data:', response.data.data);
       return response.data.data;
     } catch (error) {
       console.error('Error fetching transaction stats:', error);
@@ -122,7 +122,7 @@ export class TransaccionesService {
     }
   }
 
-  // Obtener resumen por tipos de gasto
+  // Get expense types summary
   static async getResumenPorTiposGasto(filtros: {
     fechaInicio?: string;
     fechaFin?: string;
@@ -145,7 +145,7 @@ export class TransaccionesService {
     }
   }
 
-  // Obtener resumen de gastos por campaña
+  // Get expenses summary by campaign
   static async getResumenGastosPorCampana(filtros: {
     fechaInicio?: string;
     fechaFin?: string;
@@ -166,7 +166,7 @@ export class TransaccionesService {
     }
   }
 
-  // Obtener gastos
+  // Get expenses
   static async getGastos(filtros: {
     fechaInicio?: string;
     fechaFin?: string;
@@ -189,7 +189,7 @@ export class TransaccionesService {
     }
   }
 
-  // Obtener resumen por categorías
+  // Get summary by categories
   static async getResumenPorCategorias(filtros: {
     fechaInicio?: string;
     fechaFin?: string;
@@ -212,7 +212,7 @@ export class TransaccionesService {
     }
   }
 
-  // Obtener tendencias mensuales
+  // Get monthly trends
   static async getTendenciasMensuales(año?: number, filtros: {
     personaId?: string;
     tipo?: string;
@@ -237,7 +237,7 @@ export class TransaccionesService {
     }
   }
 
-  // Obtener una transacción por ID
+  // Get a transaction by ID
   static async getById(id: number): Promise<Transaccion> {
     try {
       const response = await api.get(`${ENDPOINT}/${id}`);
@@ -251,7 +251,7 @@ export class TransaccionesService {
     }
   }
 
-  // Crear una nueva transacción
+  // Create a new transaction
   static async create(data: CreateTransaccionDto): Promise<Transaccion> {
     try {
       const response = await api.post(ENDPOINT, data);
@@ -265,7 +265,7 @@ export class TransaccionesService {
     }
   }
 
-  // Actualizar una transacción
+  // Update a transaction
   static async update(id: number, data: UpdateTransaccionDto): Promise<Transaccion> {
     try {
       const response = await api.patch(`${ENDPOINT}/${id}`, data);
@@ -279,7 +279,7 @@ export class TransaccionesService {
     }
   }
 
-  // Aprobar transacción
+  // Approve transaction
   static async approve(id: number): Promise<Transaccion> {
     try {
       const response = await api.patch(`${ENDPOINT}/${id}/approve`);
@@ -293,7 +293,7 @@ export class TransaccionesService {
     }
   }
 
-  // Rechazar transacción
+  // Reject transaction
   static async reject(id: number): Promise<Transaccion> {
     try {
       const response = await api.patch(`${ENDPOINT}/${id}/reject`);
@@ -307,7 +307,7 @@ export class TransaccionesService {
     }
   }
 
-  // Eliminar una transacción
+  // Delete a transaction
   static async delete(id: number): Promise<void> {
     try {
       await api.delete(`${ENDPOINT}/${id}`);

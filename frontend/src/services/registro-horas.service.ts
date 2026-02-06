@@ -4,7 +4,7 @@ import { RegistroHoras, CreateRegistroHorasDto, UpdateRegistroHorasDto } from '@
 const ENDPOINT = '/registro-horas';
 
 export class RegistroHorasService {
-  // Obtener todos los registros de horas
+  // Get all time records
   static async getAll(): Promise<RegistroHoras[]> {
     try {
       const response = await api.get(ENDPOINT);
@@ -15,7 +15,7 @@ export class RegistroHorasService {
     }
   }
 
-  // Obtener registro de horas por ID
+  // Get time record by ID
   static async getById(id: number): Promise<RegistroHoras> {
     try {
       const response = await api.get(`${ENDPOINT}/${id}`);
@@ -29,7 +29,7 @@ export class RegistroHorasService {
     }
   }
 
-  // Obtener registros de horas de un usuario
+  // Get time records by user ID
   static async getByUsuarioId(usuarioId: number): Promise<RegistroHoras[]> {
     try {
       const response = await api.get(`${ENDPOINT}/usuario/${usuarioId}`);
@@ -40,7 +40,7 @@ export class RegistroHorasService {
     }
   }
 
-  // Crear un nuevo registro de horas
+  // Create a new time record
   static async create(data: CreateRegistroHorasDto): Promise<RegistroHoras> {
     try {
       const response = await api.post(ENDPOINT, data);
@@ -54,7 +54,7 @@ export class RegistroHorasService {
     }
   }
 
-  // Actualizar un registro de horas
+  // Update a time record
   static async update(id: number, data: UpdateRegistroHorasDto): Promise<RegistroHoras> {
     try {
       const response = await api.patch(`${ENDPOINT}/${id}`, data);
@@ -68,7 +68,7 @@ export class RegistroHorasService {
     }
   }
 
-  // Eliminar un registro de horas
+  // Delete a time record
   static async delete(id: number): Promise<void> {
     try {
       await api.delete(`${ENDPOINT}/${id}`);
@@ -78,12 +78,12 @@ export class RegistroHorasService {
     }
   }
 
-  // Obtener estadísticas de registros de horas
+  // Get time record statistics
   static async getStats(): Promise<{
     totalHoras: number;
     totalRegistros: number;
     promedioHorasPorDia: number;
-    personasActivas: number;
+    usuariosActivos: number;
   }> {
     try {
       const response = await api.get(`${ENDPOINT}/stats`);
@@ -99,7 +99,7 @@ export class RegistroHorasService {
 
   // ==================== TIMER METHODS ====================
 
-  // Iniciar un timer
+  // Start a timer
   static async startTimer(data: {
     usuarioId?: number;
     campanaId?: number;
@@ -117,7 +117,7 @@ export class RegistroHorasService {
     }
   }
 
-  // Pausar un timer
+  // Pause a timer
   static async pauseTimer(id: number): Promise<RegistroHoras> {
     try {
       const response = await api.patch(`${ENDPOINT}/timer/${id}/pause`);
@@ -131,7 +131,7 @@ export class RegistroHorasService {
     }
   }
 
-  // Reanudar un timer
+  // Resume a timer
   static async resumeTimer(id: number): Promise<RegistroHoras> {
     try {
       const response = await api.patch(`${ENDPOINT}/timer/${id}/resume`);
@@ -145,11 +145,18 @@ export class RegistroHorasService {
     }
   }
 
-  // Detener un timer
-  static async stopTimer(id: number, descripcion?: string): Promise<RegistroHoras> {
+  // Stop a timer
+  static async stopTimer(
+    id: number,
+    descripcion?: string,
+    timerInicio?: string,
+    timerFin?: string
+  ): Promise<RegistroHoras> {
     try {
       const response = await api.patch(`${ENDPOINT}/timer/${id}/stop`, {
         descripcion,
+        timerInicio,
+        timerFin,
       });
       if (!response.data?.data) {
         throw new Error('Error deteniendo timer');
@@ -161,7 +168,7 @@ export class RegistroHorasService {
     }
   }
 
-  // Obtener timer activo de un usuario
+  // Get active timer for a user
   static async getActiveTimerByUsuario(usuarioId: number): Promise<RegistroHoras | null> {
     try {
       const response = await api.get(`${ENDPOINT}/timer/active-usuario/${usuarioId}`);
@@ -172,7 +179,7 @@ export class RegistroHorasService {
     }
   }
 
-  // Cancelar un timer
+  // Cancel a timer
   static async cancelTimer(id: number): Promise<void> {
     try {
       await api.delete(`${ENDPOINT}/timer/${id}/cancel`);
@@ -184,10 +191,10 @@ export class RegistroHorasService {
 
   // ==================== APPROVAL METHODS ====================
 
-  // Obtener registros pendientes de aprobación
+  // Get pending approval records
   static async getPending(): Promise<RegistroHoras[]> {
     try {
-      const response = await api.get(`${ENDPOINT}/pending`);
+      const response = await api.get(`${ENDPOINT}/approval/pending`);
       return response.data?.data || [];
     } catch (error) {
       console.error('Error fetching pending registros:', error);
@@ -195,10 +202,10 @@ export class RegistroHorasService {
     }
   }
 
-  // Obtener registros rechazados
+  // Get rejected records
   static async getRejected(): Promise<RegistroHoras[]> {
     try {
-      const response = await api.get(`${ENDPOINT}/rejected`);
+      const response = await api.get(`${ENDPOINT}/approval/rejected`);
       return response.data?.data || [];
     } catch (error) {
       console.error('Error fetching rejected registros:', error);
@@ -206,7 +213,7 @@ export class RegistroHorasService {
     }
   }
 
-  // Aprobar un registro
+  // Approve a record
   static async approve(id: number): Promise<RegistroHoras> {
     try {
       const response = await api.patch(`${ENDPOINT}/${id}/approve`);
@@ -220,7 +227,7 @@ export class RegistroHorasService {
     }
   }
 
-  // Rechazar un registro
+  // Reject a record
   static async reject(id: number, motivo: string): Promise<RegistroHoras> {
     try {
       const response = await api.patch(`${ENDPOINT}/${id}/reject`, { motivo });
@@ -230,6 +237,76 @@ export class RegistroHorasService {
       return response.data.data;
     } catch (error) {
       console.error('Error rejecting registro:', error);
+      throw error;
+    }
+  }
+
+  // ==================== TIME EDITING METHODS ====================
+
+  /**
+   * Update timer times (start/end) and recalculate hours
+   */
+  static async updateTimerTimes(
+    id: number,
+    timerInicio?: string,
+    timerFin?: string
+  ): Promise<RegistroHoras> {
+    try {
+      const response = await api.patch(`${ENDPOINT}/${id}/edit-times`, {
+        timerInicio,
+        timerFin,
+      });
+      if (!response.data?.data) {
+        throw new Error('Error actualizando tiempos');
+      }
+      return response.data.data;
+    } catch (error) {
+      console.error('Error updating timer times:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Resubmit a rejected record for review
+   */
+  static async resubmit(id: number): Promise<RegistroHoras> {
+    try {
+      const response = await api.patch(`${ENDPOINT}/${id}/resubmit`);
+      if (!response.data?.data) {
+        throw new Error('Error re-enviando registro');
+      }
+      return response.data.data;
+    } catch (error) {
+      console.error('Error resubmitting registro:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get orphaned timers (running for more than X hours)
+   */
+  static async getOrphanedTimers(): Promise<RegistroHoras[]> {
+    try {
+      const response = await api.get(`${ENDPOINT}/timers/orphaned`);
+      return response.data?.data || [];
+    } catch (error) {
+      console.error('Error fetching orphaned timers:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Force close an orphaned timer (admin only)
+   */
+  static async forceCloseTimer(id: number): Promise<RegistroHoras> {
+    try {
+      const response = await api.patch(`${ENDPOINT}/timer/${id}/force-close`);
+      if (!response.data?.data) {
+        throw new Error('Error cerrando timer');
+      }
+      return response.data.data;
+    } catch (error) {
+      console.error('Error force closing timer:', error);
       throw error;
     }
   }

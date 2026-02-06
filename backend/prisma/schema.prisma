@@ -121,6 +121,13 @@ model RegistroHoras {
   timerInicio    DateTime? // Para registros desde timer
   timerFin       DateTime? // Para registros desde timer
   estado         String?   // RUNNING, PAUSADO, COMPLETADO (solo para TIMER)
+
+  // Campos para auditoría y edición de tiempos
+  timerInicioOriginal DateTime? // Guarda inicio real antes de edición
+  horasOriginales     Float?    // Horas calculadas antes de edición manual
+  editadoPor          Int?      // ID del usuario que editó
+  fechaEdicion        DateTime? // Cuándo se editó por última vez
+
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   negocio        Negocio   @relation(fields: [negocioId], references: [id])
@@ -132,6 +139,7 @@ model RegistroHoras {
   @@index([negocioId, personaId])
   @@index([negocioId, usuarioId])
   @@index([negocioId, aprobado])
+  @@index([negocioId, estado]) // Nuevo índice para buscar timers activos
   @@map("registro_horas")
 }
 

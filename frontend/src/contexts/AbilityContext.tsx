@@ -3,7 +3,7 @@
 import React, { createContext, useContext } from 'react';
 import { createMongoAbility, MongoAbility } from '@casl/ability';
 
-// Definir acciones disponibles
+// Define available actions
 export enum Action {
   Manage = 'manage',
   Create = 'create',
@@ -14,7 +14,7 @@ export enum Action {
   Reject = 'reject',
 }
 
-// Definir subjects (entidades)
+// Define subjects (entities)
 export type Subjects =
   | 'Usuario'
   | 'Persona'
@@ -28,7 +28,7 @@ export type Subjects =
 
 export type AppAbility = MongoAbility<[Action, Subjects]>;
 
-// Crear ability por defecto (sin permisos)
+// Create default ability (no permissions)
 const defaultAbility = createMongoAbility<AppAbility>([]);
 
 const AbilityContext = createContext<AppAbility>(defaultAbility);
@@ -57,7 +57,7 @@ export const useAbility = () => {
   return context;
 };
 
-// Función helper para crear abilities basadas en el rol del usuario
+// Helper function to create abilities based on user role
 export const createAbilityForUser = (rol: string): AppAbility => {
   const rules: any[] = [];
 
@@ -66,7 +66,7 @@ export const createAbilityForUser = (rol: string): AppAbility => {
   } else if (rol === 'ADMIN_NEGOCIO') {
     rules.push({ action: Action.Manage, subject: 'all' });
   } else if (rol === 'ADMIN') {
-    // Gestión completa de la mayoría de entidades
+    // Full management of most entities
     rules.push(
       { action: Action.Read, subject: 'Usuario' },
       { action: Action.Update, subject: 'Usuario' },
@@ -104,8 +104,8 @@ export const createAbilityForUser = (rol: string): AppAbility => {
       { action: Action.Read, subject: 'Transaccion' },
       { action: Action.Create, subject: 'RegistroHoras' },
       { action: Action.Read, subject: 'RegistroHoras' },
-      { action: Action.Update, subject: 'RegistroHoras' }, // Solo sus propias horas no aprobadas
-      { action: Action.Delete, subject: 'RegistroHoras' }, // Solo sus propias horas no aprobadas
+      { action: Action.Update, subject: 'RegistroHoras' }, // Only their own non-approved hours
+      { action: Action.Delete, subject: 'RegistroHoras' }, // Only their own non-approved hours
       { action: Action.Read, subject: 'Persona' },
       { action: Action.Update, subject: 'Persona' }
     );

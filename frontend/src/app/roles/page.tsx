@@ -38,7 +38,7 @@ interface FormData {
 }
 
 interface EditFormData extends Rol {
-  // Campos adicionales para edición
+  // Additional fields for editing
 }
 
 export default function RolesPage() {
@@ -72,7 +72,7 @@ export default function RolesPage() {
     });
   }, [roles, usuarios, isLoading, usuariosLoading, error]);
 
-  // Filtrar roles por búsqueda
+  // Filter roles by search term
   const filteredRoles = useMemo(() => {
     if (!searchTerm) return roles;
     return roles.filter(rol =>
@@ -80,7 +80,7 @@ export default function RolesPage() {
     );
   }, [roles, searchTerm]);
 
-  // Calcular estadísticas
+  // Calculate statistics
   const stats = useMemo(() => {
     const totalRoles = roles.length;
     const importanciaTotal = roles.reduce((acc, rol) => acc + (rol.importancia || 0), 0);
@@ -93,12 +93,12 @@ export default function RolesPage() {
     };
   }, [roles, usuarios]);
 
-  // Contar usuarios por rol
+  // Count users per role
   const getUsuariosCount = (rolId: number) => {
     return (usuarios || []).filter(u => u.rolId === rolId).length;
   };
 
-  // Agregar nuevo rol
+  // Add new role
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -112,7 +112,7 @@ export default function RolesPage() {
       return;
     }
 
-    // Verificar duplicados
+    // Check for duplicates
     const existe = roles.some(r => r.nombreRol.toLowerCase() === formData.nombreRol.toLowerCase());
     if (existe) {
       alert('Ya existe un rol con ese nombre');
@@ -126,7 +126,7 @@ export default function RolesPage() {
         descripcion: formData.descripcion
       });
 
-      // Limpiar formulario
+      // Clear form
       setFormData({
         nombreRol: '',
         importancia: 0,
@@ -137,7 +137,7 @@ export default function RolesPage() {
     }
   };
 
-  // Abrir modal de edición
+  // Open edit modal
   const handleEdit = (rol: Rol) => {
     setEditingRol({
       ...rol,
@@ -146,7 +146,7 @@ export default function RolesPage() {
     setIsEditModalOpen(true);
   };
 
-  // Guardar edición
+  // Save edit
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingRol) return;
@@ -167,15 +167,15 @@ export default function RolesPage() {
     }
   };
 
-  // Cerrar modal de edición
+  // Close edit modal
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
     setEditingRol(null);
   };
 
-  // Eliminar rol
+  // Delete role
   const handleDelete = async (rol: Rol) => {
-    // Verificar si hay usuarios con este rol
+    // Check if there are users with this role
     const usuariosConRol = (usuarios || []).filter(u => u.rolId === rol.id);
 
     if (usuariosConRol.length > 0) {
@@ -193,7 +193,7 @@ export default function RolesPage() {
     }
   };
 
-  // Exportar a CSV
+  // Export to CSV
   const exportarRoles = () => {
     const datosExportar = roles.map(rol => ({
       ID: rol.id,
@@ -203,7 +203,7 @@ export default function RolesPage() {
       'Usuarios Asignados': getUsuariosCount(rol.id)
     }));
 
-    // Crear CSV
+    // Create CSV
     const headers = Object.keys(datosExportar[0] || {});
     const csvContent = [
       headers.join(','),
@@ -224,7 +224,7 @@ export default function RolesPage() {
     document.body.removeChild(link);
   };
 
-  // Recalcular datos
+  // Recalculate data
   const recalcularTodo = async () => {
     setIsRecalculating(true);
     try {
@@ -237,7 +237,7 @@ export default function RolesPage() {
     }
   };
 
-  // Refrescar tabla
+  // Refresh table
   const refreshTable = () => {
     refetch();
   };

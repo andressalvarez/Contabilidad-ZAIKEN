@@ -26,6 +26,35 @@ export class RegistroHorasController {
     };
   }
 
+  // ==================== APPROVAL ENDPOINTS (MUST be before ANY :id routes) ====================
+
+  @Get('approval/pending')
+  async getPending(@NegocioId() negocioId: number) {
+    return {
+      success: true,
+      message: 'Registros pendientes de aprobación obtenidos exitosamente',
+      data: await this.registroHorasService.getPending(negocioId),
+    };
+  }
+
+  @Get('approval/rejected')
+  async getRejected(@NegocioId() negocioId: number) {
+    return {
+      success: true,
+      message: 'Registros rechazados obtenidos exitosamente',
+      data: await this.registroHorasService.getRejected(negocioId),
+    };
+  }
+
+  @Get('timers/orphaned')
+  async getOrphanedTimers(@NegocioId() negocioId: number) {
+    return {
+      success: true,
+      message: 'Timers huérfanos obtenidos',
+      data: await this.registroHorasService.getOrphanedTimers(negocioId),
+    };
+  }
+
   @Get('stats')
   async getStats(@NegocioId() negocioId: number) {
     return {
@@ -54,6 +83,7 @@ export class RegistroHorasController {
     };
   }
 
+  // Generic :id route - MUST be after all specific routes
   @Get(':id')
   async findOne(@NegocioId() negocioId: number, @Param('id', ParseIntPipe) id: number) {
     return {
@@ -64,11 +94,17 @@ export class RegistroHorasController {
   }
 
   @Patch(':id')
-  async update(@NegocioId() negocioId: number, @Param('id', ParseIntPipe) id: number, @Body() updateRegistroHorasDto: UpdateRegistroHorasDto) {
+  async update(
+    @NegocioId() negocioId: number,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateRegistroHorasDto: UpdateRegistroHorasDto,
+    @Request() req: any
+  ) {
+    const editorUserId = req.user?.userId;
     return {
       success: true,
       message: 'Registro de horas actualizado exitosamente',
-      data: await this.registroHorasService.update(id, negocioId, updateRegistroHorasDto),
+      data: await this.registroHorasService.update(id, negocioId, updateRegistroHorasDto, editorUserId),
     };
   }
 
@@ -133,12 +169,18 @@ export class RegistroHorasController {
   async stopTimer(
     @NegocioId() negocioId: number,
     @Param('id', ParseIntPipe) id: number,
-    @Body() body?: { descripcion?: string }
+    @Body() body?: { descripcion?: string; timerInicio?: string; timerFin?: string }
   ) {
     return {
       success: true,
       message: 'Timer detenido exitosamente',
-      data: await this.registroHorasService.stopTimer(negocioId, id, body?.descripcion),
+      data: await this.registroHorasService.stopTimer(
+        negocioId,
+        id,
+        body?.descripcion,
+        body?.timerInicio,
+        body?.timerFin
+      ),
     };
   }
 
@@ -179,26 +221,6 @@ export class RegistroHorasController {
     };
   }
 
-  // ==================== APPROVAL ENDPOINTS ====================
-
-  @Get('pending')
-  async getPending(@NegocioId() negocioId: number) {
-    return {
-      success: true,
-      message: 'Registros pendientes de aprobación obtenidos exitosamente',
-      data: await this.registroHorasService.getPending(negocioId),
-    };
-  }
-
-  @Get('rejected')
-  async getRejected(@NegocioId() negocioId: number) {
-    return {
-      success: true,
-      message: 'Registros rechazados obtenidos exitosamente',
-      data: await this.registroHorasService.getRejected(negocioId),
-    };
-  }
-
   @Patch(':id/approve')
   async approve(
     @NegocioId() negocioId: number,
@@ -223,6 +245,65 @@ export class RegistroHorasController {
       success: true,
       message: 'Registro rechazado',
       data: await this.registroHorasService.reject(negocioId, id, body.motivo),
+    };
+  }
+
+  // ==================== TIME EDITING ENDPOINTS ====================
+
+  /**
+   * Edita los tiempos de inicio/fin de un registro de timer
+   * Recalcula las horas automáticamente
+   */
+  @Patch(':id/edit-times')
+  async editTimes(
+    @NegocioId() negocioId: number,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { timerInicio?: string; timerFin?: string },
+    @Request() req: any
+  ) {
+    const editorUserId = req.user?.userId;
+    return {
+      success: true,
+      message: 'Tiempos actualizados exitosamente',
+      data: await this.registroHorasService.updateTimerTimes(
+        negocioId,
+        id,
+        body.timerInicio ? new Date(body.timerInicio) : undefined,
+        body.timerFin ? new Date(body.timerFin) : undefined,
+        editorUserId
+      ),
+    };
+  }
+
+  /**
+   * Re-envía un registro rechazado para nueva revisión
+   */
+  @Patch(':id/resubmit')
+  async resubmit(
+    @NegocioId() negocioId: number,
+    @Param('id', ParseIntPipe) id: number
+  ) {
+    return {
+      success: true,
+      message: 'Registro re-enviado para revisión',
+      data: await this.registroHorasService.resubmit(negocioId, id),
+    };
+  }
+
+  /**
+   * Cierra forzadamente un timer huérfano (solo admin)
+   */
+  @Patch('timer/:id/force-close')
+  async forceCloseTimer(
+    @NegocioId() negocioId: number,
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: any
+  ) {
+    const adminUserId = req.user?.userId;
+    return {
+      success: true,
+      message: 'Timer cerrado forzadamente',
+      data: await this.registroHorasService.forceCloseTimer(negocioId, id, adminUserId),
     };
   }
 }

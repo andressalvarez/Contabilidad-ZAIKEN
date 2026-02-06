@@ -21,7 +21,7 @@ export default function PerfilPage() {
     confirmPassword: '',
   });
 
-  // Cargar perfil del usuario
+  // Load user profile
   const loadProfile = async () => {
     try {
       setLoading(true);
@@ -44,11 +44,11 @@ export default function PerfilPage() {
     loadProfile();
   }, []);
 
-  // Guardar cambios
+  // Save changes
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validar contraseña si se está cambiando
+    // Validate password if changing
     if (formData.password) {
       if (formData.password !== formData.confirmPassword) {
         toast.error('Las contraseñas no coinciden');
@@ -83,7 +83,7 @@ export default function PerfilPage() {
     }
   };
 
-  // Cancelar edición
+  // Cancel editing
   const handleCancel = () => {
     if (profile) {
       setFormData({

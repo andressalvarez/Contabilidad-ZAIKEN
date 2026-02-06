@@ -59,115 +59,115 @@ export const dashboardKeys = {
 };
 
 export function useDashboard(filtros: { fechaInicio?: string; fechaFin?: string } = {}) {
-  console.log('useDashboard - Filtros:', filtros);
+  console.log('useDashboard - Filters:', filtros);
 
-  // Obtener estadísticas de transacciones usando el servicio
+  // Get transaction statistics using the service
   const { data: estadisticas, isLoading: loadingStats, error: errorStats } = useQuery({
     queryKey: dashboardKeys.stats(filtros),
     queryFn: async () => {
-      console.log('Ejecutando query de estadísticas...');
+      console.log('Executing stats query...');
       try {
         const data = await TransaccionesService.getStats(filtros);
-        console.log('Estadísticas obtenidas:', data);
+        console.log('Stats obtained:', data);
         return data;
       } catch (error) {
-        console.error('Error en getStats:', error);
+        console.error('Error in getStats:', error);
         throw error;
       }
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 1,
   });
 
-  console.log('Estadísticas obtenidas:', estadisticas);
-  console.log('Error en estadísticas:', errorStats);
+  console.log('Stats obtained:', estadisticas);
+  console.log('Stats error:', errorStats);
 
-  // Obtener resumen de usuarios usando el servicio
+  // Get users summary using the service
   const { data: usuariosSummary, isLoading: loadingUsuarios } = useQuery({
     queryKey: dashboardKeys.usuarios(),
     queryFn: async () => {
-      console.log('Ejecutando query de usuarios...');
+      console.log('Executing users query...');
       try {
         const data = await UsuariosService.getSummary();
-        console.log('Usuarios data:', data);
+        console.log('Users data:', data);
         return data;
       } catch (error) {
-        console.error('Error en getSummary:', error);
+        console.error('Error in getSummary:', error);
         throw error;
       }
     },
     staleTime: 5 * 60 * 1000,
   });
 
-  // Obtener categorías usando el servicio
+  // Get categories using the service
   const { data: categorias, isLoading: loadingCategorias } = useQuery({
     queryKey: dashboardKeys.categorias(),
     queryFn: async () => {
-      console.log('Ejecutando query de categorías...');
+      console.log('Executing categories query...');
       try {
         const data = await CategoriasService.getAll();
-        console.log('Categorías data:', data);
+        console.log('Categories data:', data);
         return data;
       } catch (error) {
-        console.error('Error en getAll categorías:', error);
+        console.error('Error in getAll categories:', error);
         throw error;
       }
     },
-    staleTime: 10 * 60 * 1000, // 10 minutos
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  // Obtener campañas usando el servicio
+  // Get campaigns using the service
   const { data: campanas, isLoading: loadingCampanas } = useQuery({
     queryKey: dashboardKeys.campanas(),
     queryFn: async () => {
-      console.log('Ejecutando query de campañas...');
+      console.log('Executing campaigns query...');
       try {
         const data = await CampanasService.getAll();
-        console.log('Campañas data:', data);
+        console.log('Campaigns data:', data);
         return data;
       } catch (error) {
-        console.error('Error en getAll campañas:', error);
+        console.error('Error in getAll campaigns:', error);
         throw error;
       }
     },
-    staleTime: 10 * 60 * 1000, // 10 minutos
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  // Obtener resumen por categorías usando el servicio
+  // Get summary by categories using the service
   const { data: resumenCategorias, isLoading: loadingResumenCategorias } = useQuery({
     queryKey: dashboardKeys.resumenCategorias(filtros),
     queryFn: async () => {
-      console.log('Ejecutando query de resumen categorías...');
+      console.log('Executing categories summary query...');
       try {
         const data = await TransaccionesService.getResumenPorCategorias(filtros);
-        console.log('Resumen categorías data:', data);
+        console.log('Categories summary data:', data);
         return data;
       } catch (error) {
-        console.error('Error en getResumenPorCategorias:', error);
+        console.error('Error in getResumenPorCategorias:', error);
         throw error;
       }
     },
     staleTime: 5 * 60 * 1000,
   });
 
-  // Obtener resumen por campañas usando el servicio
+  // Get summary by campaigns using the service
   const { data: resumenCampanas, isLoading: loadingResumenCampanas } = useQuery({
     queryKey: dashboardKeys.resumenCampanas(filtros),
     queryFn: async () => {
-      console.log('Ejecutando query de gastos...');
+      console.log('Executing expenses query...');
       try {
         const data = await TransaccionesService.getGastos(filtros);
-        console.log('Gastos data:', data);
+        console.log('Expenses data:', data);
         return data;
       } catch (error) {
-        console.error('Error en getGastos:', error);
+        console.error('Error in getGastos:', error);
         throw error;
       }
     },
     staleTime: 5 * 60 * 1000,
   });
 
-  // Preparar datos para los gráficos
+  // Prepare data for charts
   const gastosPorCategoria = resumenCategorias
     ?.filter(item => item.totalGastos > 0)
     .map(item => ({
@@ -175,9 +175,9 @@ export function useDashboard(filtros: { fechaInicio?: string; fechaFin?: string 
       monto: item.totalGastos
     }))
     .sort((a, b) => b.monto - a.monto)
-    .slice(0, 19) || []; // Limitar a 19 categorías para el gráfico
+    .slice(0, 19) || []; // Limit to 19 categories for the chart
 
-  // Preparar datos para gastos por campaña (usando datos de gastos)
+  // Prepare data for expenses by campaign (using expenses data)
   const gastosPorCampana = resumenCampanas
     ?.filter(item => item.monto > 0)
     .reduce((acc, item) => {
@@ -196,7 +196,7 @@ export function useDashboard(filtros: { fechaInicio?: string; fechaFin?: string 
       return acc;
     }, [] as Array<{ campana: string; monto: number }>)
     .sort((a, b) => b.monto - a.monto)
-    .slice(0, 19) || []; // Limitar a 19 gastos para el gráfico
+    .slice(0, 19) || []; // Limit to 19 expenses for the chart
 
   const isLoading = loadingStats || loadingUsuarios || loadingCategorias || loadingCampanas || loadingResumenCategorias || loadingResumenCampanas;
 

@@ -33,7 +33,7 @@ export function useValorHoraByUsuario(usuarioId: number) {
   });
 }
 
-// Hook para obtener un valor por hora específico
+// Hook to get a specific hour value
 export function useValorHoraById(id: number) {
   return useQuery({
     queryKey: valorHoraKeys.detail(id),
@@ -42,27 +42,27 @@ export function useValorHoraById(id: number) {
   });
 }
 
-// Hook para obtener estadísticas
+// Hook to get statistics
 export function useValorHoraStats() {
   return useQuery({
     queryKey: valorHoraKeys.stats(),
     queryFn: () => ValorHoraService.getStats(),
-    staleTime: 1000 * 60 * 2, // 2 minutos
+    staleTime: 1000 * 60 * 2, // 2 minutes
   });
 }
 
-// Hook para crear un valor por hora
+// Hook to create an hour value
 export function useCreateValorHora() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (data: CreateValorHoraDto) => ValorHoraService.create(data),
     onSuccess: (newValorHora) => {
-      // Invalidar y refetch las listas
+      // Invalidate and refetch lists
       queryClient.invalidateQueries({ queryKey: valorHoraKeys.lists() });
       queryClient.invalidateQueries({ queryKey: valorHoraKeys.stats() });
 
-      // Optimistamente actualizar el cache
+      // Optimistically update cache
       queryClient.setQueryData(valorHoraKeys.detail(newValorHora.id), newValorHora);
 
       toast.success('Valor por hora creado exitosamente');
@@ -73,7 +73,7 @@ export function useCreateValorHora() {
   });
 }
 
-// Hook para actualizar un valor por hora
+// Hook to update an hour value
 export function useUpdateValorHora() {
   const queryClient = useQueryClient();
 
@@ -81,7 +81,7 @@ export function useUpdateValorHora() {
     mutationFn: ({ id, data }: { id: number; data: UpdateValorHoraDto }) =>
       ValorHoraService.update(id, data),
     onSuccess: (updatedValorHora) => {
-      // Invalidar queries relacionadas
+      // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: valorHoraKeys.lists() });
       queryClient.invalidateQueries({ queryKey: valorHoraKeys.stats() });
       queryClient.setQueryData(valorHoraKeys.detail(updatedValorHora.id), updatedValorHora);
@@ -94,18 +94,18 @@ export function useUpdateValorHora() {
   });
 }
 
-// Hook para eliminar un valor por hora
+// Hook to delete an hour value
 export function useDeleteValorHora() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: number) => ValorHoraService.delete(id),
     onSuccess: (_, deletedId) => {
-      // Invalidar listas y estadísticas
+      // Invalidate lists and statistics
       queryClient.invalidateQueries({ queryKey: valorHoraKeys.lists() });
       queryClient.invalidateQueries({ queryKey: valorHoraKeys.stats() });
 
-      // Remover el valor por hora específico del cache
+      // Remove specific hour value from cache
       queryClient.removeQueries({ queryKey: valorHoraKeys.detail(deletedId) });
 
       toast.success('Valor por hora eliminado exitosamente');

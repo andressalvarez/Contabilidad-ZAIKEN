@@ -14,13 +14,13 @@ export interface UseTimerReturn {
   startTimer: (usuarioId: number, campanaId?: number, descripcion?: string) => Promise<void>;
   pauseTimer: () => Promise<void>;
   resumeTimer: () => Promise<void>;
-  stopTimer: (descripcion?: string) => Promise<void>;
+  stopTimer: (descripcion?: string, timerInicio?: string, timerFin?: string) => Promise<void>;
   cancelTimer: () => Promise<void>;
   refreshTimer: (usuarioId: number) => Promise<void>;
 }
 
 /**
- * Hook para gestionar el timer de registro de horas
+ * Hook to manage the time tracking timer
  *
  * @example
  * const {
@@ -32,14 +32,14 @@ export interface UseTimerReturn {
  *   stopTimer
  * } = useTimer();
  *
- * // Iniciar timer
- * await startTimer(usuarioId, campanaId, 'Trabajando en tarea X');
+ * // Start timer
+ * await startTimer(userId, campaignId, 'Working on task X');
  *
- * // Pausar timer
+ * // Pause timer
  * await pauseTimer();
  *
- * // Detener timer
- * await stopTimer('Tarea completada');
+ * // Stop timer
+ * await stopTimer('Task completed');
  */
 export function useTimer(): UseTimerReturn {
   const [activeTimer, setActiveTimer] = useState<RegistroHoras | null>(null);
@@ -50,28 +50,28 @@ export function useTimer(): UseTimerReturn {
   const isRunning = activeTimer?.estado === 'RUNNING';
   const isPaused = activeTimer?.estado === 'PAUSADO';
 
-  // Calcular tiempo transcurrido
+  // Calculate elapsed time
   useEffect(() => {
     if (!activeTimer || !isRunning) return;
 
     const interval = setInterval(() => {
       const start = new Date(activeTimer.timerInicio!).getTime();
       const now = Date.now();
-      const elapsed = (now - start) / (1000 * 60 * 60); // Horas
+      const elapsed = (now - start) / (1000 * 60 * 60); // Hours
       setElapsedTime(activeTimer.horas + elapsed);
     }, 1000);
 
     return () => clearInterval(interval);
   }, [activeTimer, isRunning]);
 
-  // Actualizar tiempo pausado
+  // Update paused time
   useEffect(() => {
     if (isPaused && activeTimer) {
       setElapsedTime(activeTimer.horas);
     }
   }, [isPaused, activeTimer]);
 
-  // Obtener timer activo
+  // Get active timer
   const refreshTimer = useCallback(async (usuarioId: number) => {
     try {
       setLoading(true);
@@ -89,7 +89,7 @@ export function useTimer(): UseTimerReturn {
     }
   }, []);
 
-  // Iniciar timer
+  // Start timer
   const startTimer = useCallback(async (
     usuarioId: number,
     campanaId?: number,
@@ -114,7 +114,7 @@ export function useTimer(): UseTimerReturn {
     }
   }, []);
 
-  // Pausar timer
+  // Pause timer
   const pauseTimer = useCallback(async () => {
     if (!activeTimer) {
       setError('No hay timer activo');
@@ -135,7 +135,7 @@ export function useTimer(): UseTimerReturn {
     }
   }, [activeTimer]);
 
-  // Reanudar timer
+  // Resume timer
   const resumeTimer = useCallback(async () => {
     if (!activeTimer) {
       setError('No hay timer activo');
@@ -156,8 +156,12 @@ export function useTimer(): UseTimerReturn {
     }
   }, [activeTimer]);
 
-  // Detener timer
-  const stopTimer = useCallback(async (descripcion?: string) => {
+  // Stop timer
+  const stopTimer = useCallback(async (
+    descripcion?: string,
+    timerInicio?: string,
+    timerFin?: string
+  ) => {
     if (!activeTimer) {
       setError('No hay timer activo');
       return;
@@ -166,7 +170,7 @@ export function useTimer(): UseTimerReturn {
     try {
       setLoading(true);
       setError(null);
-      await RegistroHorasService.stopTimer(activeTimer.id, descripcion);
+      await RegistroHorasService.stopTimer(activeTimer.id, descripcion, timerInicio, timerFin);
       setActiveTimer(null);
       setElapsedTime(0);
     } catch (err: any) {
@@ -178,7 +182,7 @@ export function useTimer(): UseTimerReturn {
     }
   }, [activeTimer]);
 
-  // Cancelar timer
+  // Cancel timer
   const cancelTimer = useCallback(async () => {
     if (!activeTimer) {
       setError('No hay timer activo');

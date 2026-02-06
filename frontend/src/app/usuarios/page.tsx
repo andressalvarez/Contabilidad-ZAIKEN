@@ -108,7 +108,7 @@ export default function UsuariosPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validación de participación
+    // Participation validation
     if (formData.participacionPorc && formData.participacionPorc > 100) {
       toast.error('La participación no puede ser mayor a 100%');
       return;
@@ -127,7 +127,7 @@ export default function UsuariosPage() {
         notas: formData.notas,
       };
 
-      // Solo incluir password si se cambió
+      // Only include password if changed
       if (formData.password) {
         updateData.password = formData.password;
       }

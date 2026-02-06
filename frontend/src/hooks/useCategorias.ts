@@ -12,17 +12,17 @@ export const categoriasKeys = {
   detail: (id: number) => [...categoriasKeys.details(), id] as const,
 };
 
-// Hook para obtener todas las categorías
+// Hook to get all categories
 export function useCategorias() {
   return useQuery({
     queryKey: categoriasKeys.lists(),
     queryFn: CategoriasService.getAll,
-    staleTime: 1000 * 30, // 30 segundos
+    staleTime: 1000 * 30, // 30 seconds
     refetchOnWindowFocus: true,
   });
 }
 
-// Hook para obtener una categoría específica
+// Hook to get a specific category
 export function useCategoria(id: number) {
   return useQuery({
     queryKey: categoriasKeys.detail(id),
@@ -31,7 +31,7 @@ export function useCategoria(id: number) {
   });
 }
 
-// Hook para crear una categoría
+// Hook to create a category
 export function useCreateCategoria() {
   const queryClient = useQueryClient();
 
@@ -43,7 +43,7 @@ export function useCreateCategoria() {
       queryClient.invalidateQueries({ queryKey: categoriasKeys.lists() });
       queryClient.setQueryData(categoriasKeys.detail(newCategoria.id), newCategoria);
 
-      // Invalidate transacciones and estadisticas since they depend on categorías
+      // Invalidate transactions and statistics since they depend on categories
       queryClient.invalidateQueries({ queryKey: ['transacciones'] });
       queryClient.invalidateQueries({ queryKey: ['estadisticas'] });
 
@@ -55,7 +55,7 @@ export function useCreateCategoria() {
   });
 }
 
-// Hook para actualizar una categoría
+// Hook to update a category
 export function useUpdateCategoria() {
   const queryClient = useQueryClient();
 
@@ -68,7 +68,7 @@ export function useUpdateCategoria() {
       queryClient.invalidateQueries({ queryKey: categoriasKeys.lists() });
       queryClient.setQueryData(categoriasKeys.detail(updatedCategoria.id), updatedCategoria);
 
-      // Invalidate transacciones and estadisticas since they depend on categorías
+      // Invalidate transactions and statistics since they depend on categories
       queryClient.invalidateQueries({ queryKey: ['transacciones'] });
       queryClient.invalidateQueries({ queryKey: ['estadisticas'] });
 
@@ -80,7 +80,7 @@ export function useUpdateCategoria() {
   });
 }
 
-// Hook para eliminar una categoría
+// Hook to delete a category
 export function useDeleteCategoria() {
   const queryClient = useQueryClient();
 
@@ -92,7 +92,7 @@ export function useDeleteCategoria() {
       queryClient.invalidateQueries({ queryKey: categoriasKeys.lists() });
       queryClient.removeQueries({ queryKey: categoriasKeys.detail(deletedId) });
 
-      // Invalidate transacciones and estadisticas since they depend on categorías
+      // Invalidate transactions and statistics since they depend on categories
       queryClient.invalidateQueries({ queryKey: ['transacciones'] });
       queryClient.invalidateQueries({ queryKey: ['estadisticas'] });
 

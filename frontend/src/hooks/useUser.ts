@@ -11,8 +11,8 @@ interface User {
 }
 
 /**
- * Decodifica un JWT (sin verificar firma - solo para extraer datos)
- * NOTA: Nunca confiar en estos datos para seguridad. La validación real está en el backend.
+ * Decodes a JWT (without verifying signature - only for extracting data)
+ * NOTE: Never trust this data for security. Real validation is on the backend.
  */
 function decodeJWT(token: string): any {
   try {
@@ -26,21 +26,21 @@ function decodeJWT(token: string): any {
     );
     return JSON.parse(jsonPayload);
   } catch (error) {
-    console.error('Error decodificando JWT:', error);
+    console.error('Error decoding JWT:', error);
     return null;
   }
 }
 
 /**
- * Hook para obtener información del usuario actual desde el JWT
+ * Hook to get current user information from JWT
  *
  * @example
  * const { user, loading } = useUser();
  *
- * if (loading) return <div>Cargando...</div>;
- * if (!user) return <div>No autenticado</div>;
+ * if (loading) return <div>Loading...</div>;
+ * if (!user) return <div>Not authenticated</div>;
  *
- * return <div>Hola {user.email}</div>;
+ * return <div>Hello {user.email}</div>;
  */
 export function useUser() {
   const [user, setUser] = useState<User | null>(null);

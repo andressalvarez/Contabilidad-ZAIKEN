@@ -319,11 +319,11 @@ export default function DashboardPage() {
               <span className="text-sm font-medium text-gray-900">Nueva Transacción</span>
             </Link>
             <Link
-              href="/personas?new=true"
+              href="/usuarios?new=true"
               className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <Users className="h-6 w-6 text-purple-600" />
-              <span className="text-sm font-medium text-gray-900">Agregar Persona</span>
+              <span className="text-sm font-medium text-gray-900">Agregar Usuario</span>
             </Link>
             <Link
               href="/roles?new=true"

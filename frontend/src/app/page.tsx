@@ -29,7 +29,7 @@ export default function Home() {
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Chart && dashboardData) {
-      // Destruir gráficos existentes
+      // Destroy existing charts
       if (chartRef1.current) {
         const existingChart1 = window.Chart.getChart(chartRef1.current);
         if (existingChart1) {
@@ -43,7 +43,7 @@ export default function Home() {
         }
       }
 
-      // Gráfico 1: Ingresos vs Gastos (Barras)
+      // Chart 1: Income vs Expenses (Bars)
       if (chartRef1.current) {
         const ctx1 = chartRef1.current.getContext('2d')
         if (ctx1) {
@@ -81,7 +81,7 @@ export default function Home() {
         }
       }
 
-      // Gráfico 2: Gastos por Categorías (Dona)
+      // Chart 2: Expenses by Categories (Doughnut)
       if (chartRef2.current && dashboardData.gastosPorCampana.length > 0) {
         const ctx2 = chartRef2.current.getContext('2d')
         if (ctx2) {
@@ -124,7 +124,7 @@ export default function Home() {
   }, [dashboardData])
 
   const handleFiltrar = () => {
-    // Los filtros se actualizan automáticamente con el estado
+    // Filters are automatically updated with state
   };
 
   const handleLimpiar = () => {
@@ -230,7 +230,7 @@ export default function Home() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-orange-100 text-sm font-medium mb-1">Horas Totales</h3>
-                <p className="text-3xl font-bold">{formatNumber(dashboardData?.personas.horasTotales || 0)} hrs</p>
+                <p className="text-3xl font-bold">{formatNumber(dashboardData?.usuarios?.horasTotales || 0)} hrs</p>
               </div>
               <div className="text-orange-200 text-4xl">
                 <i className="bi bi-clock"></i>
@@ -243,7 +243,7 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="bg-white rounded-lg shadow p-4">
             <h3 className="text-sm font-medium text-gray-700 mb-2">APORTES</h3>
-            <p className="text-2xl font-bold text-gray-900">{formatCurrency(dashboardData?.personas.aportesTotales || 0)}</p>
+            <p className="text-2xl font-bold text-gray-900">{formatCurrency(dashboardData?.usuarios?.aportesTotales || 0)}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <h3 className="text-sm font-medium text-gray-700 mb-2">UTILIDADES DISTRIBUIDAS</h3>
@@ -255,7 +255,7 @@ export default function Home() {
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <h3 className="text-sm font-medium text-gray-700 mb-2">PERSONAS ACTIVAS</h3>
-            <p className="text-2xl font-bold text-gray-900">{formatNumber(dashboardData?.personas.totalPersonas || 0)}</p>
+            <p className="text-2xl font-bold text-gray-900">{formatNumber(dashboardData?.usuarios?.totalUsuarios || 0)}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <h3 className="text-sm font-medium text-gray-700 mb-2">TIPOS DE GASTO ACTIVOS</h3>

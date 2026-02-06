@@ -41,7 +41,7 @@ import {
   Tags
 } from 'lucide-react';
 
-// Importar Chart.js
+// Import Chart.js
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -58,8 +58,8 @@ import {
 
 import { Chart } from 'chart.js';
 
-// Registrar componentes de Chart.js
-// Plugin para fondo blanco en exportación
+// Register Chart.js components
+// Plugin for white background on export
 const WhiteBg = {
   id: 'whiteBg',
   beforeDraw(chart: any, _args: any, opts: any) {
@@ -159,12 +159,12 @@ interface VSConfig {
   version?: '2';
 }
 
-// Usar la interfaz del servicio en lugar de redefinir
+// Use service interface instead of redefining
 
-// Wrapper interno que verifica el QueryClient
+// Internal wrapper that checks QueryClient
 const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCategoriasDrillDownProps>(
   ({ filters, config, onConfigChange }, ref) => {
-    // Verificar si hay QueryClient disponible
+    // Check if QueryClient is available
     let queryClient;
     try {
       queryClient = useQueryClient();
@@ -172,12 +172,12 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       console.warn('QueryClient no disponible, creando uno temporal', error);
     }
 
-    // Estados del módulo
+    // Module states
     const [expandedSegment, setExpandedSegment] = useState<string | null>(null);
     const [currentTransactions, setCurrentTransactions] = useState<Transaccion[]>([]);
     const [currentView, setCurrentView] = useState<'list' | 'chart'>('list');
 
-    // Estado del segmento actual para DetailContent
+    // Current segment state for DetailContent
     const [currentSegmentInfo, setCurrentSegmentInfo] = useState<{
       label: string;
       value: number;
@@ -191,7 +191,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
   const [editingCarpeta, setEditingCarpeta] = useState<{id: number, carpeta: Carpeta} | null>(null);
   const [editingGrupo, setEditingGrupo] = useState<{id: number, grupo: GrupoNorm} | null>(null);
 
-    // Estados para VS Categorías avanzado
+    // States for advanced VS Categories
     const [vsConfig, setVsConfig] = useState<VSConfig>({
       grupos: {},
       carpetas: {},
@@ -215,7 +215,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       sortDirection: 'desc' as 'asc' | 'desc'
     });
 
-    // Referencias
+    // References
     const chartRef = useRef<Chart | null>(null);
     const detailsContainerRef = useRef<HTMLDivElement>(null);
     const chartMetaRef = useRef<SegmentMeta[]>([]);
@@ -223,17 +223,17 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
 
 
 
-    // Hooks de datos
+    // Data hooks
     const { data: resumenCategorias = [] } = useResumenPorCategorias(filters);
     const { data: usuarios = [] } = useUsuarios();
     const { data: categorias = [] } = useCategorias();
     const { data: transacciones = [] } = useTransacciones(filters);
 
-    // Mapas de categorías (para resolver nombres↔IDs)
+    // Category maps (to resolve names↔IDs)
     const byCatId = useMemo(() => new Map(categorias.map(c => [c.id, c.nombre])), [categorias]);
     const catIdByName = useMemo(() => new Map(categorias.map(c => [c.nombre, c.id])), [categorias]);
 
-    // MIGRACIÓN al cargar configuración guardada
+    // MIGRATION when loading saved configuration
     const migrateConfigV1toV2 = (oldCfg: any): VSConfig => {
       const grupos: Record<number, GrupoNorm> = {};
       Object.entries(oldCfg.grupos || {}).forEach(([id, g]: any) => {
@@ -277,7 +277,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
     const buildChartQuery = (s: VSConfig): ChartQuery => {
       const selectedTipo = normalizeTipo(s.filtros.tipo as any);
       const q: ChartQuery = {
-        // Si el usuario no escogió tipo, no mandamos tipo para que el backend sume todo
+        // If user didn't choose type, don't send type so backend sums everything
         tipo: selectedTipo || undefined as any,
         fechaDesde: s.filtros.fechaDesde || undefined,
         fechaHasta: s.filtros.fechaHasta || undefined
@@ -286,7 +286,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       if (effGroups.length) {
         q.groupIds = effGroups;
       } else {
-        q.categoryIds = undefined; // backend decide por categorías
+        q.categoryIds = undefined; // backend decides by categories
       }
       return q;
     };
@@ -315,7 +315,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       const colors: string[] = [];
 
       if (datosBackend.esGrupo) {
-        // resultado agregado por grupo
+        // aggregated result by group
         Object.entries(datosBackend.datos).forEach(([groupName, value]) => {
           const group = Object.values(s.grupos).find(g => g.nombre === groupName);
           if (!group) return;
@@ -325,7 +325,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
           colors.push(group.color);
         });
       } else {
-        // agregado por categoría - Fix #2: Usar IDs para colores
+        // added by category - Fix #2: Use IDs for colors
         Object.entries(datosBackend.datos).forEach(([catName, value], idx) => {
           const catId = catIdByName.get(catName);
           if (!catId) return;
@@ -417,66 +417,66 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       }
     };
 
-    // Colores base para el sistema - Paleta con máxima distinción visual
+    // Base colors for the system - Palette with maximum visual distinction
     const coloresBase = [
-      '#e74c3c',  // Rojo vibrante
-      '#3498db',  // Azul brillante
-      '#2ecc71',  // Verde esmeralda
-      '#f39c12',  // Naranja dorado
-      '#9b59b6',  // Púrpura real
-      '#1abc9c',  // Turquesa
-      '#34495e',  // Azul oscuro
-      '#f1c40f',  // Amarillo sol
-      '#e67e22',  // Naranja quemado
-      '#8e44ad',  // Violeta oscuro
-      '#16a085',  // Verde azulado
-      '#2c3e50',  // Gris azulado oscuro
-      '#d35400',  // Rojo naranja
-      '#7f8c8d',  // Gris medio
-      '#c0392b',  // Rojo oscuro
-      '#2980b9',  // Azul océano
-      '#27ae60',  // Verde bosque
-      '#f4d03f',  // Amarillo pastel
-      '#af7ac5',  // Lila
-      '#5dade2'   // Azul cielo
+      '#e74c3c',  // Vibrant red
+      '#3498db',  // Bright blue
+      '#2ecc71',  // Emerald green
+      '#f39c12',  // Golden orange
+      '#9b59b6',  // Royal purple
+      '#1abc9c',  // Turquoise
+      '#34495e',  // Dark blue
+      '#f1c40f',  // Sun yellow
+      '#e67e22',  // Burnt orange
+      '#8e44ad',  // Dark violet
+      '#16a085',  // Teal green
+      '#2c3e50',  // Dark gray-blue
+      '#d35400',  // Red-orange
+      '#7f8c8d',  // Medium gray
+      '#c0392b',  // Dark red
+      '#2980b9',  // Ocean blue
+      '#27ae60',  // Forest green
+      '#f4d03f',  // Pastel yellow
+      '#af7ac5',  // Lilac
+      '#5dade2'   // Sky blue
     ];
 
-    // Cargar configuración al inicializar
+    // Load configuration on initialization
     useEffect(() => {
       applySavedConfig();
     }, []);
 
-    // Auto-guardar configuración cuando cambie vsConfig
+    // Auto-save configuration when vsConfig changes
     useEffect(() => {
-      // Solo guardar si no es la configuración inicial vacía
+      // Only save if not the initial empty configuration
       if (Object.keys(vsConfig.grupos).length > 0 || Object.keys(vsConfig.carpetas).length > 0) {
         console.log('💾 Auto-guardando configuración por cambio de estado');
         saveConfig();
       }
     }, [vsConfig]);
 
-    // Debug: Monitorear cambios en currentView
+    // Debug: Monitor currentView changes
     useEffect(() => {
       console.log('🔄 useEffect: currentView cambió a:', currentView);
     }, [currentView]);
 
-    // Debug: Monitorear cambios en currentSegmentInfo
+    // Debug: Monitor currentSegmentInfo changes
     useEffect(() => {
       console.log('🔄 useEffect: currentSegmentInfo cambió a:', currentSegmentInfo);
     }, [currentSegmentInfo]);
 
-    // Cargar datos iniciales de VS Categorías desde el backend
+    // Load initial VS Categories data from backend
     useEffect(() => {
       const cargarDatosIniciales = async () => {
         try {
           console.log('Cargando datos iniciales de VS Categorías...');
 
-          // NO limpiar configuración - preservar estado del usuario
+          // DO NOT clear configuration - preserve user state
           // localStorage.removeItem('vsCategoriasConfig');
 
           const datos = await VSCategoriasService.getVSCategoriasData();
 
-          // Cargar estado previo del localStorage
+          // Load previous state from localStorage
           const savedConfigStr = localStorage.getItem('vsCategoriasConfig');
           let savedConfig: any = {};
           if (savedConfigStr) {
@@ -488,10 +488,10 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
             }
           }
 
-          // Actualizar carpetas preservando estado de visibilidad
+          // Update folders preserving visibility state
           const carpetasActualizadas: Record<number, Carpeta> = {};
           datos.carpetas.forEach(carpeta => {
-            // Usar estado guardado si existe, sino usar estado del backend
+            // Use saved state if exists, otherwise use backend state
             const estadoGuardado = savedConfig.carpetas?.[carpeta.id];
             carpetasActualizadas[carpeta.id] = {
               id: carpeta.id,
@@ -501,10 +501,10 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
             };
           });
 
-          // Actualizar grupos preservando estado de visibilidad
+          // Update groups preserving visibility state
           const gruposActualizados: Record<number, Grupo> = {};
           datos.grupos.forEach(grupo => {
-            // Usar estado guardado si existe, sino usar estado del backend
+            // Use saved state if exists, otherwise use backend state
             const estadoGuardado = savedConfig.grupos?.[grupo.id];
             gruposActualizados[grupo.id] = {
               id: grupo.id,
@@ -522,7 +522,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
             grupos: gruposActualizados,
             filtros: {
               ...prev.filtros,
-              // Preservar selecciones previas si existen
+              // Preserve previous selections if they exist
               gruposSeleccionados: savedConfig.filtros?.gruposSeleccionados || [],
               carpetasSeleccionadas: savedConfig.filtros?.carpetasSeleccionadas || []
             }
@@ -539,19 +539,19 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       cargarDatosIniciales();
     }, []);
 
-    // Sincronizar selección automática con grupos visibles después de cargar datos
+    // Sync automatic selection with visible groups after loading data
     useEffect(() => {
-      // Solo ejecutar si hay grupos cargados y no es la configuración inicial vacía
+      // Only run if groups are loaded and it's not the initial empty configuration
       const totalGrupos = Object.keys(vsConfig.grupos).length;
       if (totalGrupos === 0) return;
 
       console.log('🔄 Sincronizando selección automática...');
 
       const gruposVisibles = Object.entries(vsConfig.grupos).filter(([id, grupo]) => {
-        // El grupo debe estar visible
+        // The group must be visible
         if (grupo.visible === false) return false;
 
-        // Si el grupo está en una carpeta, la carpeta también debe estar visible
+        // If the group is in a folder, the folder must also be visible
         if (grupo.carpetaId) {
           const carpeta = vsConfig.carpetas[grupo.carpetaId];
           if (carpeta && carpeta.visible === false) return false;
@@ -563,7 +563,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       const idsGruposVisibles = gruposVisibles.map(([id]) => +id);
       const gruposSeleccionadosActuales = vsConfig.filtros.gruposSeleccionados;
 
-      // Verificar si hay grupos visibles que no están seleccionados
+      // Check if there are visible groups that are not selected
       const gruposVisiblesNoSeleccionados = idsGruposVisibles.filter(id =>
         !gruposSeleccionadosActuales.includes(id)
       );
@@ -579,23 +579,23 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
           }
         }));
       }
-    }, [vsConfig.grupos, vsConfig.carpetas]); // Se ejecuta cuando cambian grupos o carpetas
+    }, [vsConfig.grupos, vsConfig.carpetas]); // Runs when groups or folders change
 
-    // Actualizar filtros desde formulario
+    // Update filters from form
     const updateFiltrosFromForm = () => {
-      // Esta función se llamará cuando sea necesario sincronizar filtros del UI
-      // Por ahora, los filtros ya se actualizan automáticamente con onChange
+      // This function will be called when UI filter synchronization is needed
+      // For now, filters already update automatically with onChange
     };
 
-    // Guardar configuración en localStorage con validación robusta
+    // Save configuration to localStorage with robust validation
     const saveConfig = () => {
       try {
-        // Actualizar filtros con valores actuales del formulario
+        // Update filters with current form values
         updateFiltrosFromForm();
 
-        // Crear configuración completa y validada - Fix #7: versión y normalización
+        // Create complete and validated configuration - Fix #7: version and normalization
         const config: VSConfig = {
-          // Filtros básicos
+          // Basic filters
           filtros: {
             // categorias removido - usar categoriaIds en su lugar
             tipo: normalizeTipo(vsConfig.filtros.tipo as any), // 👈 Fix #7: Normalizar tipo
@@ -605,21 +605,21 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
             gruposSeleccionados: Array.isArray(vsConfig.filtros.gruposSeleccionados) ? vsConfig.filtros.gruposSeleccionados : [],
             carpetasSeleccionadas: Array.isArray(vsConfig.filtros.carpetasSeleccionadas) ? vsConfig.filtros.carpetasSeleccionadas : [],
           },
-          // Metadatos - Fix #7: versión correcta
+          // Metadata - Fix #7: correct version
           version: '2',
 
-          // Configuraciones de colores - Fix #2: usar IDs
+          // Color configurations - Fix #2: use IDs
           colores: vsConfig.colores || {},
 
-          // Estructuras de organización
+          // Organization structures
           grupos: vsConfig.grupos || {},
           carpetas: vsConfig.carpetas || {},
         };
 
-        // Guardar en localStorage con validación
+        // Save to localStorage with validation
         localStorage.setItem('vsCategoriasConfig', JSON.stringify(config));
 
-        // Notificar éxito
+        // Notify success
         toast.success('✅ Configuración guardada correctamente');
         console.log('Configuración guardada:', config);
 
@@ -629,10 +629,10 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       }
     };
 
-    // Aplicar configuración guardada - Fix #7: normalización al cargar
+    // Apply saved configuration - Fix #7: normalization on load
     const applySavedConfig = () => {
       try {
-        // Cargar configuración desde localStorage
+        // Load configuration from localStorage
         const savedConfigStr = localStorage.getItem('vsCategoriasConfig');
         if (!savedConfigStr) {
           console.log('No hay configuración guardada para VS de Categorías');
@@ -642,20 +642,20 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
         const savedConfig = JSON.parse(savedConfigStr);
         console.log('Configuración cargada:', savedConfig);
 
-        // Migrar si es necesario
+        // Migrate if necessary
         const v2 = savedConfig.version === '2' ? savedConfig : migrateConfigV1toV2(savedConfig);
 
-        // Fix #7: Normalizar tipo al cargar
+        // Fix #7: Normalize type on load
         if (v2.filtros?.tipo) {
           v2.filtros.tipo = normalizeTipo(v2.filtros.tipo as any);
         }
 
         console.log('Configuración migrada:', v2);
 
-        // Aplicar configuración migrada
+        // Apply migrated configuration
         setVsConfig(prev => ({ ...prev, ...v2 }));
 
-        // Notificar éxito
+        // Notify success
         toast.success('✅ Configuración cargada correctamente');
         console.log('Configuración aplicada exitosamente');
 
@@ -663,7 +663,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
         console.error('Error al cargar configuración:', error);
         toast.error('⚠️ Error al cargar configuración guardada');
 
-        // En caso de error, inicializar con valores por defecto
+        // In case of error, initialize with default values
         setVsConfig(prev => ({
           ...prev,
           filtros: {
@@ -675,22 +675,22 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       }
     };
 
-    // Generar colores
+    // Generate colors
     const generateColors = (count: number) => {
       return coloresBase.slice(0, count);
     };
 
-    // Crear gráfico responsivo
+    // Create responsive chart
     const createResponsiveChart = (canvasId: string, chartConfig: any) => {
       const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
       if (!canvas) return null;
 
-      // Destruir chart existente
+      // Destroy existing chart
       if (chartRef.current) {
         chartRef.current.destroy();
       }
 
-      // Configuración base
+      // Base configuration
       const defaultOptions = {
         responsive: true,
         maintainAspectRatio: false,
@@ -728,13 +728,13 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       return chart;
     };
 
-        // Función para obtener datos filtrados desde el backend
+        // Function to get filtered data from backend
     const getDatosFiltrados = async (): Promise<DatosGrafico> => {
       console.log('🔍 Obteniendo datos filtrados para VS Categorías...');
       console.log('📊 Configuración actual:', vsConfig);
 
       try {
-        // Usar query builder para construir el payload
+        // Use query builder to construct payload
         const effGroups = selectEffectiveGroupIds(vsConfig);
         console.log('👥 Grupos efectivos:', effGroups);
 
@@ -753,11 +753,11 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
 
         console.log('📤 Payload para backend:', payload);
 
-        // Llamar al backend con el payload
+        // Call backend with payload
         const resultado = await VSCategoriasService.getDatosParaGrafico(payload);
         console.log('📥 Respuesta del backend:', resultado);
 
-        // Guardar metadatos de segmento para cada label
+        // Save segment metadata for each label
         const segmentMeta = new Map<string, { kind: 'group'|'category', id: number }>();
 
         if (resultado.esGrupo && resultado.grupos) {
@@ -773,7 +773,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
           }
         }
 
-        // Guardar metadatos para uso en clicks
+        // Save metadata for use in clicks
         chartMetaRef.current = Array.from(segmentMeta.entries()).map(([label, meta]) => ({
           kind: meta.kind,
           id: meta.id,
@@ -796,14 +796,14 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       }
     };
 
-    // Renderizar gráfico principal con lógica corregida
+    // Render main chart with corrected logic
     const renderChart = async () => {
       if (!transacciones || transacciones.length === 0) {
         console.log('No hay transacciones disponibles');
         return;
       }
 
-      // Obtener datos filtrados desde el backend
+      // Get filtered data from backend
       const resultado = await getDatosFiltrados();
       const labels = Object.keys(resultado.datos);
       const values = Object.values(resultado.datos);
@@ -817,11 +817,11 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       if (labels.length === 0 || values.every(v => v === 0)) {
         const container = document.getElementById('vsCategoriasContainer');
         if (container) {
-          // Quitar canvas si existe, pero no borrar el resto del contenido
+          // Remove canvas if exists, but don't delete rest of content
           const existingCanvas = container.querySelector('canvas');
           if (existingCanvas) existingCanvas.remove();
 
-          // Crear/actualizar placeholder interno de "sin datos"
+          // Create/update internal "no data" placeholder
           let noData = container.querySelector('.vs-no-data');
           if (!noData) {
             noData = document.createElement('div');
@@ -833,7 +833,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
         return; // ✅ sin afectar otros elementos (botonera Gestionar permanece)
       }
 
-      // Recrear el canvas si fue removido y limpiar placeholder de "sin datos"
+      // Recreate canvas if removed and clean up "no data" placeholder
       const container = document.getElementById('vsCategoriasContainer');
       if (container) {
         const noData = container.querySelector('.vs-no-data');
@@ -850,22 +850,22 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       const canvas = document.getElementById('vsCategoriasChart') as HTMLCanvasElement;
       if (!canvas) return;
 
-      // Destruir chart existente
+      // Destroy existing chart
       if (chartRef.current) {
         chartRef.current.destroy();
       }
 
-      // Determinar colores
+      // Determine colors
       let backgroundColor: string[], borderColor: string[];
       if (resultado.esGrupo) {
-        // Modo grupos: usar colores específicos de cada grupo
+        // Groups mode: use specific colors for each group
         backgroundColor = labels.map(label => {
           const grupo = resultado.grupos?.find(g => g.nombre === label);
           return grupo ? grupo.color : coloresBase[0];
         });
         borderColor = backgroundColor;
       } else {
-        // Modo categorías por defecto: asignar colores distintos automáticamente
+        // Default categories mode: automatically assign distinct colors
         backgroundColor = labels.map((catLabel, index) => {
           const catId = catIdByName.get(catLabel);
           const existing = catId ? vsConfig.colores[catId] : undefined;
@@ -885,13 +885,13 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
         borderColor = backgroundColor;
       }
 
-      // Crear leyenda externa antes del gráfico
+      // Create external legend before chart
       if (container) {
-        // Eliminar CUALQUIER leyenda previa
+        // Remove ANY previous legend
         const existingLegends = container.querySelectorAll('.vs-categorias-legend');
         existingLegends.forEach((el) => el.remove());
 
-        // Crear elementos para la leyenda
+        // Create legend elements
         const legendItems = labels.map((label, index) => ({
           label,
           value: values[index] || 0,
@@ -920,7 +920,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
         maintainAspectRatio: false,
         aspectRatio: 2,
         plugins: {
-          legend: { display: false }, // Siempre usar leyenda externa
+          legend: { display: false }, // Always use external legend
           tooltip: {
             enabled: true,
             backgroundColor: 'rgba(0,0,0,0.8)',
@@ -971,7 +971,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
 
       chartRef.current = chart;
 
-      // Ajuste asíncrono de tamaño del gráfico tras montar
+      // Async chart size adjustment after mounting
       requestAnimationFrame(() => {
         const current = chartRef.current;
         try {
@@ -984,7 +984,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       });
     };
 
-    // Componente Legend en React
+    // Legend component in React
     const Legend = ({ items, onClick }: {
       items: { label: string; value: number; color: string }[];
       onClick: (label: string) => void
@@ -1014,7 +1014,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       );
     };
 
-    // Renderizar chips de grupos y carpetas
+    // Render group and folder chips
     const renderGruposYCarpetas = () => {
       const carpetasArray = Object.entries(vsConfig.carpetas);
       const gruposSinCarpeta = Object.entries(vsConfig.grupos).filter(([id, grupo]) => !grupo.carpetaId);
@@ -1045,7 +1045,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       );
     };
 
-    // Componente Carpeta Card
+    // Folder Card component
     const CarpetaCard = ({ carpetaId, carpeta }: { carpetaId: number; carpeta: Carpeta }) => {
       const gruposEnCarpeta = Object.entries(vsConfig.grupos).filter(([id, grupo]) => grupo.carpetaId === carpetaId);
 
@@ -1088,7 +1088,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       );
     };
 
-    // Componente Grupo en Carpeta
+    // Group in Folder component
     const GrupoEnCarpeta = ({ grupoId, grupo }: { grupoId: number; grupo: GrupoNorm }) => {
       const isSelected = vsConfig.filtros.gruposSeleccionados.includes(grupoId);
       const count = (grupo.categoriaIds || []).length;
@@ -1123,7 +1123,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       );
     };
 
-    // Componente Grupo Card
+    // Group Card component
     const GrupoCard = ({ grupoId, grupo }: { grupoId: number; grupo: GrupoNorm }) => {
       const isSelected = vsConfig.filtros.gruposSeleccionados.includes(grupoId);
       const count = (grupo.categoriaIds || []).length;
@@ -1163,7 +1163,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       );
     };
 
-        // Función de debug mejorada
+        // Enhanced debug function
     const debugVSCategorias = () => {
       console.log('🔍 DEBUG VS CATEGORÍAS REACT');
       console.log('=============================');
@@ -1176,7 +1176,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       console.log('📋 Categorías:', categorias.length);
       console.log('=============================');
 
-      // Analizar grupos visibles
+      // Analyze visible groups
       const gruposVisibles = Object.entries(vsConfig.grupos).filter(([id, grupo]) => {
         if (grupo.visible === false) {
           console.log(`❌ Grupo ${grupo.nombre} no visible`);
@@ -1193,7 +1193,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
         return true;
       });
 
-      // Analizar lógica de selección
+      // Analyze selection logic
       const gruposSeleccionados = vsConfig.filtros.gruposSeleccionados;
       const gruposSeleccionadosVisibles = gruposSeleccionados.filter(id =>
         gruposVisibles.some(([grupoId]) => +grupoId === id)
@@ -1215,7 +1215,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       console.log(`✅ Grupos seleccionados visibles: ${gruposSeleccionadosVisibles.length}`);
       console.log(`📊 GRUPOS QUE SE USARÁN EN EL GRÁFICO: ${gruposQueSeUsaran.length}`, gruposQueSeUsaran);
 
-      // Análisis de sincronización ojito-selección
+      // Eye-selection synchronization analysis
       const gruposVisiblesNoSeleccionados = gruposVisibles.filter(([id]) =>
         !gruposSeleccionados.includes(+id)
       );
@@ -1254,12 +1254,12 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       };
     };
 
-    // Exponer función de debug globalmente
+    // Expose debug function globally
     useEffect(() => {
       (window as any).debugVSCategoriasReact = debugVSCategorias;
     }, [vsConfig, transacciones, categorias]);
 
-    // Funciones de toggle mejoradas
+    // Enhanced toggle functions
     const toggleCarpetaVisibility = async (carpetaId: number) => {
       console.log(`🔄 Toggle carpeta ${carpetaId}`);
 
@@ -1278,13 +1278,13 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
           }
         };
 
-        // Sincronizar selección con visibilidad de carpeta
+        // Sync selection with folder visibility
         const gruposEnCarpeta = Object.entries(prev.grupos)
           .filter(([id, grupo]) => grupo.carpetaId === carpetaId)
           .map(([id]) => parseInt(id));
 
         if (nuevaVisibilidad) {
-          // Carpeta se activa: seleccionar automáticamente todos sus grupos
+          // Folder activated: automatically select all its groups
           const gruposASeleccionar = gruposEnCarpeta.filter(id =>
             !newConfig.filtros.gruposSeleccionados.includes(id)
           );
@@ -1296,7 +1296,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
 
           console.log(`✅ Grupos seleccionados de carpeta activada:`, gruposASeleccionar);
         } else {
-          // Carpeta se desactiva: deseleccionar todos sus grupos
+          // Folder deactivated: deselect all its groups
           newConfig.filtros = {
             ...newConfig.filtros,
             gruposSeleccionados: newConfig.filtros.gruposSeleccionados.filter(
@@ -1310,7 +1310,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
         return newConfig;
       });
 
-      // Actualizar backend
+      // Update backend
       try {
         await VSCategoriasService.updateCarpeta(carpetaId, {
           visible: !vsConfig.carpetas[carpetaId].visible
@@ -1339,9 +1339,9 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
           }
         };
 
-        // Sincronizar selección con visibilidad de grupo
+        // Sync selection with group visibility
         if (nuevaVisibilidad) {
-          // Grupo se activa: seleccionarlo automáticamente si no está seleccionado
+          // Group activated: automatically select it if not selected
           if (!newConfig.filtros.gruposSeleccionados.includes(grupoId)) {
             newConfig.filtros = {
               ...newConfig.filtros,
@@ -1350,7 +1350,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
             console.log(`✅ Grupo ${grupoId} seleccionado automáticamente al activar ojito`);
           }
         } else {
-          // Grupo se desactiva: deseleccionarlo automáticamente
+          // Group deactivated: automatically deselect it
           newConfig.filtros = {
             ...newConfig.filtros,
             gruposSeleccionados: newConfig.filtros.gruposSeleccionados.filter(
@@ -1363,7 +1363,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
         return newConfig;
       });
 
-      // Actualizar backend
+      // Update backend
       try {
         await VSCategoriasService.updateGrupo(grupoId, {
           visible: !vsConfig.grupos[grupoId].visible
@@ -1385,7 +1385,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
         let newConfig = { ...prev };
 
         if (!estaSeleccionado) {
-          // Seleccionar grupo: también activar ojito si no está visible
+          // Select group: also activate eye if not visible
           gruposSeleccionados.push(grupoId);
 
           if (prev.grupos[grupoId] && prev.grupos[grupoId].visible === false) {
@@ -1398,13 +1398,13 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
             };
             console.log(`👁️ Grupo ${grupoId} activado automáticamente al seleccionar`);
 
-            // Actualizar backend de forma asíncrona
+            // Update backend asynchronously
             VSCategoriasService.updateGrupo(grupoId, { visible: true })
               .then(() => console.log(`✅ Grupo ${grupoId} actualizado en backend (visible=true)`))
               .catch(error => console.error(`❌ Error actualizando grupo ${grupoId}:`, error));
           }
         } else {
-          // Deseleccionar grupo: también desactivar ojito
+          // Deselect group: also deactivate eye
           gruposSeleccionados.splice(index, 1);
 
           if (prev.grupos[grupoId] && prev.grupos[grupoId].visible !== false) {
@@ -1417,7 +1417,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
             };
             console.log(`👁️‍🗨️ Grupo ${grupoId} desactivado automáticamente al deseleccionar`);
 
-            // Actualizar backend de forma asíncrona
+            // Update backend asynchronously
             VSCategoriasService.updateGrupo(grupoId, { visible: false })
               .then(() => console.log(`✅ Grupo ${grupoId} actualizado en backend (visible=false)`))
               .catch(error => console.error(`❌ Error actualizando grupo ${grupoId}:`, error));
@@ -1434,29 +1434,29 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       });
     };
 
-        // Función para obtener el siguiente color disponible
+        // Function to get next available color
     const getNextAvailableColor = (tipoElemento: 'carpeta' | 'grupo' = 'grupo') => {
-      // Obtener colores ya en uso
+      // Get colors already in use
       const coloresEnUso = new Set([
         ...Object.values(vsConfig.carpetas).map(c => c.color),
         ...Object.values(vsConfig.grupos).map(g => g.color),
         ...Object.values(vsConfig.colores)
       ]);
 
-      // Encontrar el primer color no usado
+      // Find first unused color
       const colorDisponible = coloresBase.find(color => !coloresEnUso.has(color));
 
-      // Si todos están en uso, usar uno aleatorio de la paleta
+      // If all in use, use random from palette
       const colorFinal = colorDisponible || coloresBase[Math.floor(Math.random() * coloresBase.length)];
 
       console.log(`🎨 Color sugerido para ${tipoElemento}: ${colorFinal} (colores en uso: ${coloresEnUso.size})`);
       return colorFinal;
     };
 
-        // Crear nueva carpeta
+        // Create new folder
     const crearCarpeta = async (nombre: string, color?: string) => {
       try {
-        // Si no se proporciona color, asignar automáticamente
+        // If no color provided, assign automatically
         const colorFinal = color || getNextAvailableColor('carpeta');
 
         const nuevaCarpeta = await VSCategoriasService.createCarpeta({
@@ -1488,13 +1488,13 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       }
     };
 
-    // Crear nuevo grupo - Fix #5: enviar/guardar categoriaIds
+    // Create new group - Fix #5: send/save categoriaIds
         const crearGrupo = async (nombre: string, color: string, categoriasSeleccionadas: string[], carpetaId?: string) => {
       try {
-        // Si no se proporciona color, asignar automáticamente
+        // If no color provided, assign automatically
         const colorFinal = color || getNextAvailableColor('grupo');
 
-        // Obtener IDs de categorías - Fix #5: usar IDs
+        // Get category IDs - Fix #5: use IDs
         const categoriasIds = categorias
           .filter(cat => categoriasSeleccionadas.includes(cat.nombre))
           .map(cat => cat.id);
@@ -1542,7 +1542,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       }
     };
 
-    // Agregar estilos CSS dinámicos para VS Categorías
+    // Add dynamic CSS styles for VS Categories
     useEffect(() => {
       if (!document.getElementById('vs-categorias-styles')) {
         const style = document.createElement('style');
@@ -1714,7 +1714,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       }
     }, []);
 
-    // Editar carpeta existente
+    // Edit existing folder
     const editarCarpeta = (carpetaId: number) => {
       const carpeta = vsConfig.carpetas[carpetaId];
       if (carpeta) {
@@ -1723,7 +1723,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       }
     };
 
-    // Guardar edición de carpeta
+    // Save folder edit
     const guardarEdicionCarpeta = (nombre: string, color: string) => {
       if (!editingCarpeta) return;
 
@@ -1744,7 +1744,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       toast.success('Carpeta actualizada exitosamente');
     };
 
-    // Editar grupo existente
+    // Edit existing group
     const editarGrupo = (grupoId: number) => {
       const grupo = vsConfig.grupos[grupoId];
       if (grupo) {
@@ -1753,7 +1753,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       }
     };
 
-    // Guardar edición de grupo (persistente)
+    // Save group edit (persistent)
     const guardarEdicionGrupo = async (nombre: string, color: string, categoriaIds: number[], carpetaId?: string) => {
       if (!editingGrupo) return;
       try {
@@ -1788,7 +1788,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       }
     };
 
-    // Exportar imagen
+    // Export image
     const exportImg = () => {
       if (!chartRef.current) return;
               const url = chartRef.current.toBase64Image('image/png');
@@ -1799,9 +1799,9 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       toast.success('Imagen exportada');
     };
 
-    // Exportar CSV - Fix #9: desde lo que está en pantalla
+    // Export CSV - Fix #9: from what's on screen
     const exportCsv = () => {
-      // Usa chartMetaRef + labels visibles
+      // Use chartMetaRef + visible labels
       if (!chartMetaRef.current || chartMetaRef.current.length === 0) {
         toast.error('No hay datos para exportar');
         return;
@@ -1819,7 +1819,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       toast.success('CSV exportado');
     };
 
-        // Manejar clic en segmento con metadatos
+        // Handle segment click with metadata
     const handleSegmentClick = async (seg: SegmentMeta) => {
       if (expandedSegment === seg.label) {
         collapseDetails();
@@ -1833,19 +1833,19 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
 
       const reqId = ++lastReq.current;
       const data = await fetchSegmentTransactions(seg);
-      if (reqId !== lastReq.current) return; // llegó tarde, descarta
+      if (reqId !== lastReq.current) return; // arrived late, discard
 
       setCurrentTransactions(data);
-      setCurrentView('list'); // o recuerda la última vista del usuario
+      setCurrentView('list'); // or remember user's last view
       console.log('✅ handleSegmentClick completado exitosamente');
     };
 
-    // Fix #6: Eliminar funciones legacy por label (ya no necesarias)
-    // Las funciones getSegmentTransactions y getSegmentTransactionsLocal por segmentLabel
-    // han sido reemplazadas por fetchSegmentTransactions y fallbackLocalTransactions
-    // que usan SegmentMeta con IDs en lugar de labels
+    // Fix #6: Remove legacy functions by label (no longer needed)
+    // The getSegmentTransactions and getSegmentTransactionsLocal functions by segmentLabel
+    // have been replaced by fetchSegmentTransactions and fallbackLocalTransactions
+    // which use SegmentMeta with IDs instead of labels
 
-    // Componente DetailContent reutilizable
+    // Reusable DetailContent component
     const DetailContent = ({ segmentLabel, segmentValue, segmentColor, transactions, forceView }: {
       segmentLabel: string;
       segmentValue: number;
@@ -1853,7 +1853,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       transactions?: Transaccion[];
       forceView?: 'list' | 'chart';
     }) => {
-      // Usar transacciones pasadas como parámetro o currentTransactions como fallback
+      // Use transactions passed as parameter or currentTransactions as fallback
       const transactionsToShow = transactions || currentTransactions;
 
       console.log('🎨 DetailContent renderizando con:', {
@@ -1960,11 +1960,11 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
         );
       };
 
-    // Mostrar detalles
+    // Show details
     const showDetails = (segmentLabel: string, segmentValue: number, segmentColor: string, transactions?: Transaccion[]) => {
       console.log('🎯 showDetails llamado con:', { segmentLabel, segmentValue, segmentColor, transactionsLength: transactions?.length });
 
-      // Guardar información del segmento actual
+      // Save current segment information
       const segmentInfo = {
         label: segmentLabel,
         value: segmentValue,
@@ -1973,19 +1973,19 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       setCurrentSegmentInfo(segmentInfo);
       console.log('💾 currentSegmentInfo guardado:', segmentInfo);
 
-      // Actualizar transacciones si se proporcionan
+      // Update transactions if provided
       if (transactions && transactions.length > 0) {
         setCurrentTransactions(transactions);
         console.log('💾 currentTransactions actualizado:', { length: transactions.length });
       }
 
-      // Scroll suave al contenedor de detalles
+      // Smooth scroll to details container
       if (detailsContainerRef.current) {
       detailsContainerRef.current.scrollIntoView({ behavior: 'smooth' });
       }
     };
 
-    // Obtener transacciones filtradas para drill-down
+    // Get filtered transactions for drill-down
     const getFilteredTransactions = (): Transaccion[] => {
       let filtered = currentTransactions;
 
@@ -2004,7 +2004,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
         filtered = filtered.filter(t => t.personaId?.toString() === detailFilters.persona);
       }
 
-      // Ordenar
+      // Sort
       filtered.sort((a, b) => {
         const aValue = a[detailFilters.sortField as keyof Transaccion];
         const bValue = b[detailFilters.sortField as keyof Transaccion];
@@ -2019,7 +2019,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       return filtered;
     };
 
-    // Cambiar vista
+    // Switch view
     const switchView = (viewType: 'list' | 'chart') => {
       console.log('🔄 Cambiando vista a:', viewType);
       console.log('📊 Estado actual currentView antes del cambio:', currentView);
@@ -2034,24 +2034,24 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       console.log('✅ setCurrentView ejecutado, nuevo valor:', viewType);
     };
 
-    // Renderizar gráficos de detalles
+    // Render detail charts
     const renderDetailCharts = () => {
       const filteredTransactions = getFilteredTransactions();
 
-      // Gráfico por usuario
+      // Chart by user
       const usuarioData = analyzeByUser(filteredTransactions);
       if (usuarioData.labels.length > 0) {
         createTransactionDetailChart('usuarioChart', usuarioData);
       }
 
-      // Gráfico temporal
+      // Temporal chart
       const temporalData = analyzeByMonth(filteredTransactions);
       if (temporalData.labels.length > 0) {
         createTemporalChart('temporalChart', temporalData);
       }
     };
 
-    // Analizar por usuario
+    // Analyze by user
     const analyzeByUser = (transactions: Transaccion[]) => {
       const usuarioMap = new Map<string, number>();
 
@@ -2070,7 +2070,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       };
     };
 
-    // Analizar por mes
+    // Analyze by month
     const analyzeByMonth = (transactions: Transaccion[]) => {
       const monthMap = new Map<string, number>();
 
@@ -2092,7 +2092,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       };
     };
 
-    // Crear gráfico de transacciones detallado
+    // Create detailed transaction chart
     const createTransactionDetailChart = (canvasId: string, chartData: any) => {
       const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
       if (!canvas) return;
@@ -2132,7 +2132,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       });
     };
 
-    // Crear gráfico temporal
+    // Create temporal chart
     const createTemporalChart = (canvasId: string, chartData: any) => {
       const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
       if (!canvas) return;
@@ -2173,7 +2173,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       });
     };
 
-    // Colapsar detalles
+    // Collapse details
     const collapseDetails = () => {
       setExpandedSegment(null);
       setCurrentTransactions([]);
@@ -2183,7 +2183,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       }
     };
 
-    // Ordenar tabla
+    // Sort table
     const sortTable = (field: string) => {
       setDetailFilters(prev => ({
         ...prev,
@@ -2192,13 +2192,13 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       }));
     };
 
-    // Exponer métodos al ref
+    // Expose methods to ref
     useImperativeHandle(ref, () => ({
       renderChart,
       collapseDetails
     }));
 
-    // Renderizar gráfico cuando cambien los datos
+    // Render chart when data changes
     useEffect(() => {
       const timeoutId = setTimeout(async () => {
         await renderChart();
@@ -2207,7 +2207,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       return () => clearTimeout(timeoutId);
     }, [transacciones, vsConfig.filtros.gruposSeleccionados, vsConfig.filtros.chartType, vsConfig.filtros.tipo, vsConfig.filtros.fechaDesde, vsConfig.filtros.fechaHasta]);
 
-    // Exponer funciones globalmente para eventos
+    // Expose functions globally for events
     useEffect(() => {
       (window as any).handleSegmentClick = handleSegmentClick;
       (window as any).collapseDetails = collapseDetails;
@@ -2232,7 +2232,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       };
     }, [detailFilters]);
 
-    // Exponer apertura del modal de gestión para debug rápido
+    // Expose management modal open for quick debug
     useEffect(() => {
       (window as any).__openManage = () => setShowManageModal(true);
       return () => { delete (window as any).__openManage; };
@@ -2336,7 +2336,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
                   console.log('🎨 Regenerando colores con paleta mejorada...');
 
                   try {
-                    // Regenerar colores de carpetas
+                    // Regenerate folder colors
                     const carpetasActualizadas = { ...vsConfig.carpetas };
                     const carpetasEntries = Object.entries(carpetasActualizadas);
 
@@ -2349,7 +2349,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
                       console.log(`✅ Carpeta ${carpeta.nombre}: ${nuevoColor}`);
                     }
 
-                    // Regenerar colores de grupos
+                    // Regenerate group colors
                     const gruposActualizados = { ...vsConfig.grupos };
                     const gruposEntries = Object.entries(gruposActualizados);
 
@@ -2362,13 +2362,13 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
                       console.log(`✅ Grupo ${grupo.nombre}: ${nuevoColor}`);
                     }
 
-                    // Regenerar colores de categorías
+                    // Regenerate category colors
                     const coloresActualizados: Record<string, string> = {};
                     categorias.forEach((cat, index) => {
                       coloresActualizados[cat.nombre] = coloresBase[index % coloresBase.length];
                     });
 
-                    // Actualizar estado local
+                    // Update local state
                     setVsConfig(prev => ({
                       ...prev,
                       carpetas: carpetasActualizadas,
@@ -2698,10 +2698,10 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
 
 VsCategoriasDrillDownInternal.displayName = 'VsCategoriasDrillDownInternal';
 
-// Componente wrapper principal con QueryClient
+// Main wrapper component with QueryClient
 const VsCategoriasDrillDown = forwardRef<VsCategoriasDrillDownRef, VsCategoriasDrillDownProps>(
   (props, ref) => {
-    // Verificar si ya tenemos un QueryClient
+    // Check if we already have a QueryClient
     let hasQueryClient = true;
     try {
       useQueryClient();
@@ -2709,12 +2709,12 @@ const VsCategoriasDrillDown = forwardRef<VsCategoriasDrillDownRef, VsCategoriasD
       hasQueryClient = false;
     }
 
-    // Si ya hay QueryClient, usar el componente directamente
+    // If QueryClient exists, use the component directly
     if (hasQueryClient) {
       return <VsCategoriasDrillDownInternal {...props} ref={ref} />;
     }
 
-    // Si no hay QueryClient, crear uno temporal
+    // If no QueryClient, create a temporary one
     const [queryClient] = useState(() => new QueryClient({
       defaultOptions: {
         queries: {
@@ -2737,7 +2737,7 @@ VsCategoriasDrillDown.displayName = 'VsCategoriasDrillDown';
 
 export default VsCategoriasDrillDown;
 
-// Componente Formulario para Carpetas
+// Form component for Folders
 const CarpetaForm = ({ onSubmit, onCancel, colorSugerido }: {
   onSubmit: (nombre: string, color: string) => void;
   onCancel: () => void;
@@ -2803,7 +2803,7 @@ const CarpetaForm = ({ onSubmit, onCancel, colorSugerido }: {
   );
 };
 
-// Componente Formulario para Grupos
+// Form component for Groups
 const GrupoForm = ({
   categorias,
   carpetas,
@@ -2923,7 +2923,7 @@ const GrupoForm = ({
   );
 };
 
-// Componente Modal de Gestión
+// Management Modal component
 const ManageModal = ({
   vsConfig,
   setVsConfig,
@@ -2939,7 +2939,7 @@ const ManageModal = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'carpetas' | 'grupos'>('carpetas');
 
-  // Mapa local de categorias id->nombre para evitar ReferenceError
+  // Local category map id->name to avoid ReferenceError
   const byCatId = useMemo(() => new Map(categorias.map((c: any) => [c.id, c.nombre])), [categorias]);
 
   const eliminarCarpeta = async (carpetaId: number) => {
@@ -2953,21 +2953,21 @@ const ManageModal = ({
 
     if (confirm(mensaje)) {
       try {
-        // Eliminar de la base de datos
+        // Delete from database
         await VSCategoriasService.deleteCarpeta(carpetaId);
 
-        // Actualizar estado local
+        // Update local state
         setVsConfig(prev => {
           const newConfig = { ...prev };
 
-          // Remover carpetaId de grupos que estaban en esta carpeta
+          // Remove carpetaId from groups that were in this folder
           gruposEnCarpeta.forEach(([grupoId, grupo]) => {
             if (newConfig.grupos[grupoId]) {
               delete newConfig.grupos[grupoId].carpetaId;
             }
           });
 
-          // Eliminar la carpeta
+          // Delete the folder
           delete newConfig.carpetas[carpetaId];
 
           return newConfig;
@@ -2985,15 +2985,15 @@ const ManageModal = ({
     const grupo = vsConfig.grupos[grupoId];
     if (confirm(`¿Estás seguro de eliminar el grupo "${grupo.nombre}"?`)) {
       try {
-        // Eliminar de la base de datos
+        // Delete from database
         await VSCategoriasService.deleteGrupo(grupoId);
 
-        // Actualizar estado local
+        // Update local state
         setVsConfig(prev => {
           const newConfig = { ...prev };
           delete newConfig.grupos[grupoId];
 
-          // Remover de gruposSeleccionados si estaba seleccionado
+          // Remove from gruposSeleccionados if it was selected
           newConfig.filtros.gruposSeleccionados = newConfig.filtros.gruposSeleccionados.filter(id => id !== grupoId);
 
           return newConfig;
@@ -3163,7 +3163,7 @@ const ManageModal = ({
   );
 };
 
-// Componente Lista de Drill-down
+// Drill-down List component
 const DrillDownListView = ({ transactions, usuarios: usuariosProp }: { transactions: Transaccion[], usuarios?: any[] }) => {
   const [mounted, setMounted] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -3172,7 +3172,7 @@ const DrillDownListView = ({ transactions, usuarios: usuariosProp }: { transacti
   const [sortField, setSortField] = useState<keyof Transaccion>('fecha');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  // Usar usuarios del prop o array vacío
+  // Use usuarios from prop or empty array
   const usuarios = usuariosProp || [];
 
   useEffect(() => {
@@ -3202,7 +3202,7 @@ const DrillDownListView = ({ transactions, usuarios: usuariosProp }: { transacti
     );
   }
 
-    // Debug: mostrar información detallada cuando está en loading
+    // Debug: show detailed information when loading
   if (transactions.length === 0 && mounted) {
     console.log('🔄 DrillDownListView: Mostrando estado de loading');
     console.log('📊 Estado actual:', {
@@ -3240,7 +3240,7 @@ const DrillDownListView = ({ transactions, usuarios: usuariosProp }: { transacti
     );
   }
 
-  // Mensaje especial si mounted pero aún no hay transacciones
+  // Special message if mounted but still no transactions
   if (mounted && transactions.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -3255,9 +3255,9 @@ const DrillDownListView = ({ transactions, usuarios: usuariosProp }: { transacti
     );
   }
 
-    // Filtrar transacciones (basado en lógica legacy getFilteredTransactions)
+    // Filter transactions (based on legacy getFilteredTransactions logic)
   const filteredTransactions = transactions.filter(transaction => {
-    // Filtro de búsqueda (equivalente al legacy que busca en concepto, usuario y notas)
+    // Search filter (equivalent to legacy that searches in concept, user and notes)
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
       const usuario = usuarios.find(u => u.id === (transaction.usuarioId || transaction.personaId));
@@ -3272,12 +3272,12 @@ const DrillDownListView = ({ transactions, usuarios: usuariosProp }: { transacti
       if (!matchesSearch) return false;
     }
 
-    // Filtro por tipo
+    // Filter by type
     if (selectedTipo && transaction.tipo?.nombre !== selectedTipo) {
       return false;
     }
 
-    // Filtro por usuario (comparar con nombre de usuario, no ID)
+    // Filter by user (compare with user name, not ID)
     if (selectedUsuario) {
       const usuario = usuarios.find(u => u.id === (transaction.usuarioId || transaction.personaId));
       const userName = usuario ? usuario.nombre : 'Sin usuario';
@@ -3332,7 +3332,7 @@ const DrillDownListView = ({ transactions, usuarios: usuariosProp }: { transacti
     }
   };
 
-  // Estadísticas rápidas
+  // Quick statistics
   const totalMonto = filteredTransactions.reduce((sum, t) => sum + (t.monto || 0), 0);
   const ingresos = filteredTransactions.filter(t => t.tipo?.nombre === 'INGRESO').reduce((sum, t) => sum + (t.monto || 0), 0);
   const gastos = filteredTransactions.filter(t => t.tipo?.nombre === 'GASTO').reduce((sum, t) => sum + (t.monto || 0), 0);
@@ -3410,7 +3410,7 @@ const DrillDownListView = ({ transactions, usuarios: usuariosProp }: { transacti
                   if (t.usuario?.nombre) {
                     usuariosEnTransacciones.add(t.usuario.nombre);
                   } else if (t.usuarioId || t.personaId) {
-                    // Fallback: buscar en el array de usuarios si no viene el objeto completo
+                    // Fallback: search in users array if the full object is not provided
                     const usuario = usuarios.find(u => u.id === (t.usuarioId || t.personaId));
                     if (usuario) {
                       usuariosEnTransacciones.add(usuario.nombre);
@@ -3581,7 +3581,7 @@ const DrillDownListView = ({ transactions, usuarios: usuariosProp }: { transacti
   );
 };
 
-// Componente Formulario para Editar Carpetas
+// Form component for Editing Folders
 const EditCarpetaForm = ({
   carpeta,
   onSubmit,
@@ -3649,7 +3649,7 @@ const EditCarpetaForm = ({
   );
 };
 
-// Componente Formulario para Editar Grupos
+// Form component for Editing Groups
 const EditGrupoForm = ({
   grupo,
   categorias,
@@ -3769,7 +3769,7 @@ const EditGrupoForm = ({
   );
 };
 
-// Componente Gráficos de Drill-down (basado en legacy vs-categorias-drill-down.js)
+// Drill-down Charts component (based on legacy vs-categorias-drill-down.js)
 const DrillDownChartView = ({
   transactions,
   segmentColor
@@ -3783,7 +3783,7 @@ const DrillDownChartView = ({
     setMounted(true);
   }, []);
 
-  // Analizar transacciones por usuario (basado en legacy)
+  // Analyze transactions by user (based on legacy)
   const analyzeByUser = () => {
     const userData: Record<string, number> = {};
     transactions.forEach(t => {
@@ -3797,7 +3797,7 @@ const DrillDownChartView = ({
     return Object.entries(userData).map(([name, amount]) => ({ name, amount }));
   };
 
-  // Analizar transacciones por mes (basado en legacy)
+  // Analyze transactions by month (based on legacy)
   const analyzeByMonth = () => {
     const monthData: Record<string, number> = {};
     transactions.forEach(t => {
@@ -3815,7 +3815,7 @@ const DrillDownChartView = ({
       .map(([month, amount]) => ({ month, amount }));
   };
 
-  // Generar colores para gráficos (basado en legacy)
+  // Generate colors for charts (based on legacy)
   const generateColors = (count: number) => {
     const detailColors = [
       '#6366f1', '#f59e42', '#10b981', '#ef4444', '#fbbf24',
@@ -3829,7 +3829,7 @@ const DrillDownChartView = ({
     return colors;
   };
 
-  // Analizar detalles de transacciones individuales para visualización granular (basado en legacy)
+  // Analyze individual transaction details for granular visualization (based on legacy)
   const analyzeTransactionDetails = (transactions: Transaccion[]) => {
     return transactions.map((t, index) => {
       const userName = t.usuario?.nombre || 'Sin usuario';
@@ -3844,10 +3844,10 @@ const DrillDownChartView = ({
         categoria: t.categoria?.nombre || '',
         notas: t.notas || ''
       };
-    }).sort((a, b) => b.monto - a.monto); // Ordenar por monto descendente
+    }).sort((a, b) => b.monto - a.monto); // Sort by amount descending
   };
 
-  // Renderizar análisis estadístico (basado en legacy)
+  // Render statistical analysis (based on legacy)
   const renderStatisticalAnalysis = (transactions: Transaccion[]) => {
     const amounts = transactions.map(t => t.monto || 0);
     const total = amounts.reduce((sum, amt) => sum + amt, 0);
@@ -3855,7 +3855,7 @@ const DrillDownChartView = ({
     const max = Math.max(...amounts);
     const min = Math.min(...amounts);
 
-    // Calcular mediana
+    // Calculate median
     const sortedAmounts = [...amounts].sort((a, b) => a - b);
     const median = sortedAmounts.length % 2 === 0
       ? (sortedAmounts[sortedAmounts.length/2 - 1] + sortedAmounts[sortedAmounts.length/2]) / 2
@@ -3887,7 +3887,7 @@ const DrillDownChartView = ({
     );
   };
 
-  // Crear gráfico visual de transacciones individuales (basado en legacy)
+  // Create visual chart of individual transactions (based on legacy)
   const createTransactionDetailChart = (canvasId: string, transactionData: any[]) => {
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
     if (!canvas) return;
@@ -3895,43 +3895,43 @@ const DrillDownChartView = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Calcular tamaños de puntos basados en el monto
+    // Calculate point sizes based on amount
     const montos = transactionData.map(t => t.monto);
     const minMonto = Math.min(...montos);
     const maxMonto = Math.max(...montos);
     const rangeMonto = maxMonto - minMonto || 1;
 
-    // Preparar datos para visualización directa de transacciones
+    // Prepare data for direct transaction visualization
     const scatterData = transactionData.map((t, index) => {
-      // Calcular tamaño del punto basado en el monto (entre 4 y 20)
+      // Calculate point size based on amount (between 4 and 20)
       const normalizedSize = ((t.monto - minMonto) / rangeMonto);
       const pointSize = 4 + (normalizedSize * 16);
 
-      // Color basado en el tipo de transacción
+      // Color based on transaction type
       let color;
       switch (t.tipo) {
         case 'INGRESO':
-          color = '#10b981'; // Verde
+          color = '#10b981'; // Green
           break;
         case 'GASTO':
-          color = '#ef4444'; // Rojo
+          color = '#ef4444'; // Red
           break;
         case 'APORTE':
-          color = '#3b82f6'; // Azul
+          color = '#3b82f6'; // Blue
           break;
         default:
-          color = '#6b7280'; // Gris
+          color = '#6b7280'; // Gray
       }
 
       return {
-        x: index + 1, // Número de transacción en orden
+        x: index + 1, // Transaction number in order
         y: t.monto,
         pointRadius: pointSize,
         pointHoverRadius: pointSize + 3,
-        backgroundColor: color + '80', // 50% transparencia
+        backgroundColor: color + '80', // 50% transparency
         borderColor: color,
         borderWidth: 2,
-        // Datos adicionales para tooltip
+        // Additional data for tooltip
         concepto: t.concepto,
         fecha: t.fecha,
         tipo: t.tipo,
@@ -3958,7 +3958,7 @@ const DrillDownChartView = ({
         maintainAspectRatio: false,
         plugins: {
           legend: {
-            display: false // Ocultar leyenda ya que cada punto es único
+            display: false // Hide legend since each point is unique
           },
           tooltip: {
             callbacks: {
@@ -4035,7 +4035,7 @@ const DrillDownChartView = ({
     });
   };
 
-  // Crear gráfico temporal (basado en legacy)
+  // Create temporal chart (based on legacy)
   const createTemporalChart = (canvasId: string, monthData: any[]) => {
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
     if (!canvas) return;
@@ -4086,24 +4086,24 @@ const DrillDownChartView = ({
     });
   };
 
-  // Renderizar gráficos después de que el componente se monte
+  // Render charts after component mounts
   useEffect(() => {
     if (mounted && transactions.length > 0) {
-      // Pequeño delay para asegurar que el DOM esté listo
+      // Small delay to ensure DOM is ready
       setTimeout(() => {
         const transactionAnalysis = analyzeTransactionDetails(transactions);
         const monthAnalysis = analyzeByMonth(transactions);
 
-        // Crear gráfico de transacciones
+        // Create transactions chart
         createTransactionDetailChart('drill-chart-transacciones', transactionAnalysis);
 
-        // Crear gráfico temporal
+        // Create temporal chart
         createTemporalChart('drill-chart-temporal', monthAnalysis);
       }, 100);
     }
   }, [mounted, transactions]);
 
-  // Renderizar contenido de gráficos (basado en legacy)
+  // Render chart content (based on legacy)
   const renderDetailCharts = () => {
     if (transactions.length === 0) {
   return (
@@ -4117,12 +4117,12 @@ const DrillDownChartView = ({
 
     return (
       <div className="space-y-6">
-        {/* Gráfico visual de transacciones */}
+        {/* Visual transactions chart */}
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h4 className="text-lg font-semibold text-gray-900 mb-4">Visualización de Transacciones</h4>
           <p className="text-sm text-gray-600 mb-3">Vista gráfica de la información de la lista para identificación rápida de patrones</p>
 
-          {/* Leyenda visual */}
+          {/* Visual legend */}
           <div className="bg-gray-50 rounded-lg p-3 mb-4 border">
             <div className="flex flex-wrap items-center gap-4 text-sm">
               <div className="flex items-center gap-2">
@@ -4149,7 +4149,7 @@ const DrillDownChartView = ({
           </div>
         </div>
 
-        {/* Gráfico temporal */}
+        {/* Temporal chart */}
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h4 className="text-lg font-semibold text-gray-900 mb-4">Evolución Temporal</h4>
           <div className="h-64">
@@ -4157,7 +4157,7 @@ const DrillDownChartView = ({
           </div>
         </div>
 
-        {/* Análisis estadístico */}
+        {/* Statistical analysis */}
         <div className="bg-gray-50 rounded-lg p-6">
           <h4 className="text-lg font-semibold text-gray-900 mb-4">Análisis Estadístico</h4>
           {renderStatisticalAnalysis(transactions)}
