@@ -285,7 +285,7 @@ export default function HorasPendientesPage() {
                           }}
                         >
                           <h3 style={{ fontSize: '1.125rem', fontWeight: '600', margin: 0 }}>
-                            {record.persona?.nombre || 'Persona desconocida'}
+                            {record.usuario?.nombre || 'Usuario desconocido'}
                           </h3>
                           <span
                             style={{
@@ -487,7 +487,7 @@ export default function HorasPendientesPage() {
                         }}
                       >
                         <h3 style={{ fontSize: '1.125rem', fontWeight: '600', margin: 0 }}>
-                          {record.persona?.nombre || 'Persona desconocida'}
+                          {record.usuario?.nombre || 'Usuario desconocido'}
                         </h3>
                         <span
                           style={{

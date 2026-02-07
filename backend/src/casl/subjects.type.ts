@@ -1,6 +1,5 @@
 import {
   Usuario,
-  Persona,
   Campana,
   Categoria,
   Transaccion,
@@ -19,8 +18,6 @@ import {
 export type Subjects =
   | 'Usuario'
   | Usuario
-  | 'Persona'
-  | Persona
   | 'Campana'
   | Campana
   | 'Categoria'

@@ -19,36 +19,18 @@ export class RegistroHorasService {
       throw new BadRequestException('El máximo permitido es 16 horas por registro.');
     }
 
-    let usuarioId = createRegistroHorasDto.usuarioId;
-    let personaId = createRegistroHorasDto.personaId;
-
-    if (!usuarioId && personaId) {
-      const persona = await this.prisma.persona.findUnique({
-        where: { id: personaId },
-        select: { usuarioId: true }
-      });
-      usuarioId = persona?.usuarioId ?? undefined;
-    }
+    const usuarioId = createRegistroHorasDto.usuarioId;
 
     if (!usuarioId) {
-      throw new NotFoundException('Usuario no encontrado para el registro de horas');
+      throw new NotFoundException('Debe proporcionar usuarioId');
     }
 
     const usuario = await this.prisma.usuario.findUnique({
       where: { id: usuarioId },
-      include: { personas: { take: 1 } }
     });
 
     if (!usuario || usuario.negocioId !== negocioId) {
       throw new NotFoundException('Usuario no encontrado o no pertenece al negocio');
-    }
-
-    if (!personaId && usuario.personas[0]) {
-      personaId = usuario.personas[0].id;
-    }
-
-    if (!personaId) {
-      throw new NotFoundException('No se pudo determinar la persona asociada');
     }
 
     if (createRegistroHorasDto.campanaId) {
@@ -65,7 +47,6 @@ export class RegistroHorasService {
       data: {
         negocioId,
         usuarioId,
-        personaId,
         campanaId: createRegistroHorasDto.campanaId,
         fecha: new Date(createRegistroHorasDto.fecha),
         horas: createRegistroHorasDto.horas,
@@ -85,7 +66,6 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true,
       },
     });
   }
@@ -109,7 +89,6 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true,
       },
       orderBy: {
         fecha: 'desc',
@@ -137,7 +116,6 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true,
       },
     });
 
@@ -146,34 +124,6 @@ export class RegistroHorasService {
     }
 
     return registroHoras;
-  }
-
-  async findByPersonaId(negocioId: number, personaId: number) {
-    return this.prisma.registroHoras.findMany({
-      where: {
-        negocioId,
-        personaId,
-      },
-      include: {
-        usuario: {
-          select: {
-            id: true,
-            nombre: true,
-            email: true,
-            rolNegocio: {
-              select: {
-                id: true,
-                nombreRol: true,
-              },
-            },
-          },
-        },
-        persona: true,
-      },
-      orderBy: {
-        fecha: 'desc',
-      },
-    });
   }
 
   async findByUsuarioId(negocioId: number, usuarioId: number) {
@@ -196,7 +146,6 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true,
       },
       orderBy: {
         fecha: 'desc',
@@ -231,25 +180,13 @@ export class RegistroHorasService {
     }
 
     if (updateRegistroHorasDto.usuarioId !== undefined) {
-      updateData.usuarioId = updateRegistroHorasDto.usuarioId;
-
       const usuario = await this.prisma.usuario.findUnique({
         where: { id: updateRegistroHorasDto.usuarioId },
-        include: { personas: { take: 1 } }
       });
-      if (usuario?.personas?.[0]) {
-        updateData.personaId = usuario.personas[0].id;
+      if (!usuario) {
+        throw new NotFoundException('Usuario no encontrado');
       }
-    } else if (updateRegistroHorasDto.personaId !== undefined) {
-      updateData.personaId = updateRegistroHorasDto.personaId;
-
-      const persona = await this.prisma.persona.findUnique({
-        where: { id: updateRegistroHorasDto.personaId },
-        select: { usuarioId: true }
-      });
-      if (persona?.usuarioId) {
-        updateData.usuarioId = persona.usuarioId;
-      }
+      updateData.usuarioId = updateRegistroHorasDto.usuarioId;
     }
 
     if (updateRegistroHorasDto.campanaId !== undefined) {
@@ -285,7 +222,6 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true,
       },
     });
   }
@@ -327,7 +263,7 @@ export class RegistroHorasService {
 
     const usuariosUnicos = new Set(
       registrosHoras
-        .map(r => r.usuarioId || r.personaId)
+        .map(r => r.usuarioId)
         .filter(id => id !== null)
     ).size;
 
@@ -341,30 +277,13 @@ export class RegistroHorasService {
 
   // ==================== TIMER METHODS ====================
 
-  async startTimer(negocioId: number, usuarioIdOrPersonaId: number, campanaId?: number, descripcion?: string) {
-    let usuarioId: number;
-    let personaId: number | undefined;
-
+  async startTimer(negocioId: number, usuarioId: number, campanaId?: number, descripcion?: string) {
     const usuario = await this.prisma.usuario.findFirst({
-      where: { id: usuarioIdOrPersonaId, negocioId },
-      include: { personas: { take: 1 } }
+      where: { id: usuarioId, negocioId },
     });
 
-    if (usuario) {
-      usuarioId = usuario.id;
-      personaId = usuario.personas?.[0]?.id;
-    } else {
-      const persona = await this.prisma.persona.findFirst({
-        where: { id: usuarioIdOrPersonaId, negocioId },
-        select: { usuarioId: true, id: true }
-      });
-
-      if (!persona || !persona.usuarioId) {
-        throw new NotFoundException('Usuario no encontrado');
-      }
-
-      usuarioId = persona.usuarioId;
-      personaId = persona.id;
+    if (!usuario) {
+      throw new NotFoundException('Usuario no encontrado');
     }
 
     const timerActivo = await this.prisma.registroHoras.findFirst({
@@ -383,7 +302,6 @@ export class RegistroHorasService {
       data: {
         negocioId,
         usuarioId,
-        personaId,
         campanaId,
         fecha: new Date(),
         horas: 0,
@@ -408,7 +326,6 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true,
         campana: true,
       },
     });
@@ -452,7 +369,6 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true,
         campana: true,
       },
     });
@@ -488,7 +404,6 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true,
         campana: true,
       },
     });
@@ -560,31 +475,18 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true,
         campana: true,
       },
     });
   }
 
-  async getActiveTimer(negocioId: number, usuarioIdOrPersonaId: number) {
-    let usuarioId: number | undefined;
-
+  async getActiveTimer(negocioId: number, usuarioId: number) {
     const usuario = await this.prisma.usuario.findFirst({
-      where: { id: usuarioIdOrPersonaId, negocioId },
+      where: { id: usuarioId, negocioId },
       select: { id: true }
     });
 
-    if (usuario) {
-      usuarioId = usuario.id;
-    } else {
-      const persona = await this.prisma.persona.findFirst({
-        where: { id: usuarioIdOrPersonaId, negocioId },
-        select: { usuarioId: true }
-      });
-      usuarioId = persona?.usuarioId || undefined;
-    }
-
-    if (!usuarioId) {
+    if (!usuario) {
       return null;
     }
 
@@ -610,7 +512,6 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true,
         campana: true,
       },
     });
@@ -642,7 +543,6 @@ export class RegistroHorasService {
       const registro = await tx.registroHoras.findFirst({
         where: { id, negocioId },
         include: {
-          persona: { include: { usuario: true } },
           usuario: true,
         },
       });
@@ -683,15 +583,12 @@ export class RegistroHorasService {
               },
             },
           },
-          persona: {
-            include: { usuario: true },
-          },
           campana: true,
         },
       });
 
       // 2. Apply debt deduction (within same transaction)
-      const targetUserId = approved.usuarioId || approved.persona?.usuario?.id;
+      const targetUserId = approved.usuarioId;
       if (targetUserId) {
         try {
           await this.hourDebtService.applyDebtDeduction(
@@ -759,7 +656,6 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true,
         campana: true,
       },
     });
@@ -790,7 +686,6 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true,
         campana: true,
       },
       orderBy: {
@@ -822,7 +717,6 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true,
         campana: true,
       },
       orderBy: {
@@ -914,7 +808,6 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true,
         campana: true,
       },
     });
@@ -957,7 +850,6 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true,
         campana: true,
       },
     });
@@ -992,7 +884,6 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true,
         campana: true,
       },
       orderBy: {
@@ -1049,7 +940,6 @@ export class RegistroHorasService {
             },
           },
         },
-        persona: true,
         campana: true,
       },
     });

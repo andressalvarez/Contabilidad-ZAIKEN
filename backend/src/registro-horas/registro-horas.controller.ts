@@ -64,16 +64,6 @@ export class RegistroHorasController {
     };
   }
 
-  @Get('persona/:personaId')
-  async findByPersonaId(@NegocioId() negocioId: number, @Param('personaId', ParseIntPipe) personaId: number) {
-    return {
-      success: true,
-      message: 'Registros de horas de la persona obtenidos exitosamente',
-      data: await this.registroHorasService.findByPersonaId(negocioId, personaId),
-    };
-  }
-
-
   @Get('usuario/:usuarioId')
   async findByUsuarioId(@NegocioId() negocioId: number, @Param('usuarioId', ParseIntPipe) usuarioId: number) {
     return {
@@ -124,14 +114,12 @@ export class RegistroHorasController {
   @HttpCode(HttpStatus.CREATED)
   async startTimer(
     @NegocioId() negocioId: number,
-    @Body() body: { usuarioId?: number; personaId?: number; campanaId?: number; descripcion?: string }
+    @Body() body: { usuarioId: number; campanaId?: number; descripcion?: string }
   ) {
-
-    const id = body.usuarioId || body.personaId;
-    if (!id) {
+    if (!body.usuarioId) {
       return {
         success: false,
-        message: 'Debe proporcionar usuarioId o personaId',
+        message: 'Debe proporcionar usuarioId',
       };
     }
 
@@ -140,7 +128,7 @@ export class RegistroHorasController {
       message: 'Timer iniciado exitosamente',
       data: await this.registroHorasService.startTimer(
         negocioId,
-        id,
+        body.usuarioId,
         body.campanaId,
         body.descripcion
       ),
@@ -183,20 +171,6 @@ export class RegistroHorasController {
       ),
     };
   }
-
-  @Get('timer/active/:personaId')
-  async getActiveTimer(
-    @NegocioId() negocioId: number,
-    @Param('personaId', ParseIntPipe) personaId: number
-  ) {
-    const timer = await this.registroHorasService.getActiveTimer(negocioId, personaId);
-    return {
-      success: true,
-      message: timer ? 'Timer activo encontrado' : 'No hay timer activo',
-      data: timer,
-    };
-  }
-
 
   @Get('timer/active-usuario/:usuarioId')
   async getActiveTimerByUsuario(

@@ -34,7 +34,6 @@ interface FormData {
   rol: 'ADMIN_NEGOCIO' | 'USER' | 'EMPLEADO';
   password: string;
   activo: boolean;
-  // ✅ Campos migrados de Persona
   rolId?: number;
   participacionPorc?: number;
   valorHora?: number;
@@ -50,7 +49,6 @@ export default function UsuariosPage() {
     rol: 'USER',
     password: '',
     activo: true,
-    // ✅ Campos migrados de Persona
     rolId: undefined,
     participacionPorc: 0,
     valorHora: 0,
@@ -120,7 +118,6 @@ export default function UsuariosPage() {
         email: formData.email,
         rol: formData.rol,
         activo: formData.activo,
-        // ✅ Campos migrados de Persona
         rolId: formData.rolId,
         participacionPorc: formData.participacionPorc,
         valorHora: formData.valorHora,
@@ -149,7 +146,6 @@ export default function UsuariosPage() {
       rol: usuario.rol,
       password: '', // No pre-llenar password por seguridad
       activo: usuario.activo,
-      // ✅ Campos migrados de Persona
       rolId: usuario.rolId,
       participacionPorc: usuario.participacionPorc || 0,
       valorHora: usuario.valorHora || 0,
@@ -172,7 +168,6 @@ export default function UsuariosPage() {
       rol: 'USER',
       password: '',
       activo: true,
-      // ✅ Campos migrados de Persona
       rolId: undefined,
       participacionPorc: 0,
       valorHora: 0,
@@ -446,7 +441,6 @@ export default function UsuariosPage() {
                   </select>
                 </div>
 
-                {/* ✅ Campos migrados de Persona */}
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                     <Briefcase className="h-4 w-4" />

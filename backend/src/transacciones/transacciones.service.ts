@@ -14,7 +14,6 @@ export interface FiltrosTransacciones {
   categoriaId?: number;
   categoriasIds?: number[];
   usuarioId?: number;
-  personaId?: number;
   campanaId?: number;
   aprobado?: boolean;
 }
@@ -70,9 +69,6 @@ export class TransaccionesService {
   
       if (createTransaccionDto.usuarioId) {
         await this.validateUsuario(createTransaccionDto.usuarioId, negocioId);
-      } else if (createTransaccionDto.personaId) {
-        // Backward compatibility: validar persona y obtener usuarioId
-        await this.validatePersona(createTransaccionDto.personaId, negocioId);
       }
 
       if (createTransaccionDto.campanaId) {
@@ -104,8 +100,7 @@ export class TransaccionesService {
               },
             },
           },
-          persona: true,
-          campana: true,
+                    campana: true,
           categoria: true,
         },
       });
@@ -154,8 +149,6 @@ export class TransaccionesService {
 
     if (filtros.usuarioId) {
       where.usuarioId = filtros.usuarioId;
-    } else if (filtros.personaId) {
-      where.personaId = filtros.personaId;
     }
 
     if (filtros.campanaId) {
@@ -183,8 +176,7 @@ export class TransaccionesService {
             },
           },
         },
-        persona: true,
-        campana: true,
+                campana: true,
         categoria: true,
       },
       orderBy: { fecha: 'desc' },
@@ -211,8 +203,7 @@ export class TransaccionesService {
             },
           },
         },
-        persona: true,
-        campana: true,
+                campana: true,
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -240,8 +231,7 @@ export class TransaccionesService {
             },
           },
         },
-        persona: true,
-        campana: true,
+                campana: true,
       },
       orderBy: { fecha: 'desc' },
     });
@@ -269,8 +259,7 @@ export class TransaccionesService {
             },
           },
         },
-        persona: true,
-        campana: true,
+                campana: true,
         categoria: true,
       },
     });
@@ -291,9 +280,6 @@ export class TransaccionesService {
   
       if (updateTransaccionDto.usuarioId) {
         await this.validateUsuario(updateTransaccionDto.usuarioId, negocioId);
-      } else if (updateTransaccionDto.personaId) {
-        // Backward compatibility
-        await this.validatePersona(updateTransaccionDto.personaId, negocioId);
       }
 
       if (updateTransaccionDto.campanaId) {
@@ -326,8 +312,7 @@ export class TransaccionesService {
               },
             },
           },
-          persona: true,
-          campana: true,
+                    campana: true,
           categoria: true,
         },
       });
@@ -383,10 +368,6 @@ export class TransaccionesService {
       negocioId
     };
 
-    if (filters.personaId) {
-      where.personaId = parseInt(filters.personaId.toString());
-    }
-
     if (filters.campanaId) {
       where.campanaId = parseInt(filters.campanaId.toString());
     }
@@ -411,8 +392,7 @@ export class TransaccionesService {
       where,
       include: {
         tipo: true,
-        persona: true,
-        campana: true
+                campana: true
       }
     });
 
@@ -547,10 +527,6 @@ export class TransaccionesService {
       where.categoriaId = filtros.categoriaId;
     }
 
-    if (filtros.personaId) {
-      where.personaId = filtros.personaId;
-    }
-
     if (filtros.campanaId) {
       where.campanaId = filtros.campanaId;
     }
@@ -629,10 +605,6 @@ export class TransaccionesService {
       where.categoriaId = filtros.categoriaId;
     }
 
-    if (filtros.personaId) {
-      where.personaId = filtros.personaId;
-    }
-
     if (filtros.campanaId) {
       where.campanaId = filtros.campanaId;
     }
@@ -705,9 +677,6 @@ export class TransaccionesService {
     }
     if (filtros.categoriaId) {
       where.categoriaId = filtros.categoriaId;
-    }
-    if (filtros.personaId) {
-      where.personaId = filtros.personaId;
     }
     if (filtros.campanaId) {
       where.campanaId = filtros.campanaId;
@@ -819,10 +788,6 @@ export class TransaccionesService {
       };
     }
 
-    if (filtros.personaId) {
-      where.personaId = filtros.personaId;
-    }
-
     if (filtros.campanaId) {
       where.campanaId = filtros.campanaId;
     }
@@ -927,19 +892,6 @@ export class TransaccionesService {
     });
     if (!usuario) {
       throw new NotFoundException(`Usuario con ID ${usuarioId} no encontrado`);
-    }
-  }
-
-
-  private async validatePersona(personaId: number, negocioId: number): Promise<void> {
-    const persona = await this.prisma.persona.findFirst({
-      where: {
-        id: personaId,
-        negocioId
-      },
-    });
-    if (!persona) {
-      throw new NotFoundException(`Persona con ID ${personaId} no encontrada`);
     }
   }
 

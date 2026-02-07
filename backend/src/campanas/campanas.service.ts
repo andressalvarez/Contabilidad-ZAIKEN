@@ -184,12 +184,11 @@ export class CampanasService {
     };
 
 
-    if (filters.usuarioId || filters.personaId) {
+    if (filters.usuarioId) {
       where.transacciones = {
         some: {
           negocioId,
-          ...(filters.usuarioId && { usuarioId: parseInt(filters.usuarioId) }),
-          ...(filters.personaId && !filters.usuarioId && { personaId: parseInt(filters.personaId) })
+          usuarioId: parseInt(filters.usuarioId),
         }
       };
     }
@@ -214,9 +213,7 @@ export class CampanasService {
         transacciones: {
           where: {
             negocioId,
-        
             ...(filters.usuarioId && { usuarioId: parseInt(filters.usuarioId) }),
-            ...(filters.personaId && !filters.usuarioId && { personaId: parseInt(filters.personaId) }),
             ...(filters.fechaInicio || filters.fechaFin) && {
               fecha: {
                 ...(filters.fechaInicio && { gte: new Date(filters.fechaInicio) }),

@@ -42,7 +42,7 @@ export class TransaccionesController {
     @Query('categoria') categoria?: string,
     @Query('categoriaId', new ParseIntPipe({ optional: true })) categoriaId?: number,
     @Query('categoriasIds') categoriasIds?: string,
-    @Query('personaId', new ParseIntPipe({ optional: true })) personaId?: number,
+    @Query('usuarioId', new ParseIntPipe({ optional: true })) usuarioId?: number,
     @Query('campanaId', new ParseIntPipe({ optional: true })) campanaId?: number,
     @Query('aprobado', new ParseBoolPipe({ optional: true })) aprobado?: boolean,
     @Query('ignorarTipo', new ParseBoolPipe({ optional: true })) ignorarTipo?: boolean,
@@ -50,11 +50,11 @@ export class TransaccionesController {
     const filtros: FiltrosTransacciones = {
       fechaInicio,
       fechaFin,
-      tipoId: ignorarTipo ? undefined : tipoId, // Ignorar tipo si se especifica
+      tipoId: ignorarTipo ? undefined : tipoId,
       categoria,
       categoriaId,
       categoriasIds: categoriasIds ? categoriasIds.split(',').map(id => +id) : undefined,
-      personaId,
+      usuarioId,
       campanaId,
       aprobado,
     };
@@ -84,7 +84,7 @@ export class TransaccionesController {
     @Query('categoriasIds') categoriasIds: string,
     @Query('fechaInicio') fechaInicio?: string,
     @Query('fechaFin') fechaFin?: string,
-    @Query('personaId', new ParseIntPipe({ optional: true })) personaId?: number,
+    @Query('usuarioId', new ParseIntPipe({ optional: true })) usuarioId?: number,
     @Query('campanaId', new ParseIntPipe({ optional: true })) campanaId?: number,
     @Query('aprobado', new ParseBoolPipe({ optional: true })) aprobado?: boolean,
   ) {
@@ -92,10 +92,9 @@ export class TransaccionesController {
       fechaInicio,
       fechaFin,
       categoriasIds: categoriasIds.split(',').map(id => +id),
-      personaId,
+      usuarioId,
       campanaId,
       aprobado,
-      // No se especifica tipoId para buscar todos los tipos
     };
 
     return {
@@ -120,14 +119,14 @@ export class TransaccionesController {
     @Query('fechaInicio') fechaInicio?: string,
     @Query('fechaFin') fechaFin?: string,
     @Query('categoria') categoria?: string,
-    @Query('personaId', new ParseIntPipe({ optional: true })) personaId?: number,
+    @Query('usuarioId', new ParseIntPipe({ optional: true })) usuarioId?: number,
     @Query('campanaId', new ParseIntPipe({ optional: true })) campanaId?: number,
   ) {
     const filtros: FiltrosTransacciones = {
       fechaInicio,
       fechaFin,
       categoria,
-      personaId,
+      usuarioId,
       campanaId,
     };
 
@@ -171,14 +170,14 @@ export class TransaccionesController {
     @Query('fechaInicio') fechaInicio?: string,
     @Query('fechaFin') fechaFin?: string,
     @Query('categoria') categoria?: string,
-    @Query('personaId', new ParseIntPipe({ optional: true })) personaId?: number,
+    @Query('usuarioId', new ParseIntPipe({ optional: true })) usuarioId?: number,
     @Query('campanaId', new ParseIntPipe({ optional: true })) campanaId?: number,
   ) {
     const filtros: FiltrosTransacciones = {
       fechaInicio,
       fechaFin,
       categoria,
-      personaId,
+      usuarioId,
       campanaId,
     };
 
@@ -194,13 +193,13 @@ export class TransaccionesController {
     @NegocioId() negocioId: number,
     @Query('fechaInicio') fechaInicio?: string,
     @Query('fechaFin') fechaFin?: string,
-    @Query('personaId', new ParseIntPipe({ optional: true })) personaId?: number,
+    @Query('usuarioId', new ParseIntPipe({ optional: true })) usuarioId?: number,
     @Query('campanaId', new ParseIntPipe({ optional: true })) campanaId?: number,
   ) {
     const filtros: FiltrosTransacciones = {
       fechaInicio,
       fechaFin,
-      personaId,
+      usuarioId,
       campanaId,
     };
 
@@ -217,7 +216,7 @@ export class TransaccionesController {
     @Query('fechaInicio') fechaInicio?: string,
     @Query('fechaFin') fechaFin?: string,
     @Query('categoria') categoria?: string,
-    @Query('personaId', new ParseIntPipe({ optional: true })) personaId?: number,
+    @Query('usuarioId', new ParseIntPipe({ optional: true })) usuarioId?: number,
     @Query('campanaId', new ParseIntPipe({ optional: true })) campanaId?: number,
     @Query('aprobado', new ParseBoolPipe({ optional: true })) aprobado?: boolean,
   ) {
@@ -225,10 +224,10 @@ export class TransaccionesController {
       fechaInicio,
       fechaFin,
       categoria,
-      personaId,
+      usuarioId,
       campanaId,
       aprobado,
-      tipoId: 1, // Solo GASTOS (corregido de 2 a 1)
+      tipoId: 1,
     };
 
     return {

@@ -33,8 +33,7 @@ export class DistribucionUtilidadesService {
                 },
               },
             },
-            persona: true,
-          },
+                      },
         },
       },
     });
@@ -64,8 +63,7 @@ export class DistribucionUtilidadesService {
                 },
               },
             },
-            persona: true,
-          },
+                      },
         },
       },
       orderBy: {
@@ -99,8 +97,7 @@ export class DistribucionUtilidadesService {
                 },
               },
             },
-            persona: true,
-          },
+                      },
         },
       },
     });
@@ -140,8 +137,7 @@ export class DistribucionUtilidadesService {
                 },
               },
             },
-            persona: true,
-          },
+                      },
         },
       },
     });
@@ -246,7 +242,6 @@ export class DistribucionUtilidadesService {
       },
       include: {
         rolNegocio: true,
-        personas: { take: 1 }, // Necesario temporalmente hasta eliminar personaId del schema
       },
     });
 
@@ -263,13 +258,10 @@ export class DistribucionUtilidadesService {
     const detalles = usuarios.map(usuario => {
       const porcentaje = usuario.participacionPorc / totalParticipacion;
       const montoDistribuido = distribucion.utilidadTotal * porcentaje;
-      // personaId temporalmente requerido hasta migración completa
-      const personaId = usuario.personas?.[0]?.id || usuario.id;
 
       return {
         distribucionId: id,
         usuarioId: usuario.id,
-        personaId,
         porcentajeParticipacion: porcentaje * 100,
         montoDistribuido,
       };

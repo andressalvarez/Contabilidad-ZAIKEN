@@ -5,7 +5,6 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { RolesModule } from './roles/roles.module';
-import { PersonasModule } from './personas/personas.module';
 import { TransaccionesModule } from './transacciones/transacciones.module';
 import { CategoriasModule } from './categorias/categorias.module';
 import { TiposTransaccionModule } from './tipos-transaccion/tipos-transaccion.module';
@@ -36,7 +35,6 @@ import { HourDebtModule } from './hour-debt/hour-debt.module';
     PrismaModule,
     CaslModule,
     RolesModule,
-    PersonasModule,
     TransaccionesModule,
     CategoriasModule,
     TiposTransaccionModule,

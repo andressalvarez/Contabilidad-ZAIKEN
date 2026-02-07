@@ -370,7 +370,7 @@ function RecentTimerRecord({
   const [isEditing, setIsEditing] = useState(false);
   const [descripcion, setDescripcion] = useState(record.descripcion || '');
 
-  const user = users.find(u => u.id === (record.usuarioId || record.personaId));
+  const user = users.find(u => u.id === (record.usuarioId));
 
   const handleSave = () => {
     onEdit(record.id, { descripcion });
@@ -545,9 +545,7 @@ export default function RegistroHorasPage() {
   // Registros personales del usuario actual (solo los suyos)
   const myRegistros = useMemo(() => {
     if (!currentUser?.id) return [];
-    return (timeRecords || []).filter(r =>
-      (r.usuarioId === currentUser.id) || (r.personaId === currentUser.id)
-    );
+    return (timeRecords || []).filter(r => r.usuarioId === currentUser.id);
   }, [timeRecords, currentUser?.id]);
 
   // Registros de hoy del usuario actual
@@ -573,7 +571,7 @@ export default function RegistroHorasPage() {
 
     if (!searchTerm) return baseRegistros;
     return baseRegistros.filter(registro => {
-      const usuarioId = registro.usuarioId || registro.personaId;
+      const usuarioId = registro.usuarioId;
       const usuario = (users || []).find(u => u.id === usuarioId);
       const nombreUsuario = usuario?.nombre || '';
       return nombreUsuario.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -606,7 +604,7 @@ export default function RegistroHorasPage() {
     const todayRegistros = timeRecords.filter(r => r.fecha.split('T')[0] === today);
     const totalHorasHoy = todayRegistros.reduce((acc, r) => acc + (r.horas || 0), 0);
     const totalHoras = timeRecords.reduce((acc, r) => acc + (r.horas || 0), 0);
-    const usersActivos = new Set(todayRegistros.map(r => r.usuarioId || r.personaId)).size;
+    const usersActivos = new Set(todayRegistros.map(r => r.usuarioId)).size;
 
     return {
       totalHorasHoy,
@@ -636,7 +634,7 @@ export default function RegistroHorasPage() {
 
     // Sumar horas de hoy
     todayRegistros.forEach(r => {
-      const userId = r.usuarioId || r.personaId;
+      const userId = r.usuarioId;
       if (userId && userMap.has(userId)) {
         const stats = userMap.get(userId)!;
         stats.horasHoy += r.horas || 0;
@@ -646,7 +644,7 @@ export default function RegistroHorasPage() {
 
     // Sumar horas totales
     timeRecords.forEach(r => {
-      const userId = r.usuarioId || r.personaId;
+      const userId = r.usuarioId;
       if (userId && userMap.has(userId)) {
         const stats = userMap.get(userId)!;
         stats.horasTotal += r.horas || 0;
@@ -659,7 +657,7 @@ export default function RegistroHorasPage() {
   }, [timeRecords, users]);
 
   const getUserName = (registro: RegistroHoras) => {
-    const usuarioId = registro.usuarioId || registro.personaId;
+    const usuarioId = registro.usuarioId;
     const usuario = (users || []).find(u => u.id === usuarioId);
     return usuario?.nombre || 'Usuario no encontrado';
   };
@@ -716,7 +714,7 @@ export default function RegistroHorasPage() {
   const handleEdit = (registroHoras: RegistroHoras) => {
     setEditingId(registroHoras.id);
     setEditingData({
-      usuarioId: registroHoras.usuarioId || registroHoras.personaId,
+      usuarioId: registroHoras.usuarioId,
       fecha: registroHoras.fecha,
       horas: registroHoras.horas,
       descripcion: registroHoras.descripcion
@@ -1340,7 +1338,7 @@ export default function RegistroHorasPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         {editingId === registroHoras.id ? (
                           <select
-                            value={editingData.usuarioId || registroHoras.usuarioId || registroHoras.personaId}
+                            value={editingData.usuarioId || registroHoras.usuarioId}
                             onChange={(e) => setEditingData(prev => ({ ...prev, usuarioId: parseInt(e.target.value) || 0 }))}
                             className="px-2 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
                           >

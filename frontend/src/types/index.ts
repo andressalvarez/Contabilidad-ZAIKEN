@@ -22,7 +22,6 @@ export interface Usuario {
   rol: 'ADMIN_NEGOCIO' | 'USER' | 'EMPLEADO';
   activo: boolean;
 
-  // Fields migrated from Persona
   rolId?: number;
   rolNegocio?: Rol;
   participacionPorc: number;
@@ -87,7 +86,6 @@ export interface Transaccion {
   categoria?: Categoria;
   usuarioId?: number;
   usuario?: Usuario;
-  personaId?: number;
   campanaId?: number;
   campana?: Campana;
   moneda: string;
@@ -101,9 +99,8 @@ export interface Transaccion {
 
 export interface ValorHora {
   id: number;
-  usuarioId?: number;
+  usuarioId: number;
   usuario?: Usuario;
-  personaId?: number;
   rolId: number;
   rol?: Rol;
   valor: number;
@@ -117,9 +114,8 @@ export interface ValorHora {
 
 export interface RegistroHoras {
   id: number;
-  usuarioId?: number;
+  usuarioId: number;
   usuario?: Usuario;
-  personaId?: number;
   campanaId?: number;
   campana?: Campana;
   fecha: string;
@@ -159,9 +155,8 @@ export interface DistribucionUtilidades {
 export interface DistribucionDetalle {
   id: number;
   distribucionId: number;
-  usuarioId?: number;
+  usuarioId: number;
   usuario?: Usuario;
-  personaId?: number;
   porcentajeParticipacion: number;
   montoDistribuido: number;
   createdAt: string;
@@ -185,7 +180,6 @@ export interface CreateUsuarioDto {
   nombre: string;
   rol: 'ADMIN_NEGOCIO' | 'USER' | 'EMPLEADO';
   activo?: boolean;
-  // Fields migrated from Persona
   rolId?: number;
   participacionPorc?: number;
   horasTotales?: number;
@@ -203,7 +197,6 @@ export interface CreateTransaccionDto {
   fecha: string;
   categoriaId?: number;
   usuarioId?: number;
-  personaId?: number;
   campanaId?: number;
   moneda?: string;
   notas?: string;
@@ -212,8 +205,7 @@ export interface CreateTransaccionDto {
 export interface UpdateTransaccionDto extends Partial<CreateTransaccionDto> {}
 
 export interface CreateValorHoraDto {
-  usuarioId?: number;
-  personaId?: number;
+  usuarioId: number;
   valor: number;
   fechaInicio: string;
   notas?: string;
@@ -222,8 +214,7 @@ export interface CreateValorHoraDto {
 export interface UpdateValorHoraDto extends Partial<CreateValorHoraDto> {}
 
 export interface CreateRegistroHorasDto {
-  usuarioId?: number;
-  personaId?: number;
+  usuarioId: number;
   campanaId?: number;
   fecha: string;
   horas: number;

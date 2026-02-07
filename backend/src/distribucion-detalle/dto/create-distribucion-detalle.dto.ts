@@ -5,7 +5,7 @@ export class CreateDistribucionDetalleDto {
   distribucionId: number;
 
   @IsNumber()
-  personaId: number;
+  usuarioId: number;
 
   @IsNumber()
   porcentajeParticipacion: number;

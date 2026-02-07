@@ -12,7 +12,7 @@ export interface UpdateDistribucionUtilidadesDto extends Partial<CreateDistribuc
 
 export interface CreateDistribucionDetalleDto {
   distribucionId: number;
-  personaId: number;
+  usuarioId: number;
   porcentajeParticipacion: number;
   montoDistribuido: number;
 }

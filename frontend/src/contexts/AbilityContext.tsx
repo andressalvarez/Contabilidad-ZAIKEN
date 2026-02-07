@@ -17,7 +17,6 @@ export enum Action {
 // Define subjects (entities)
 export type Subjects =
   | 'Usuario'
-  | 'Persona'
   | 'Campana'
   | 'Categoria'
   | 'Transaccion'
@@ -75,7 +74,6 @@ export const createAbilityForUser = (rol: string): AppAbility => {
       { action: Action.Read, subject: 'Usuario' },
       { action: Action.Update, subject: 'Usuario' },
       { action: Action.Create, subject: 'Usuario' },
-      { action: Action.Manage, subject: 'Persona' },
       { action: Action.Manage, subject: 'Campana' },
       { action: Action.Manage, subject: 'Categoria' },
       { action: Action.Manage, subject: 'Transaccion' },
@@ -94,8 +92,6 @@ export const createAbilityForUser = (rol: string): AppAbility => {
   } else if (rol === 'MANAGER') {
     rules.push(
       { action: Action.Read, subject: 'Usuario' },
-      { action: Action.Read, subject: 'Persona' },
-      { action: Action.Update, subject: 'Persona' },
       { action: Action.Read, subject: 'Campana' },
       { action: Action.Create, subject: 'Campana' },
       { action: Action.Update, subject: 'Campana' },
@@ -117,11 +113,10 @@ export const createAbilityForUser = (rol: string): AppAbility => {
       { action: Action.Read, subject: 'Transaccion' },
       { action: Action.Create, subject: 'RegistroHoras' },
       { action: Action.Read, subject: 'RegistroHoras' },
-      { action: Action.Update, subject: 'RegistroHoras' }, // Only their own non-approved hours
-      { action: Action.Delete, subject: 'RegistroHoras' }, // Only their own non-approved hours
-      { action: Action.Read, subject: 'Persona' },
-      { action: Action.Update, subject: 'Persona' },
-      // Deuda de horas - puede crear y ver sus propias
+      { action: Action.Update, subject: 'RegistroHoras' },
+      { action: Action.Delete, subject: 'RegistroHoras' },
+      { action: Action.Read, subject: 'Usuario' },
+      { action: Action.Update, subject: 'Usuario' },
       { action: Action.Create, subject: 'HourDebt' },
       { action: Action.Read, subject: 'HourDebt' },
       { action: Action.Read, subject: 'DebtDeduction' }

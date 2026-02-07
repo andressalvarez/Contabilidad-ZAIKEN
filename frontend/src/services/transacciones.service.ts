@@ -7,7 +7,6 @@ export interface FiltrosTransacciones {
   tipo?: TipoTransaccion;
   categoria?: string;
   usuarioId?: number;
-  personaId?: number;
   campanaId?: number;
   aprobado?: boolean;
 }
@@ -126,7 +125,7 @@ export class TransaccionesService {
   static async getResumenPorTiposGasto(filtros: {
     fechaInicio?: string;
     fechaFin?: string;
-    personaId?: string;
+    usuarioId?: string;
     tipo?: string;
     categoria?: string;
     campanaId?: string;
@@ -149,7 +148,7 @@ export class TransaccionesService {
   static async getResumenGastosPorCampana(filtros: {
     fechaInicio?: string;
     fechaFin?: string;
-    personaId?: string;
+    usuarioId?: string;
     campanaId?: string;
   } = {}): Promise<any[]> {
     try {
@@ -171,7 +170,7 @@ export class TransaccionesService {
     fechaInicio?: string;
     fechaFin?: string;
     categoria?: string;
-    personaId?: string;
+    usuarioId?: string;
     campanaId?: string;
     aprobado?: boolean;
   } = {}): Promise<any[]> {
@@ -193,7 +192,7 @@ export class TransaccionesService {
   static async getResumenPorCategorias(filtros: {
     fechaInicio?: string;
     fechaFin?: string;
-    personaId?: string;
+    usuarioId?: string;
     tipo?: string;
     categoria?: string;
     campanaId?: string;
@@ -214,7 +213,7 @@ export class TransaccionesService {
 
   // Get monthly trends
   static async getTendenciasMensuales(año?: number, filtros: {
-    personaId?: string;
+    usuarioId?: string;
     tipo?: string;
     categoria?: string;
     campanaId?: string;

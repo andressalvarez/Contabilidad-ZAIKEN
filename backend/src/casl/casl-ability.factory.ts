@@ -47,9 +47,6 @@ export class CaslAbilityFactory {
       can(Action.Update, 'Usuario');
       can(Action.Create, 'Usuario');
 
-      // Gestión de personas
-      can(Action.Manage, 'Persona');
-
       // Gestión de campañas
       can(Action.Manage, 'Campana');
 
@@ -91,10 +88,6 @@ export class CaslAbilityFactory {
     if (user.rol === 'MANAGER') {
       // Lectura de usuarios
       can(Action.Read, 'Usuario');
-
-      // Gestión de personas
-      can(Action.Read, 'Persona');
-      can(Action.Update, 'Persona');
 
       // Gestión de campañas
       can(Action.Read, 'Campana');
@@ -139,17 +132,13 @@ export class CaslAbilityFactory {
       can(Action.Create, 'RegistroHoras');
       can(Action.Read, 'RegistroHoras');
       // Solo puede actualizar/eliminar sus propias horas no aprobadas
-      can(Action.Update, 'RegistroHoras', { personaId: user.id, aprobado: false });
-      can(Action.Delete, 'RegistroHoras', { personaId: user.id, aprobado: false });
+      can(Action.Update, 'RegistroHoras', { usuarioId: user.id, aprobado: false });
+      can(Action.Delete, 'RegistroHoras', { usuarioId: user.id, aprobado: false });
 
       // Deuda de horas - puede crear y ver sus propias
-      can(Action.Create, 'HourDebt'); // Solo para sí mismo (validado en controller)
+      can(Action.Create, 'HourDebt');
       can(Action.Read, 'HourDebt', { usuarioId: user.id });
-      can(Action.Read, 'DebtDeduction'); // Ver sus propias deducciones
-
-      // Puede ver su persona
-      can(Action.Read, 'Persona', { usuarioId: user.id });
-      can(Action.Update, 'Persona', { usuarioId: user.id });
+      can(Action.Read, 'DebtDeduction');
 
       // Puede ver su usuario
       can(Action.Read, 'Usuario', { id: user.id });

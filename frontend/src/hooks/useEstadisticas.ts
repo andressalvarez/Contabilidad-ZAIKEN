@@ -7,7 +7,7 @@ export const useEstadisticas = (filters: any) => {
     queryKey: ['estadisticas', filters],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (filters.personaId) params.append('personaId', filters.personaId);
+      if (filters.usuarioId) params.append('usuarioId', filters.usuarioId);
       if (filters.fechaInicio) params.append('fechaInicio', filters.fechaInicio);
       if (filters.fechaFin) params.append('fechaFin', filters.fechaFin);
       if (filters.tipo) params.append('tipo', filters.tipo);
@@ -27,7 +27,7 @@ export const useTendenciasMensuales = (año: number, filters: any) => {
     queryFn: async () => {
       const params = new URLSearchParams();
       params.append('año', año.toString());
-      if (filters.personaId) params.append('personaId', filters.personaId);
+      if (filters.usuarioId) params.append('usuarioId', filters.usuarioId);
       if (filters.fechaInicio) params.append('fechaInicio', filters.fechaInicio);
       if (filters.fechaFin) params.append('fechaFin', filters.fechaFin);
       if (filters.tipo) params.append('tipo', filters.tipo);
@@ -45,7 +45,7 @@ export const useResumenPorCategorias = (filters: any) => {
     queryKey: ['resumen-categorias', filters],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (filters.personaId) params.append('personaId', filters.personaId);
+      if (filters.usuarioId) params.append('usuarioId', filters.usuarioId);
       if (filters.fechaInicio) params.append('fechaInicio', filters.fechaInicio);
       if (filters.fechaFin) params.append('fechaFin', filters.fechaFin);
       if (filters.tipo) params.append('tipo', filters.tipo);
@@ -71,7 +71,7 @@ export const useEstadisticasCampanas = (filters: any) => {
     queryKey: ['estadisticas-campanas', filters],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (filters.personaId) params.append('personaId', filters.personaId);
+      if (filters.usuarioId) params.append('usuarioId', filters.usuarioId);
       if (filters.fechaInicio) params.append('fechaInicio', filters.fechaInicio);
       if (filters.fechaFin) params.append('fechaFin', filters.fechaFin);
 

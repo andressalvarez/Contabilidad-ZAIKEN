@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useValorHora, useCreateValorHora, useUpdateValorHora, useDeleteValorHora, useValorHoraStats } from '@/hooks/useValorHora';
 import { useUsuarios } from '@/hooks/useUsuarios';import MainLayout from '@/components/layout/MainLayout';
 import {
@@ -57,30 +57,16 @@ export default function ValorHoraPage() {
   const updateMutation = useUpdateValorHora();
   const deleteMutation = useDeleteValorHora();
 
-  // Debug logs
-  useEffect(() => {
-    console.log('ValorHoraPage - Debug Info:', {
-      valoresHora,
-      usuarios,
-      stats,
-      isLoading,
-      error,
-      valoresHoraLength: valoresHora.length,
-      usuariosLength: usuarios?.length || 0
-    });
-  }, [valoresHora, usuarios, stats, isLoading, error]);
 
   // Filter hourly rates by search
   const filteredValoresHora = useMemo(() => {
     if (!searchTerm) return valoresHora;
     return (valoresHora || []).filter(valorHora => {
-      const usuarioId = valorHora.usuarioId || valorHora.personaId;
-      const usuario = (usuarios || []).find(u => u.id === usuarioId);
-      const nombreUsuario = usuario?.nombre || '';
+      const nombreUsuario = valorHora.usuario?.nombre || '';
       return nombreUsuario.toLowerCase().includes(searchTerm.toLowerCase()) ||
              valorHora.valor.toString().includes(searchTerm);
     });
-  }, [valoresHora, usuarios, searchTerm]);
+  }, [valoresHora, searchTerm]);
 
   // Format currency
   const formatCurrency = (amount: number) => {
@@ -91,10 +77,13 @@ export default function ValorHoraPage() {
     }).format(amount);
   };
 
-  // Get user name (with backward compatibility)
+  // Get user name from the usuario relation (new system)
   const getUserName = (valorHora: ValorHora) => {
-    const usuarioId = valorHora.usuarioId || valorHora.personaId;    const usuario = (usuarios || []).find(u => u.id === usuarioId);
-    return usuario?.nombre || 'Usuario no encontrado';
+    // Use the usuario relation that comes from the API
+    if (valorHora.usuario?.nombre) {
+      return valorHora.usuario.nombre;
+    }
+    return 'Usuario no encontrado';
   };
 
   // Calculate calculator result
@@ -112,7 +101,7 @@ export default function ValorHoraPage() {
 
     // Check if there's already a value for this user on the same date
     const existingValue = (valoresHora || []).find(vh => {
-      const vhUsuarioId = vh.usuarioId || vh.personaId;      return vhUsuarioId === formData.usuarioId && vh.fechaInicio === formData.fechaInicio;
+      return vh.usuarioId === formData.usuarioId && vh.fechaInicio === formData.fechaInicio;
     });
 
     if (existingValue) {
@@ -496,7 +485,7 @@ export default function ValorHoraPage() {
                     ID
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Persona
+                    Usuario
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Valor por Hora

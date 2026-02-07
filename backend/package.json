@@ -47,6 +47,8 @@
     "backup": "bash scripts/backup-db.sh",
     "validate": "ts-node scripts/validate-data.ts",
     "validate:migration": "ts-node scripts/validate-migration.ts",
+    "migrate:personas-to-usuarios": "ts-node scripts/migrate-personas-to-usuarios.ts",
+    "migrate:personas-to-usuarios:dry": "ts-node scripts/migrate-personas-to-usuarios.ts --dry-run",
     "rollback": "ts-node scripts/rollback.ts",
     "pre-deploy": "ts-node scripts/pre-deploy-check.ts",
     "install:all": "npm install @casl/ability @casl/prisma && npm install && npx prisma generate"

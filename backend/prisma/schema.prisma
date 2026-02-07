@@ -22,7 +22,6 @@ model Negocio {
 
   // Relaciones
   usuarios                 Usuario[]
-  personas                 Persona[]
   valorHoras               ValorHora[]
   registroHoras            RegistroHoras[]
   categorias               Categoria[]
@@ -44,48 +43,16 @@ model Rol {
   descripcion String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
-  personas    Persona[]
   valorHoras  ValorHora[]
-  usuarios    Usuario[]   @relation("UsuarioRolNegocio") // Nueva relación con Usuario
+  usuarios    Usuario[]   @relation("UsuarioRolNegocio")
 
   @@map("roles")
-}
-
-model Persona {
-  id                  Int                   @id @default(autoincrement())
-  negocioId           Int
-  nombre              String
-  rolId               Int
-  usuarioId           Int?
-  horasTotales        Int                   @default(0)
-  aportesTotales      Float                 @default(0)
-  valorHora           Float                 @default(0)
-  inversionHoras      Float                 @default(0)
-  inversionTotal      Float                 @default(0)
-  participacionPorc   Float                 @default(0)
-  notas               String?
-  activo              Boolean               @default(true)
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  email               String?
-  distribucionDetalle DistribucionDetalle[]
-  negocio             Negocio               @relation(fields: [negocioId], references: [id])
-  rol                 Rol                   @relation(fields: [rolId], references: [id])
-  registroHoras       RegistroHoras[]
-  transacciones       Transaccion[]
-  valorHoras          ValorHora[]
-  usuario             Usuario?              @relation(fields: [usuarioId], references: [id])
-
-  @@unique([negocioId, nombre])
-  @@index([negocioId])
-  @@map("personas")
 }
 
 model ValorHora {
   id          Int       @id @default(autoincrement())
   negocioId   Int
-  personaId   Int       // Deprecado - usar usuarioId
-  usuarioId   Int?      // Nueva FK a Usuario
+  usuarioId   Int
   rolId       Int
   valor       Float
   notas       String?
@@ -96,8 +63,7 @@ model ValorHora {
   updatedAt   DateTime  @updatedAt
   negocio     Negocio   @relation(fields: [negocioId], references: [id])
   rol         Rol       @relation(fields: [rolId], references: [id])
-  persona     Persona   @relation(fields: [personaId], references: [id])
-  usuario     Usuario?  @relation("ValorHoraUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuario     Usuario   @relation("ValorHoraUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@index([negocioId])
   @@index([usuarioId])
@@ -107,8 +73,7 @@ model ValorHora {
 model RegistroHoras {
   id             Int       @id @default(autoincrement())
   negocioId      Int
-  personaId      Int       // Deprecado - usar usuarioId
-  usuarioId      Int?      // Nueva FK a Usuario
+  usuarioId      Int
   campanaId      Int?
   fecha          DateTime
   horas          Float
@@ -137,16 +102,14 @@ model RegistroHoras {
   updatedAt      DateTime  @updatedAt
   negocio        Negocio   @relation(fields: [negocioId], references: [id])
   campana        Campana?  @relation(fields: [campanaId], references: [id])
-  persona        Persona   @relation(fields: [personaId], references: [id])
-  usuario        Usuario?  @relation("RegistroHorasUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuario        Usuario   @relation("RegistroHorasUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
   debtDeductions DebtDeduction[]
 
   @@index([negocioId])
-  @@index([negocioId, personaId])
   @@index([negocioId, usuarioId])
   @@index([negocioId, aprobado])
-  @@index([negocioId, estado]) // Nuevo índice para buscar timers activos
-  @@index([personaId, fecha, aprobado]) // Índice para queries de deuda
+  @@index([negocioId, estado])
+  @@index([usuarioId, fecha, aprobado])
   @@map("registro_horas")
 }
 
@@ -216,7 +179,6 @@ model Transaccion {
   concepto    String
   fecha       DateTime
   categoriaId Int?
-  personaId   Int?
   campanaId   Int?
   moneda      String          @default("COP")
   notas       String?
@@ -226,7 +188,6 @@ model Transaccion {
   updatedAt   DateTime        @updatedAt
   negocio     Negocio         @relation(fields: [negocioId], references: [id])
   campana     Campana?        @relation(fields: [campanaId], references: [id])
-  persona     Persona?        @relation(fields: [personaId], references: [id])
   tipo        TipoTransaccion @relation(fields: [tipoId], references: [id])
   categoria   Categoria?      @relation(fields: [categoriaId], references: [id])
   usuario     Usuario?        @relation(fields: [usuarioId], references: [id])
@@ -255,14 +216,12 @@ model DistribucionUtilidades {
 model DistribucionDetalle {
   id                      Int                    @id @default(autoincrement())
   distribucionId          Int
-  personaId               Int                    // Deprecado - usar usuarioId
-  usuarioId               Int?                   // Nueva FK a Usuario
+  usuarioId               Int
   porcentajeParticipacion Float
   montoDistribuido        Float
   createdAt               DateTime               @default(now())
   updatedAt               DateTime               @updatedAt
-  persona                 Persona                @relation(fields: [personaId], references: [id])
-  usuario                 Usuario?               @relation("DistribucionDetalleUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuario                 Usuario                @relation("DistribucionDetalleUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
   distribucion            DistribucionUtilidades @relation(fields: [distribucionId], references: [id])
 
   @@index([usuarioId])
@@ -301,12 +260,11 @@ model Usuario {
   rolNegocio    Rol?      @relation("UsuarioRolNegocio", fields: [rolId], references: [id])
 
   // Relaciones inversas (propiedad)
-  personas      Persona[]
   categorias    Categoria[]
   campanas      Campana[]
   transacciones Transaccion[]
 
-  // Relaciones migradas de Persona
+  // Relaciones con otras entidades
   registroHoras       RegistroHoras[]       @relation("RegistroHorasUsuario")
   valorHoras          ValorHora[]           @relation("ValorHoraUsuario")
   distribucionDetalle DistribucionDetalle[] @relation("DistribucionDetalleUsuario")

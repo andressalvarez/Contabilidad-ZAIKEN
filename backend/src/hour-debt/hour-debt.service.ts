@@ -344,7 +344,7 @@ export class HourDebtService {
             id: true,
             fecha: true,
             horas: true,
-            persona: {
+            usuario: {
               select: { nombre: true },
             },
           },
@@ -572,22 +572,9 @@ export class HourDebtService {
 
     const normalizedDate = DateUtils.normalizeToBusinessDate(workDate);
 
-    // Find user to get related persona (backward compatibility)
-    const user = await prisma.usuario.findUnique({
-      where: { id: usuarioId },
-      include: { personas: true },
-    });
-
-    if (!user) return 0;
-
-    const personaIds = user.personas.map((p) => p.id);
-
     const result = await prisma.registroHoras.aggregate({
       where: {
-        OR: [
-          { usuarioId }, // New records
-          { personaId: { in: personaIds } }, // Old records linked via persona
-        ],
+        usuarioId,
         fecha: normalizedDate,
         aprobado: true,
         deletedAt: null,

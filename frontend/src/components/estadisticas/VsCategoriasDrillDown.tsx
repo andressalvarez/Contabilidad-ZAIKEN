@@ -364,13 +364,13 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
 
     const transformApiTransactions = (apiData: any[]): Transaccion[] => {
       return apiData.map((t: any) => {
-        let personaId = null;
-        let personaNombre = '';
-        if (t.persona) {
-          personaId = t.persona.id || t.personaId;
-          personaNombre = t.persona.nombre || t.persona.name || '';
-        } else if (t.personaId) {
-          personaId = t.personaId;
+        let usuarioId = null;
+        let usuarioNombre = '';
+        if (t.usuario) {
+          usuarioId = t.usuario.id || t.usuarioId;
+          usuarioNombre = t.usuario.nombre || t.usuario.name || '';
+        } else if (t.usuarioId) {
+          usuarioId = t.usuarioId;
         }
 
         return {
@@ -381,8 +381,8 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
           fecha: t.fecha ? new Date(t.fecha).toISOString().split('T')[0] : '',
           categoriaId: t.categoriaId,
           categoria: t.categoria?.nombre ? t.categoria : (t.categoria ? { nombre: t.categoria } as any : undefined),
-          personaId: personaId,
-          persona: t.persona || (personaId ? { id: personaId, nombre: personaNombre } as any : undefined),
+          usuarioId: usuarioId,
+          usuario: t.usuario || (usuarioId ? { id: usuarioId, nombre: usuarioNombre } as any : undefined),
           campanaId: t.campanaId,
           campana: t.campana,
           moneda: t.moneda || 'COP',
@@ -2001,7 +2001,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       }
 
       if (detailFilters.persona) {
-        filtered = filtered.filter(t => t.personaId?.toString() === detailFilters.persona);
+        filtered = filtered.filter(t => t.usuarioId?.toString() === detailFilters.persona);
       }
 
       // Sort
@@ -2056,7 +2056,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       const usuarioMap = new Map<string, number>();
 
       transactions.forEach(t => {
-        const usuario = usuarios.find(u => u.id === (t.usuarioId || t.personaId));
+        const usuario = usuarios.find(u => u.id === (t.usuarioId));
         const nombre = usuario?.nombre || 'Sin usuario';
         usuarioMap.set(nombre, (usuarioMap.get(nombre) || 0) + t.monto);
       });
@@ -3260,7 +3260,7 @@ const DrillDownListView = ({ transactions, usuarios: usuariosProp }: { transacti
     // Search filter (equivalent to legacy that searches in concept, user and notes)
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
-      const usuario = usuarios.find(u => u.id === (transaction.usuarioId || transaction.personaId));
+      const usuario = usuarios.find(u => u.id === (transaction.usuarioId));
       const userName = usuario ? usuario.nombre.toLowerCase() : '';
 
       const matchesSearch =
@@ -3279,7 +3279,7 @@ const DrillDownListView = ({ transactions, usuarios: usuariosProp }: { transacti
 
     // Filter by user (compare with user name, not ID)
     if (selectedUsuario) {
-      const usuario = usuarios.find(u => u.id === (transaction.usuarioId || transaction.personaId));
+      const usuario = usuarios.find(u => u.id === (transaction.usuarioId));
       const userName = usuario ? usuario.nombre : 'Sin usuario';
       if (userName !== selectedUsuario) {
         return false;
@@ -3401,17 +3401,16 @@ const DrillDownListView = ({ transactions, usuarios: usuariosProp }: { transacti
                   sampleUsuarios: transactions.slice(0, 3).map(t => ({
                     id: t.id,
                     usuario: t.usuario,
-                    usuarioId: t.usuarioId,
-                    personaId: t.personaId
+                    usuarioId: t.usuarioId
                   }))
                 });
 
                 transactions.forEach(t => {
                   if (t.usuario?.nombre) {
                     usuariosEnTransacciones.add(t.usuario.nombre);
-                  } else if (t.usuarioId || t.personaId) {
+                  } else if (t.usuarioId) {
                     // Fallback: search in users array if the full object is not provided
-                    const usuario = usuarios.find(u => u.id === (t.usuarioId || t.personaId));
+                    const usuario = usuarios.find(u => u.id === (t.usuarioId));
                     if (usuario) {
                       usuariosEnTransacciones.add(usuario.nombre);
                     } else {
@@ -3536,7 +3535,7 @@ const DrillDownListView = ({ transactions, usuarios: usuariosProp }: { transacti
         </thead>
         <tbody>
               {filteredTransactions.map((transaction, index) => {
-            const usuario = usuarios.find(u => u.id === (transaction.usuarioId || transaction.personaId));
+            const usuario = usuarios.find(u => u.id === (transaction.usuarioId));
 
             return (
               <tr key={transaction.id || index} className="bg-white border-b hover:bg-gray-50">

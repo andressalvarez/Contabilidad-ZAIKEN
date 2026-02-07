@@ -38,19 +38,6 @@ export class ValorHoraController {
     };
   }
 
-  @Get('persona/:personaId')
-  async findByPersonaId(
-    @Param('personaId', ParseIntPipe) personaId: number,
-    @NegocioId() negocioId: number,
-  ) {
-    return {
-      success: true,
-      message: 'Valores por hora de la persona obtenidos exitosamente',
-      data: await this.valorHoraService.findByPersonaId(personaId, negocioId),
-    };
-  }
-
-
   @Get('usuario/:usuarioId')
   async findByUsuarioId(
     @Param('usuarioId', ParseIntPipe) usuarioId: number,

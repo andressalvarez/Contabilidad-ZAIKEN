@@ -336,7 +336,7 @@ export default function TransaccionesPage() {
         t.categoria?.nombre || '',
         t.monto,
         t.moneda,
-        t.persona?.nombre || '',
+        t.usuario?.nombre || '',
         t.campana?.nombre || '',
         `"${t.notas || ''}"`
       ].join(','))
@@ -369,7 +369,7 @@ export default function TransaccionesPage() {
     return transacciones.filter(transaccion => {
       return transaccion.concepto?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         transaccion.categoria?.nombre?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        transaccion.persona?.nombre?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        transaccion.usuario?.nombre?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         transaccion.campana?.nombre?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
     });
   }, [transacciones, debouncedSearchTerm]);
@@ -1116,10 +1116,10 @@ export default function TransaccionesPage() {
                           </span>
                         </td>
                         <td className="px-3 py-4 text-sm text-gray-900">
-                          {transaccion.persona ? (
-                            <span className="text-blue-600 font-medium">{transaccion.persona.nombre}</span>
+                          {transaccion.usuario ? (
+                            <span className="text-blue-600 font-medium">{transaccion.usuario.nombre}</span>
                           ) : (
-                            <span className="text-gray-400 italic">Sin persona</span>
+                            <span className="text-gray-400 italic">Sin usuario</span>
                           )}
                         </td>
                         <td className="px-3 py-4 text-sm text-gray-900">

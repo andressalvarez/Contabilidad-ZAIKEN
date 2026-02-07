@@ -7,22 +7,32 @@ LOCK_FILE=/app/.backup_import_done
 
 mkdir -p "$LOG_DIR"
 
+# ============================================
+# DESARROLLO: Recompilar código TypeScript
+# ============================================
+if [ "$NODE_ENV" = "development" ]; then
+  echo "[entrypoint] 🔧 Modo DESARROLLO - Recompilando código..."
+  npx prisma generate || true
+  npm run build || { echo "[entrypoint] ❌ Build falló"; exit 1; }
+  echo "[entrypoint] ✅ Código recompilado"
+fi
+
 echo "[entrypoint] Applying Prisma migrations..."
 # Si existe el schema en /app/prisma/schema.prisma lo usamos explícitamente
 if [ -f "/app/prisma/schema.prisma" ]; then
-  prisma migrate deploy --schema=/app/prisma/schema.prisma || true
+  npx prisma migrate deploy --schema=/app/prisma/schema.prisma || true
 else
-  prisma migrate deploy || true
+  npx prisma migrate deploy || true
 fi
 
 # Fallback: si el historial de migraciones está desalineado y faltan tablas,
 # empuja el schema directamente (solo crea/actualiza estructuras faltantes)
 if [ -f "/app/prisma/schema.prisma" ]; then
-  prisma db push --schema=/app/prisma/schema.prisma --accept-data-loss --skip-generate || true
+  npx prisma db push --schema=/app/prisma/schema.prisma --accept-data-loss --skip-generate || true
 fi
 
 # Control flag (default true)
-IMPORT_ON_BOOT=${IMPORT_ON_BOOT:-true}
+IMPORT_ON_BOOT=${IMPORT_ON_BOOT:-false}
 # Permite forzar el import ignorando el lock file (false por defecto)
 IMPORT_FORCE=${IMPORT_FORCE:-false}
 BACKUP_URL_DEFAULT="https://raw.githubusercontent.com/andressalvarez/Contabilidad-ZAIKEN/main/backup_2025-07-15.json"
@@ -41,7 +51,7 @@ if [ "$IMPORT_ON_BOOT" = "true" ]; then
   if [ "$NEED_IMPORT" = "42" ]; then
     echo "[entrypoint] Ensuring schema is present (db push)..."
     if [ -f "/app/prisma/schema.prisma" ]; then
-      prisma db push --schema=/app/prisma/schema.prisma --accept-data-loss --skip-generate || true
+      npx prisma db push --schema=/app/prisma/schema.prisma --accept-data-loss --skip-generate || true
     fi
     echo "[entrypoint] No transacciones found. Importing backup..."
     # Descargar backup si no existe archivo local
@@ -68,6 +78,13 @@ if [ "$IMPORT_ON_BOOT" = "true" ]; then
 fi
 
 echo "[entrypoint] Starting NestJS..."
-exec node dist/src/main.js
+
+# En desarrollo usa hot-reload (CMD del Dockerfile), en prod usa dist directamente
+if [ "$NODE_ENV" = "development" ]; then
+  echo "[entrypoint] 🔥 Hot-reload activado (nest start --watch)"
+  exec npm run start:dev
+else
+  exec node dist/src/main.js
+fi
 
 

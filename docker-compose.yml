@@ -39,8 +39,9 @@ services:
     volumes:
       - ./backend/src:/app/src
       - ./backend/scripts:/app/scripts
-      - ./backend/data-importer.ts:/app/data-importer.ts
       - ./backend/backups:/app/backups
+      - ./backend/docker-entrypoint.sh:/app/docker-entrypoint.sh
+      - ./backend/prisma:/app/prisma
       - /app/node_modules
     restart: unless-stopped
 

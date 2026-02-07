@@ -21,7 +21,7 @@ export const transaccionesKeys = {
   pending: () => [...transaccionesKeys.all, 'pending'] as const,
   resumenCategorias: (filtros: { fechaInicio?: string; fechaFin?: string }) =>
     [...transaccionesKeys.all, 'resumen-categorias', { filtros }] as const,
-  tendencias: (año?: number, personaId?: number) => [...transaccionesKeys.all, 'tendencias', año, personaId] as const,
+  tendencias: (año?: number) => [...transaccionesKeys.all, 'tendencias', año] as const,
 };
 
 // Hook to get transactions with filters

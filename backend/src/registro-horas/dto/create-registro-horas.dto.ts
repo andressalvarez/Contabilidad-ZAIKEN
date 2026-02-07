@@ -1,15 +1,9 @@
 import { IsNumber, IsString, IsOptional, IsDateString, Min } from 'class-validator';
 
 export class CreateRegistroHorasDto {
-  @IsOptional()
   @IsNumber()
   @Min(1)
-  usuarioId?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(1)
-  personaId?: number;
+  usuarioId: number;
 
   @IsOptional()
   @IsNumber()

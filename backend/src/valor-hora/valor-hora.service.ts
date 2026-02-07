@@ -7,65 +7,30 @@ export class ValorHoraService {
   constructor(private prisma: PrismaService) {}
 
   async create(negocioId: number, createValorHoraDto: CreateValorHoraDto) {
-
-    let usuarioId = createValorHoraDto.usuarioId;
-    let personaId = createValorHoraDto.personaId;
-    let rolId: number | undefined;
-
-    if (usuarioId) {
-      const usuario = await this.prisma.usuario.findFirst({
-        where: { id: usuarioId, negocioId },
-        include: { personas: { take: 1 } }
-      });
-
-      if (!usuario) {
-        throw new NotFoundException('Usuario no encontrado');
-      }
-
-      rolId = usuario.rolId ?? undefined;
-      personaId = usuario.personas?.[0]?.id;
-    } else if (personaId) {
-      const persona = await this.prisma.persona.findUnique({
-        where: { id: personaId },
-        include: { rol: true }
-      });
-
-      if (!persona) {
-        throw new NotFoundException('Persona no encontrada');
-      }
-
-      usuarioId = persona.usuarioId ?? undefined;
-      rolId = persona.rolId;
-    } else {
-      throw new NotFoundException('Debe proporcionar usuarioId o personaId');
-    }
+    const usuarioId = createValorHoraDto.usuarioId;
 
     if (!usuarioId) {
-      throw new NotFoundException('No se pudo determinar el usuario');
+      throw new NotFoundException('Debe proporcionar usuarioId');
     }
 
-    if (!rolId) {
-      throw new NotFoundException('No se pudo determinar el rol');
+    // Verify user exists and get their role
+    const usuario = await this.prisma.usuario.findFirst({
+      where: { id: usuarioId, negocioId },
+    });
+
+    if (!usuario) {
+      throw new NotFoundException('Usuario no encontrado');
     }
 
-    if (!personaId) {
-      const usuario = await this.prisma.usuario.findFirst({
-        where: { id: usuarioId, negocioId },
-        include: { personas: { take: 1 } }
-      });
-      personaId = usuario?.personas?.[0]?.id;
-    }
-
-    if (!personaId) {
-      throw new NotFoundException('No se pudo determinar la persona asociada');
+    if (!usuario.rolId) {
+      throw new NotFoundException('El usuario no tiene un rol asignado');
     }
 
     return this.prisma.valorHora.create({
       data: {
         negocioId,
         usuarioId,
-        personaId,
-        rolId,
+        rolId: usuario.rolId,
         valor: createValorHoraDto.valor,
         fechaInicio: new Date(createValorHoraDto.fechaInicio),
         notas: createValorHoraDto.notas,
@@ -84,7 +49,6 @@ export class ValorHoraService {
             },
           },
         },
-        persona: true,
         rol: true,
       },
     });
@@ -107,7 +71,6 @@ export class ValorHoraService {
             },
           },
         },
-        persona: true,
         rol: true,
       },
       orderBy: {
@@ -136,7 +99,6 @@ export class ValorHoraService {
             },
           },
         },
-        persona: true,
         rol: true,
       },
     });
@@ -146,36 +108,6 @@ export class ValorHoraService {
     }
 
     return valorHora;
-  }
-
-
-  async findByPersonaId(personaId: number, negocioId: number) {
-    return this.prisma.valorHora.findMany({
-      where: {
-        personaId,
-        negocioId,
-      },
-      include: {
-        usuario: {
-          select: {
-            id: true,
-            nombre: true,
-            email: true,
-            rolNegocio: {
-              select: {
-                id: true,
-                nombreRol: true,
-              },
-            },
-          },
-        },
-        persona: true,
-        rol: true,
-      },
-      orderBy: {
-        fechaInicio: 'desc',
-      },
-    });
   }
 
 
@@ -199,7 +131,6 @@ export class ValorHoraService {
             },
           },
         },
-        persona: true,
         rol: true,
       },
       orderBy: {
@@ -243,7 +174,6 @@ export class ValorHoraService {
             },
           },
         },
-        persona: true,
         rol: true,
       },
     });
@@ -275,7 +205,7 @@ export class ValorHoraService {
 
     const usuariosConValor = new Set(
       valoresHora
-        .map(vh => vh.usuarioId || vh.personaId) // Usar usuarioId, fallback a personaId
+        .map(vh => vh.usuarioId)
         .filter(id => id !== null)
     ).size;
 

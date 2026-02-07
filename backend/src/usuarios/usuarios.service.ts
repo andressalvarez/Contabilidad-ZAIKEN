@@ -11,7 +11,6 @@ interface CreateUsuarioData {
   activo?: boolean;
   passwordHash: string;
   negocioId: number;
-  // Campos migrados de Persona
   rolId?: number;
   participacionPorc?: number;
   horasTotales?: number;
@@ -28,7 +27,6 @@ interface UpdateUsuarioData {
   rol?: string;
   activo?: boolean;
   passwordHash?: string;
-  // Campos migrados de Persona
   rolId?: number;
   participacionPorc?: number;
   horasTotales?: number;
@@ -61,8 +59,7 @@ export class UsuariosService {
         rol: true,
         activo: true,
         createdAt: true,
-        // Campos migrados de Persona
-        rolId: true,
+              rolId: true,
         participacionPorc: true,
         horasTotales: true,
         aportesTotales: true,
@@ -96,8 +93,7 @@ export class UsuariosService {
         rol: true,
         activo: true,
         createdAt: true,
-        // Campos migrados de Persona
-        rolId: true,
+              rolId: true,
         participacionPorc: true,
         horasTotales: true,
         aportesTotales: true,
@@ -175,8 +171,7 @@ export class UsuariosService {
         rol: data.rol,
         activo: data.activo,
         password: data.passwordHash,
-        // Campos migrados de Persona
-        rolId: data.rolId,
+              rolId: data.rolId,
         participacionPorc: data.participacionPorc,
         horasTotales: data.horasTotales,
         aportesTotales: data.aportesTotales,

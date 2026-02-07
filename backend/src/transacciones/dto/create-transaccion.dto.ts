@@ -57,18 +57,6 @@ export class CreateTransaccionDto {
   usuarioId?: number;
 
   @IsOptional()
-  @IsInt({ message: 'El ID de persona debe ser un número entero' })
-  @Transform(({ value }) => {
-    if (value === null || value === undefined || value === '') return undefined;
-    if (typeof value === 'string') {
-      const parsed = parseInt(value, 10);
-      return isNaN(parsed) ? value : parsed;
-    }
-    return value;
-  })
-  personaId?: number;
-
-  @IsOptional()
   @IsInt({ message: 'El ID de campaña debe ser un número entero' })
   @Transform(({ value }) => {
     if (value === null || value === undefined || value === '') return undefined;

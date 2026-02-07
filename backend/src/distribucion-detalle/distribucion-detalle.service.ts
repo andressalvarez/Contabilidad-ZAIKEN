@@ -19,7 +19,7 @@ export class DistribucionDetalleService {
 
     return this.prisma.distribucionDetalle.create({
       data: createDistribucionDetalleDto,
-      include: { persona: true, distribucion: true },
+      include: { usuario: true, distribucion: true },
     });
   }
 
@@ -36,7 +36,7 @@ export class DistribucionDetalleService {
 
     return this.prisma.distribucionDetalle.findMany({
       where,
-      include: { persona: true, distribucion: true },
+      include: { usuario: true, distribucion: true },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -49,7 +49,7 @@ export class DistribucionDetalleService {
           negocioId,
         },
       },
-      include: { persona: true, distribucion: true },
+      include: { usuario: true, distribucion: true },
     });
 
     if (!detalle) {
@@ -77,7 +77,7 @@ export class DistribucionDetalleService {
     return this.prisma.distribucionDetalle.update({
       where: { id },
       data: updateDistribucionDetalleDto,
-      include: { persona: true, distribucion: true },
+      include: { usuario: true, distribucion: true },
     });
   }
 
