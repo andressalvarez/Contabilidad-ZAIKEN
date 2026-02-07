@@ -19,6 +19,9 @@ COPY . .
 # Generar Prisma Client
 RUN npx prisma generate
 
+# Build the application
+RUN npm run build
+
 # Crear directorio de backups
 RUN mkdir -p /app/backups && chmod 755 /app/backups
 

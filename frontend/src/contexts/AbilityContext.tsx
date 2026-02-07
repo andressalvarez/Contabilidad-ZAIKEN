@@ -24,6 +24,10 @@ export type Subjects =
   | 'RegistroHoras'
   | 'ValorHora'
   | 'DistribucionUtilidades'
+  | 'HourDebt'
+  | 'DebtDeduction'
+  | 'HourDebtAuditLog'
+  | 'Settings'
   | 'all';
 
 export type AppAbility = MongoAbility<[Action, Subjects]>;
@@ -79,7 +83,13 @@ export const createAbilityForUser = (rol: string): AppAbility => {
       { action: Action.Approve, subject: 'RegistroHoras' },
       { action: Action.Reject, subject: 'RegistroHoras' },
       { action: Action.Manage, subject: 'ValorHora' },
-      { action: Action.Manage, subject: 'DistribucionUtilidades' }
+      { action: Action.Manage, subject: 'DistribucionUtilidades' },
+      // Deuda de horas
+      { action: Action.Manage, subject: 'HourDebt' },
+      { action: Action.Manage, subject: 'DebtDeduction' },
+      { action: Action.Read, subject: 'HourDebtAuditLog' },
+      // Configuración del sistema (SMTP, etc.)
+      { action: Action.Manage, subject: 'Settings' }
     );
   } else if (rol === 'MANAGER') {
     rules.push(
@@ -95,7 +105,10 @@ export const createAbilityForUser = (rol: string): AppAbility => {
       { action: Action.Approve, subject: 'RegistroHoras' },
       { action: Action.Reject, subject: 'RegistroHoras' },
       { action: Action.Read, subject: 'ValorHora' },
-      { action: Action.Read, subject: 'DistribucionUtilidades' }
+      { action: Action.Read, subject: 'DistribucionUtilidades' },
+      // Deuda de horas
+      { action: Action.Manage, subject: 'HourDebt' },
+      { action: Action.Read, subject: 'DebtDeduction' }
     );
   } else if (rol === 'EMPLEADO') {
     rules.push(
@@ -107,7 +120,11 @@ export const createAbilityForUser = (rol: string): AppAbility => {
       { action: Action.Update, subject: 'RegistroHoras' }, // Only their own non-approved hours
       { action: Action.Delete, subject: 'RegistroHoras' }, // Only their own non-approved hours
       { action: Action.Read, subject: 'Persona' },
-      { action: Action.Update, subject: 'Persona' }
+      { action: Action.Update, subject: 'Persona' },
+      // Deuda de horas - puede crear y ver sus propias
+      { action: Action.Create, subject: 'HourDebt' },
+      { action: Action.Read, subject: 'HourDebt' },
+      { action: Action.Read, subject: 'DebtDeduction' }
     );
   } else if (rol === 'USER') {
     rules.push(

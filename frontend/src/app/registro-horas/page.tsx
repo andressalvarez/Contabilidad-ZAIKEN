@@ -8,9 +8,6 @@ import {
   useDeleteRegistroHoras,
   useActiveTimer,
   useStartTimer,
-  usePauseTimer,
-  useResumeTimer,
-  useStopTimer,
   useCancelTimer,
   useUpdateTimerTimes,
   useResubmitRegistro
@@ -38,7 +35,6 @@ import {
   XCircle,
   Info,
   Play,
-  Pause,
   Square,
   ChevronDown,
   ChevronUp,
@@ -46,12 +42,15 @@ import {
   Award,
   Target,
   PieChart,
-  RefreshCw,
   Send
 } from 'lucide-react';
 import { RegistroHoras, CreateRegistroHorasDto } from '@/types';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
+import { StopTimerModal } from '@/components/StopTimerModal';
+import HourDebtWidget from '@/components/hour-debt/HourDebtWidget';
+import CreateDebtModal from '@/components/CreateDebtModal';
+import DebtHistoryTable from '@/components/DebtHistoryTable';
 
 interface FormData {
   fecha: string;
@@ -132,13 +131,14 @@ function TimerWidget({
   isAdmin
 }: {
   users: any[];
-  onTimerStop: (record: RegistroHoras) => void;
+  onTimerStop?: (record: RegistroHoras) => void;
   currentUserId: number;
   isAdmin: boolean;
 }) {
   const [selectedUserId, setSelectedUserId] = useState<number>(currentUserId || 0);
   const [description, setDescription] = useState('');
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [showStopModal, setShowStopModal] = useState(false);
 
   // Auto-select current user when loaded
   useEffect(() => {
@@ -150,9 +150,6 @@ function TimerWidget({
   // Timer hooks
   const { data: activeTimer, refetch: refetchActiveTimer } = useActiveTimer(selectedUserId);
   const startTimerMutation = useStartTimer();
-  const pauseTimerMutation = usePauseTimer();
-  const resumeTimerMutation = useResumeTimer();
-  const stopTimerMutation = useStopTimer();
   const cancelTimerMutation = useCancelTimer();
 
   const isRunning = activeTimer?.estado === 'RUNNING';
@@ -202,37 +199,8 @@ function TimerWidget({
     }
   };
 
-  const handlePause = async () => {
-    if (!activeTimer) return;
-    try {
-      await pauseTimerMutation.mutateAsync(activeTimer.id);
-    } catch (error) {
-      console.error('Error pausing timer:', error);
-    }
-  };
-
-  const handleResume = async () => {
-    if (!activeTimer) return;
-    try {
-      await resumeTimerMutation.mutateAsync(activeTimer.id);
-    } catch (error) {
-      console.error('Error resuming timer:', error);
-    }
-  };
-
-  const handleStop = async () => {
-    if (!activeTimer) return;
-    try {
-      const stoppedTimer = await stopTimerMutation.mutateAsync({
-        id: activeTimer.id,
-        descripcion: description || activeTimer.descripcion
-      });
-      onTimerStop(stoppedTimer);
-      setDescription('');
-      setElapsedSeconds(0);
-    } catch (error) {
-      console.error('Error stopping timer:', error);
-    }
+  const handleStop = () => {
+    setShowStopModal(true);
   };
 
   const handleCancel = async () => {
@@ -343,13 +311,12 @@ function TimerWidget({
                 {/* STOP Button - Primary action */}
                 <motion.button
                   onClick={handleStop}
-                  disabled={stopTimerMutation.isPending}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-2xl shadow-lg disabled:opacity-50 transition-all font-semibold text-lg"
+                  className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-2xl shadow-lg transition-all font-semibold text-lg"
                 >
                   <Square className="h-6 w-6" fill="white" />
-                  {stopTimerMutation.isPending ? 'Guardando...' : 'Finalizar y Guardar'}
+                  Finalizar y Guardar
                 </motion.button>
 
                 {/* CANCEL Button */}
@@ -369,11 +336,26 @@ function TimerWidget({
           </div>
         </div>
       </div>
+
+      {/* Stop Timer Modal */}
+      {showStopModal && activeTimer && (
+        <StopTimerModal
+          activeTimer={activeTimer}
+          onClose={() => setShowStopModal(false)}
+          onSuccess={(savedRecord) => {
+            setShowStopModal(false);
+            setDescription('');
+            setElapsedSeconds(0);
+            refetchActiveTimer();
+            onTimerStop?.(savedRecord);
+          }}
+        />
+      )}
     </div>
   );
 }
 
-// Component to show recently created record (editable)
+// Component to show recently created record (editable description only)
 function RecentTimerRecord({
   record,
   users,
@@ -386,16 +368,21 @@ function RecentTimerRecord({
   onDismiss: () => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({
-    horas: record.horas,
-    descripcion: record.descripcion || ''
-  });
+  const [descripcion, setDescripcion] = useState(record.descripcion || '');
 
   const user = users.find(u => u.id === (record.usuarioId || record.personaId));
 
   const handleSave = () => {
-    onEdit(record.id, editData);
+    onEdit(record.id, { descripcion });
     setIsEditing(false);
+  };
+
+  // Format time range
+  const formatTimeRange = () => {
+    if (!record.timerInicio || !record.timerFin) return null;
+    const start = new Date(record.timerInicio);
+    const end = new Date(record.timerFin);
+    return `${start.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}`;
   };
 
   return (
@@ -416,7 +403,7 @@ function RecentTimerRecord({
           </motion.div>
           <div>
             <h3 className="font-bold text-green-800">¡Tiempo registrado!</h3>
-            <p className="text-sm text-green-600">Puedes editar los detalles antes de finalizar</p>
+            <p className="text-sm text-green-600">Puedes agregar una descripción</p>
           </div>
         </div>
         <button
@@ -427,7 +414,7 @@ function RecentTimerRecord({
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         {/* User */}
         <div className="flex items-center gap-2 p-3 bg-white rounded-lg">
           <User className="h-4 w-4 text-indigo-600" />
@@ -440,66 +427,75 @@ function RecentTimerRecord({
           <span>{new Date(record.fecha).toLocaleDateString('es-CO')}</span>
         </div>
 
-        {/* Hours (editable) */}
+        {/* Hours (read-only) */}
         <div className="flex items-center gap-2 p-3 bg-white rounded-lg">
           <Clock className="h-4 w-4 text-indigo-600" />
-          {isEditing ? (
-            <input
-              type="number"
-              value={editData.horas}
-              onChange={(e) => setEditData(prev => ({ ...prev, horas: parseFloat(e.target.value) || 0 }))}
-              className="w-20 px-2 py-1 border rounded text-center"
-              step="0.25"
-              min="0"
-            />
-          ) : (
-            <span className="font-bold text-indigo-600">{record.horas.toFixed(2)}h</span>
-          )}
+          <span className="font-bold text-indigo-600">{record.horas.toFixed(2)}h</span>
         </div>
+      </div>
 
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-2">
-          {isEditing ? (
-            <>
+      {/* Time Range if from timer */}
+      {record.origen === 'TIMER' && formatTimeRange() && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center gap-2 text-sm text-blue-800">
+            <Clock className="h-4 w-4" />
+            <span className="font-medium">Horario:</span>
+            <span>{formatTimeRange()}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Description (always editable) */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-gray-700 block">
+          Descripción del trabajo realizado
+        </label>
+        {isEditing ? (
+          <div className="space-y-2">
+            <textarea
+              value={descripcion}
+              onChange={(e) => setDescripcion(e.target.value)}
+              className="w-full px-3 py-2 border-2 border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="¿Qué trabajaste?"
+              rows={3}
+              autoFocus
+            />
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => {
+                  setIsEditing(false);
+                  setDescripcion(record.descripcion || '');
+                }}
+                className="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm transition-colors"
+              >
+                Cancelar
+              </button>
               <button
                 onClick={handleSave}
-                className="flex items-center gap-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm"
+                className="flex items-center gap-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm transition-colors"
               >
                 <Save className="h-4 w-4" />
                 Guardar
               </button>
-              <button
-                onClick={() => setIsEditing(false)}
-                className="flex items-center gap-1 px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </>
-          ) : (
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-start gap-2">
+            <div className="flex-1 p-3 bg-white border border-gray-200 rounded-lg min-h-[60px]">
+              <p className="text-gray-700">
+                {record.descripcion || <span className="text-gray-400 italic">Sin descripción</span>}
+              </p>
+            </div>
             <button
               onClick={() => setIsEditing(true)}
-              className="flex items-center gap-1 px-3 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg text-sm"
+              className="flex items-center gap-1 px-3 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg text-sm transition-colors"
             >
               <Edit3 className="h-4 w-4" />
-              Editar
+              {record.descripcion ? 'Editar' : 'Agregar'}
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
-
-      {/* Description (editable) */}
-      {isEditing && (
-        <div className="mt-4">
-          <label className="text-sm font-medium text-gray-700 mb-1 block">Descripción</label>
-          <input
-            type="text"
-            value={editData.descripcion}
-            onChange={(e) => setEditData(prev => ({ ...prev, descripcion: e.target.value }))}
-            className="w-full px-3 py-2 border rounded-lg"
-            placeholder="Que trabajaste?"
-          />
-        </div>
-      )}
     </motion.div>
   );
 }
@@ -519,6 +515,7 @@ export default function RegistroHorasPage() {
   const [viewMode, setViewMode] = useState<'personal' | 'team'>('personal');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [timeEditModal, setTimeEditModal] = useState<{ open: boolean; record: RegistroHoras | null }>({ open: false, record: null });
+  const [showDebtModal, setShowDebtModal] = useState(false);
 
   // Get current user
   const { user: currentUser, loading: userLoading } = useUser();
@@ -863,6 +860,17 @@ export default function RegistroHorasPage() {
                 </div>
               </div>
 
+              {/* Debt Button (Personal View) */}
+              {viewMode === 'personal' && (
+                <button
+                  onClick={() => setShowDebtModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-md"
+                >
+                  <AlertCircle className="h-4 w-4" />
+                  Registrar Deuda
+                </button>
+              )}
+
               {/* Toggle Admin View */}
               {isAdmin && (
                 <>
@@ -926,47 +934,52 @@ export default function RegistroHorasPage() {
         {/* Estadisticas segun modo de vista */}
         {viewMode === 'personal' ? (
           // VISTA PERSONAL: Estadisticas del usuario actual
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-indigo-100 rounded-lg">
-                  <Clock className="text-indigo-600" size={24} />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Mis Horas Totales</p>
-                  <p className="text-2xl font-bold text-gray-900">{myTotalStats.totalHoras.toFixed(1)}h</p>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-indigo-100 rounded-lg">
+                    <Clock className="text-indigo-600" size={24} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Mis Horas Totales</p>
+                    <p className="text-2xl font-bold text-gray-900">{myTotalStats.totalHoras.toFixed(1)}h</p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <CheckCircle className="text-green-600" size={24} />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Mis Registros</p>
-                  <p className="text-2xl font-bold text-gray-900">{myTotalStats.totalRegistros}</p>
+              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-green-100 rounded-lg">
+                    <CheckCircle className="text-green-600" size={24} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Mis Registros</p>
+                    <p className="text-2xl font-bold text-gray-900">{myTotalStats.totalRegistros}</p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-amber-100 rounded-lg">
-                  <Target className="text-amber-600" size={24} />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Promedio Diario</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {myTotalStats.totalRegistros > 0
-                      ? (myTotalStats.totalHoras / Math.max(1, myTotalStats.totalRegistros)).toFixed(1)
-                      : '0'}h
-                  </p>
+              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-amber-100 rounded-lg">
+                    <Target className="text-amber-600" size={24} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Promedio Diario</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {myTotalStats.totalRegistros > 0
+                        ? (myTotalStats.totalHoras / Math.max(1, myTotalStats.totalRegistros)).toFixed(1)
+                        : '0'}h
+                    </p>
+                  </div>
                 </div>
               </div>
+
+              {/* Hour Debt Widget */}
+              <HourDebtWidget />
             </div>
-          </div>
+          </>
         ) : (
           // VISTA EQUIPO (ADMIN): Dashboard completo
           <>
@@ -1497,6 +1510,9 @@ export default function RegistroHorasPage() {
           </div>
         </div>
 
+        {/* Debt History Table - Solo en vista personal */}
+        {viewMode === 'personal' && <DebtHistoryTable />}
+
         {/* Informacion y Sugerencias - Solo en vista personal */}
         {viewMode === 'personal' && (
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
@@ -1577,6 +1593,12 @@ export default function RegistroHorasPage() {
           />
         )}
       </AnimatePresence>
+
+      {/* Modal de Crear Deuda */}
+      <CreateDebtModal
+        isOpen={showDebtModal}
+        onClose={() => setShowDebtModal(false)}
+      />
     </MainLayout>
   );
 }

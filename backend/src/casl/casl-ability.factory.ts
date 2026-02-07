@@ -64,6 +64,11 @@ export class CaslAbilityFactory {
       can(Action.Approve, 'RegistroHoras');
       can(Action.Reject, 'RegistroHoras');
 
+      // Gestión de deuda de horas (FULL ACCESS)
+      can(Action.Manage, 'HourDebt');
+      can(Action.Manage, 'DebtDeduction');
+      can(Action.Read, 'HourDebtAuditLog');
+
       // Gestión de valor hora
       can(Action.Manage, 'ValorHora');
 
@@ -75,6 +80,9 @@ export class CaslAbilityFactory {
       can(Action.Manage, 'VSCarpeta');
       can(Action.Manage, 'VSGrupo');
       can(Action.Manage, 'VSConfiguracion');
+
+      // Settings (SMTP, configuración del sistema)
+      can(Action.Manage, 'Settings');
 
       return build({ detectSubjectType });
     }
@@ -104,6 +112,10 @@ export class CaslAbilityFactory {
       can(Action.Approve, 'RegistroHoras');
       can(Action.Reject, 'RegistroHoras');
 
+      // Deuda de horas - puede ver todas y crear para usuarios
+      can(Action.Manage, 'HourDebt');
+      can(Action.Read, 'DebtDeduction');
+
       // Valor hora
       can(Action.Read, 'ValorHora');
 
@@ -129,6 +141,11 @@ export class CaslAbilityFactory {
       // Solo puede actualizar/eliminar sus propias horas no aprobadas
       can(Action.Update, 'RegistroHoras', { personaId: user.id, aprobado: false });
       can(Action.Delete, 'RegistroHoras', { personaId: user.id, aprobado: false });
+
+      // Deuda de horas - puede crear y ver sus propias
+      can(Action.Create, 'HourDebt'); // Solo para sí mismo (validado en controller)
+      can(Action.Read, 'HourDebt', { usuarioId: user.id });
+      can(Action.Read, 'DebtDeduction'); // Ver sus propias deducciones
 
       // Puede ver su persona
       can(Action.Read, 'Persona', { usuarioId: user.id });

@@ -11,6 +11,9 @@ import {
   VSCarpeta,
   VSGrupo,
   VSConfiguracion,
+  HourDebt,
+  DebtDeduction,
+  HourDebtAuditLog,
 } from '@prisma/client';
 
 export type Subjects =
@@ -38,4 +41,11 @@ export type Subjects =
   | VSGrupo
   | 'VSConfiguracion'
   | VSConfiguracion
+  | 'HourDebt'
+  | HourDebt
+  | 'DebtDeduction'
+  | DebtDeduction
+  | 'HourDebtAuditLog'
+  | HourDebtAuditLog
+  | 'Settings'
   | 'all';

@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { Settings } from 'lucide-react'
 import { useRegistroHoras } from '@/hooks/useRegistroHoras'
 import { useCan } from '@/hooks/usePermissions'
 import { Action } from '@/types/permissions'
@@ -10,6 +11,9 @@ export default function Sidebar() {
   const pathname = usePathname()
   const { data: registrosHoras = [] } = useRegistroHoras()
   const canApprove = useCan(Action.Approve, 'RegistroHoras')
+  const canManageDebt = useCan(Action.Manage, 'HourDebt')
+  const canReadDebt = useCan(Action.Read, 'HourDebt')
+  const canManageSettings = useCan(Action.Manage, 'Settings')
 
   // Count hours pending approval
   const pendingCount = registrosHoras.filter(
@@ -116,6 +120,21 @@ export default function Sidebar() {
                       {pendingCount}
                     </span>
                   )}
+                </Link>
+              </li>
+            )}
+            {(canManageDebt || canReadDebt) && (
+              <li>
+                <Link
+                  href="/deuda-horas"
+                  className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg ${
+                    isActive('/deuda-horas')
+                      ? 'text-amber-600 bg-amber-50'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <i className="bi bi-hourglass-split"></i>
+                  <span>Deuda de Horas</span>
                 </Link>
               </li>
             )}
@@ -228,6 +247,21 @@ export default function Sidebar() {
                 <span>Usuarios</span>
               </Link>
             </li>
+            {canManageSettings && (
+              <li>
+                <Link
+                  href="/configuracion"
+                  className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg ${
+                    isActive('/configuracion')
+                      ? 'text-indigo-600 bg-indigo-50'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>Configuración</span>
+                </Link>
+              </li>
+            )}
           </ul>
         </div>
       </nav>

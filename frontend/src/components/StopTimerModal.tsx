@@ -1,15 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useTimer } from '@/hooks/useTimer';
-import { X, Save } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { RegistroHorasService } from '@/services';
+import { X, Save, Clock, Calendar, AlertCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { RegistroHoras } from '@/types';
+import { motion } from 'framer-motion';
 
 interface StopTimerModalProps {
   activeTimer: RegistroHoras;
   onClose: () => void;
-  onSuccess?: () => void;
+  onSuccess?: (savedRecord: RegistroHoras) => void;
 }
 
 /**
@@ -28,7 +29,7 @@ export const StopTimerModal: React.FC<StopTimerModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { stopTimer, loading, elapsedTime } = useTimer();
+  const [loading, setLoading] = useState(false);
   const [descripcion, setDescripcion] = useState(activeTimer.descripcion || '');
 
   // Initialize start and end times from activeTimer
@@ -49,6 +50,19 @@ export const StopTimerModal: React.FC<StopTimerModalProps> = ({
   const [endTime, setEndTime] = useState(
     formatDateTimeLocal(new Date().toISOString())
   );
+
+  // Calculate hours in real-time
+  const calculatedHours = useMemo(() => {
+    if (startTime && endTime) {
+      const start = new Date(startTime);
+      const end = new Date(endTime);
+      const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+      return Math.max(0, hours);
+    }
+    return 0;
+  }, [startTime, endTime]);
+
+  const isValidTime = calculatedHours > 0 && calculatedHours <= 16;
 
   // Format elapsed time
   const formatTime = (hours: number): string => {
@@ -71,6 +85,7 @@ export const StopTimerModal: React.FC<StopTimerModalProps> = ({
     const end = new Date(endTime);
 
     console.log('⏰ Datos del timer:', {
+      timerId: activeTimer.id,
       startTime,
       endTime,
       start: start.toISOString(),
@@ -84,273 +99,169 @@ export const StopTimerModal: React.FC<StopTimerModalProps> = ({
     }
 
     try {
-      await stopTimer(descripcion, start.toISOString(), end.toISOString());
+      setLoading(true);
+      const savedRecord = await RegistroHorasService.stopTimer(
+        activeTimer.id,
+        descripcion,
+        start.toISOString(),
+        end.toISOString()
+      );
       toast.success('Timer detenido y registro guardado');
-      onSuccess?.();
+      onSuccess?.(savedRecord);
+      onClose();
     } catch (error: any) {
+      console.error('❌ Error al detener timer:', error);
       toast.error(error.message || 'Error al detener timer');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        onClick={onClose}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          zIndex: 9998,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+      className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+    >
+      {/* Modal */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        transition={{ duration: 0.2 }}
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-auto"
       >
-        {/* Modal */}
-        <div
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            backgroundColor: 'white',
-            borderRadius: '0.75rem',
-            boxShadow: '0 20px 25px rgba(0, 0, 0, 0.15)',
-            maxWidth: '600px',
-            width: '90%',
-            maxHeight: '90vh',
-            overflow: 'auto',
-          }}
-        >
           {/* Header */}
-          <div
-            style={{
-              padding: '1.5rem',
-              borderBottom: '1px solid #E5E7EB',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <h2
-              style={{
-                fontSize: '1.25rem',
-                fontWeight: '600',
-                color: '#111827',
-                margin: 0,
-              }}
-            >
-              Detener Timer
-            </h2>
-            <button
-              onClick={onClose}
-              disabled={loading}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#6B7280',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                padding: '0.25rem',
-                borderRadius: '0.375rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                if (!loading) {
-                  e.currentTarget.style.backgroundColor = '#F3F4F6';
-                  e.currentTarget.style.color = '#111827';
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-                e.currentTarget.style.color = '#6B7280';
-              }}
-            >
-              <X size={20} />
-            </button>
+          <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-indigo-600 rounded-xl">
+                  <Clock className="text-white" size={24} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Finalizar Registro de Tiempo
+                  </h2>
+                  <p className="text-sm text-gray-600 mt-0.5">
+                    Revisa y ajusta los horarios antes de guardar
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                disabled={loading}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-white rounded-lg transition-colors disabled:opacity-50"
+              >
+                <X size={20} />
+              </button>
+            </div>
           </div>
 
           {/* Body */}
-          <form onSubmit={handleSubmit}>
-            <div style={{ padding: '1.5rem' }}>
-              {/* Tiempo transcurrido */}
-              <div
-                style={{
-                  backgroundColor: '#F3F4F6',
-                  padding: '1rem',
-                  borderRadius: '0.5rem',
-                  marginBottom: '1.5rem',
-                  textAlign: 'center',
-                }}
-              >
-                <p
-                  style={{
-                    fontSize: '0.875rem',
-                    color: '#6B7280',
-                    marginBottom: '0.5rem',
-                  }}
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            {/* Tiempo calculado con preview en tiempo real */}
+            <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 rounded-xl p-6 border-2 border-indigo-200">
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <Clock className="text-indigo-600" size={20} />
+                  <p className="text-sm font-medium text-gray-700">
+                    Tiempo Total Calculado
+                  </p>
+                </div>
+                <motion.div
+                  key={calculatedHours}
+                  initial={{ scale: 1.1 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.2 }}
+                  className={`text-5xl font-bold font-mono mb-2 ${
+                    isValidTime ? 'text-indigo-600' : 'text-red-600'
+                  }`}
                 >
-                  Tiempo total trabajado:
+                  {formatTime(calculatedHours)}
+                </motion.div>
+                <p className="text-sm text-gray-600">
+                  {calculatedHours.toFixed(2)} horas decimales
                 </p>
-                <p
-                  style={{
-                    fontSize: '2rem',
-                    fontWeight: '700',
-                    color: '#111827',
-                    fontFamily: 'monospace',
-                    margin: 0,
-                  }}
-                >
-                  {formatTime(elapsedTime)}
-                </p>
-                <p
-                  style={{
-                    fontSize: '0.75rem',
-                    color: '#6B7280',
-                    marginTop: '0.25rem',
-                  }}
-                >
-                  {elapsedTime.toFixed(2)} horas
-                </p>
+                {!isValidTime && calculatedHours > 16 && (
+                  <div className="mt-3 flex items-center justify-center gap-2 text-red-600 text-sm">
+                    <AlertCircle size={16} />
+                    <span>Máximo permitido: 16 horas</span>
+                  </div>
+                )}
               </div>
+            </div>
 
               {/* Campaña (si existe) */}
               {activeTimer.campana && (
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <p
-                    style={{
-                      fontSize: '0.875rem',
-                      color: '#6B7280',
-                      marginBottom: '0.25rem',
-                    }}
-                  >
-                    Campaña:
-                  </p>
-                  <p
-                    style={{
-                      fontSize: '1rem',
-                      color: '#111827',
-                      fontWeight: '500',
-                      margin: 0,
-                    }}
-                  >
+                <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Calendar className="text-purple-600" size={16} />
+                    <p className="text-xs font-medium text-purple-700 uppercase tracking-wide">
+                      Campaña
+                    </p>
+                  </div>
+                  <p className="text-base font-semibold text-purple-900">
                     {activeTimer.campana.nombre}
                   </p>
                 </div>
               )}
 
               {/* Horarios */}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h3
-                  style={{
-                    fontSize: '1rem',
-                    fontWeight: '600',
-                    color: '#111827',
-                    marginBottom: '1rem',
-                    paddingBottom: '0.5rem',
-                    borderBottom: '2px solid #E5E7EB',
-                  }}
-                >
-                  🕐 Ajustar Horario
-                </h3>
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '1rem',
-                  }}
-                >
-                <div>
-                  <label
-                    htmlFor="startTime"
-                    style={{
-                      display: 'block',
-                      fontSize: '0.875rem',
-                      fontWeight: '500',
-                      color: '#374151',
-                      marginBottom: '0.5rem',
-                    }}
-                  >
-                    Hora de Inicio *
-                  </label>
-                  <input
-                    type="datetime-local"
-                    id="startTime"
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '1px solid #D1D5DB',
-                      borderRadius: '0.5rem',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'all 0.2s',
-                    }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.borderColor = '#3B82F6';
-                      e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.borderColor = '#D1D5DB';
-                      e.currentTarget.style.boxShadow = 'none';
-                    }}
-                  />
+              <div className="bg-white border-2 border-gray-200 rounded-xl p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Clock className="text-indigo-600" size={20} />
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Ajustar Horario
+                  </h3>
                 </div>
 
-                <div>
-                  <label
-                    htmlFor="endTime"
-                    style={{
-                      display: 'block',
-                      fontSize: '0.875rem',
-                      fontWeight: '500',
-                      color: '#374151',
-                      marginBottom: '0.5rem',
-                    }}
-                  >
-                    Hora de Fin *
-                  </label>
-                  <input
-                    type="datetime-local"
-                    id="endTime"
-                    value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '1px solid #D1D5DB',
-                      borderRadius: '0.5rem',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'all 0.2s',
-                    }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.borderColor = '#3B82F6';
-                      e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.borderColor = '#D1D5DB';
-                      e.currentTarget.style.boxShadow = 'none';
-                    }}
-                  />
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      htmlFor="startTime"
+                      className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2"
+                    >
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      Hora de Inicio *
+                    </label>
+                    <input
+                      type="datetime-local"
+                      id="startTime"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      required
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="endTime"
+                      className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2"
+                    >
+                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                      Hora de Fin *
+                    </label>
+                    <input
+                      type="datetime-local"
+                      id="endTime"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                      required
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white font-mono"
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* Descripción */}
-              <div style={{ marginBottom: '1.5rem' }}>
+              <div>
                 <label
                   htmlFor="descripcion"
-                  style={{
-                    display: 'block',
-                    fontSize: '0.875rem',
-                    fontWeight: '500',
-                    color: '#374151',
-                    marginBottom: '0.5rem',
-                  }}
+                  className="block text-sm font-medium text-gray-700 mb-2"
                 >
                   Descripción del trabajo realizado
                 </label>
@@ -360,122 +271,48 @@ export const StopTimerModal: React.FC<StopTimerModalProps> = ({
                   onChange={(e) => setDescripcion(e.target.value)}
                   placeholder="Describe brevemente lo que trabajaste..."
                   rows={4}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '1px solid #D1D5DB',
-                    borderRadius: '0.5rem',
-                    fontSize: '0.875rem',
-                    fontFamily: 'inherit',
-                    resize: 'vertical',
-                    outline: 'none',
-                    transition: 'all 0.2s',
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = '#3B82F6';
-                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = '#D1D5DB';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-vertical bg-white"
                 />
               </div>
 
               {/* Información adicional */}
-              <div
-                style={{
-                  backgroundColor: '#FEF3C7',
-                  border: '1px solid #FCD34D',
-                  borderRadius: '0.5rem',
-                  padding: '0.75rem',
-                  marginBottom: '1.5rem',
-                }}
-              >
-                <p
-                  style={{
-                    fontSize: '0.875rem',
-                    color: '#92400E',
-                    margin: 0,
-                  }}
-                >
-                  <strong>Nota:</strong> Este registro quedará pendiente de
-                  aprobación. Una vez aprobado, se contabilizará en las métricas.
-                </p>
+              <div className="flex items-start gap-3 bg-amber-50 border-l-4 border-amber-400 rounded-lg p-4">
+                <AlertCircle className="text-amber-600 flex-shrink-0 mt-0.5" size={20} />
+                <div className="text-sm text-amber-800">
+                  <p className="font-medium mb-1">Registro pendiente de aprobación</p>
+                  <p className="text-amber-700">
+                    Una vez aprobado por un administrador, este registro se contabilizará en las métricas del sistema.
+                  </p>
+                </div>
               </div>
-            </div>
 
             {/* Footer */}
-            <div
-              style={{
-                padding: '1rem 1.5rem',
-                borderTop: '1px solid #E5E7EB',
-                display: 'flex',
-                gap: '0.75rem',
-                justifyContent: 'flex-end',
-              }}
-            >
+            <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                style={{
-                  padding: '0.625rem 1.25rem',
-                  backgroundColor: 'white',
-                  border: '1px solid #D1D5DB',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  color: '#374151',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  if (!loading) {
-                    e.currentTarget.style.backgroundColor = '#F9FAFB';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'white';
-                }}
+                className="px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancelar
               </button>
-              <button
+              <motion.button
                 type="submit"
-                disabled={loading}
-                style={{
-                  padding: '0.625rem 1.25rem',
-                  backgroundColor: loading ? '#9CA3AF' : '#3B82F6',
-                  border: 'none',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  color: 'white',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  transition: 'all 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  if (!loading) {
-                    e.currentTarget.style.backgroundColor = '#2563EB';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!loading) {
-                    e.currentTarget.style.backgroundColor = '#3B82F6';
-                  }
-                }}
+                disabled={loading || !isValidTime}
+                whileHover={{ scale: loading || !isValidTime ? 1 : 1.02 }}
+                whileTap={{ scale: loading || !isValidTime ? 1 : 0.98 }}
+                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                  loading || !isValidTime
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg'
+                }`}
               >
-                <Save size={16} />
+                <Save size={18} />
                 {loading ? 'Guardando...' : 'Guardar Registro'}
-              </button>
+              </motion.button>
             </div>
           </form>
-        </div>
-      </div>
-    </>
+        </motion.div>
+      </motion.div>
   );
 };

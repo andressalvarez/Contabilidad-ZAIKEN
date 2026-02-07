@@ -1,10 +1,17 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRegistroHorasDto, UpdateRegistroHorasDto } from './dto';
+import { HourDebtService } from '../hour-debt/hour-debt.service';
+import { DebtDeletionReason } from '@prisma/client';
 
 @Injectable()
 export class RegistroHorasService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(RegistroHorasService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private hourDebtService: HourDebtService,
+  ) {}
 
   async create(negocioId: number, createRegistroHorasDto: CreateRegistroHorasDto) {
     // VALIDACIÓN: Límite de 16 horas por registro
@@ -285,7 +292,21 @@ export class RegistroHorasService {
 
   async remove(id: number, negocioId: number) {
     // Verificar que existe y pertenece al negocio
-    await this.findOne(id, negocioId);
+    const registro = await this.findOne(id, negocioId);
+
+    // Rollback debt deductions if record was approved
+    if (registro.aprobado) {
+      try {
+        await this.hourDebtService.rollbackAndRecalculateDebts(
+          id,
+          negocioId,
+          DebtDeletionReason.RECORD_DELETED,
+        );
+      } catch (error) {
+        this.logger.error('Error rolling back debt deductions:', error);
+        // Continue with deletion even if rollback fails
+      }
+    }
 
     return this.prisma.registroHoras.delete({
       where: { id },
@@ -616,42 +637,82 @@ export class RegistroHorasService {
    * Aprueba un registro de horas
    */
   async approve(negocioId: number, id: number, userId: number) {
-    const registro = await this.findOne(id, negocioId);
+    // Single transaction for approve + debt deduction
+    return await this.prisma.$transaction(async (tx) => {
+      const registro = await tx.registroHoras.findFirst({
+        where: { id, negocioId },
+        include: {
+          persona: { include: { usuario: true } },
+          usuario: true,
+        },
+      });
 
-    if (registro.aprobado) {
-      throw new BadRequestException('El registro ya está aprobado');
-    }
+      if (!registro) {
+        throw new NotFoundException(`Registro #${id} no encontrado`);
+      }
 
-    if (registro.rechazado) {
-      throw new BadRequestException('El registro está rechazado. Elimínelo o edítelo primero.');
-    }
+      if (registro.aprobado) {
+        throw new BadRequestException('El registro ya está aprobado');
+      }
 
-    return this.prisma.registroHoras.update({
-      where: { id },
-      data: {
-        aprobado: true,
-        aprobadoPor: userId,
-        fechaAprobacion: new Date(),
-        rechazado: false,
-        motivoRechazo: null,
-      },
-      include: {
-        usuario: {
-          select: {
-            id: true,
-            nombre: true,
-            email: true,
-            rolNegocio: {
-              select: {
-                id: true,
-                nombreRol: true,
+      if (registro.rechazado) {
+        throw new BadRequestException('El registro está rechazado. Elimínelo o edítelo primero.');
+      }
+
+      // 1. Approve record
+      const approved = await tx.registroHoras.update({
+        where: { id },
+        data: {
+          aprobado: true,
+          aprobadoPor: userId,
+          fechaAprobacion: new Date(),
+          rechazado: false,
+          motivoRechazo: null,
+        },
+        include: {
+          usuario: {
+            select: {
+              id: true,
+              nombre: true,
+              email: true,
+              rolNegocio: {
+                select: {
+                  id: true,
+                  nombreRol: true,
+                },
               },
             },
           },
+          persona: {
+            include: { usuario: true },
+          },
+          campana: true,
         },
-        persona: true,
-        campana: true,
-      },
+      });
+
+      // 2. Apply debt deduction (within same transaction)
+      const targetUserId = approved.usuarioId || approved.persona?.usuario?.id;
+      if (targetUserId) {
+        try {
+          await this.hourDebtService.applyDebtDeduction(
+            negocioId,
+            targetUserId,
+            approved.id,
+            approved.horas,
+            approved.fecha,
+            tx, // Pass transaction
+          );
+        } catch (error) {
+          this.logger.error('Error applying debt deduction:', error);
+          // Don't fail approval if deduction fails
+        }
+      }
+
+      return approved;
+    }, {
+      isolationLevel: 'ReadCommitted',
+      maxWait: 5000,
+      timeout: 10000,
     });
   }
 
@@ -661,8 +722,18 @@ export class RegistroHorasService {
   async reject(negocioId: number, id: number, motivo: string) {
     const registro = await this.findOne(id, negocioId);
 
+    // If was approved, rollback debt deductions first
     if (registro.aprobado) {
-      throw new BadRequestException('No se puede rechazar un registro ya aprobado');
+      try {
+        await this.hourDebtService.rollbackAndRecalculateDebts(
+          id,
+          negocioId,
+          DebtDeletionReason.RECORD_REJECTED,
+        );
+      } catch (error) {
+        this.logger.error('Error rolling back debt deductions:', error);
+        // Continue with rejection even if rollback fails
+      }
     }
 
     return this.prisma.registroHoras.update({

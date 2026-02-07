@@ -32,6 +32,7 @@ model Negocio {
   vsCarpetas               VSCarpeta[]
   vsGrupos                 VSGrupo[]
   vsConfiguraciones        VSConfiguracion[]
+  hourDebts                HourDebt[]
 
   @@map("negocios")
 }
@@ -128,18 +129,24 @@ model RegistroHoras {
   editadoPor          Int?      // ID del usuario que editó
   fechaEdicion        DateTime? // Cuándo se editó por última vez
 
+  // Soft delete
+  deletedAt           DateTime? // Cuándo fue eliminado
+  deletedBy           Int?      // ID del usuario que eliminó
+
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   negocio        Negocio   @relation(fields: [negocioId], references: [id])
   campana        Campana?  @relation(fields: [campanaId], references: [id])
   persona        Persona   @relation(fields: [personaId], references: [id])
   usuario        Usuario?  @relation("RegistroHorasUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
+  debtDeductions DebtDeduction[]
 
   @@index([negocioId])
   @@index([negocioId, personaId])
   @@index([negocioId, usuarioId])
   @@index([negocioId, aprobado])
   @@index([negocioId, estado]) // Nuevo índice para buscar timers activos
+  @@index([personaId, fecha, aprobado]) // Índice para queries de deuda
   @@map("registro_horas")
 }
 
@@ -304,6 +311,13 @@ model Usuario {
   valorHoras          ValorHora[]           @relation("ValorHoraUsuario")
   distribucionDetalle DistribucionDetalle[] @relation("DistribucionDetalleUsuario")
 
+  // Sistema de Deuda de Horas
+  hourDebts          HourDebt[]        @relation("HourDebtUsuario")
+  createdDebts       HourDebt[]        @relation("HourDebtCreator")
+  editedDebts        HourDebt[]        @relation("HourDebtEditor")
+  deletedDebts       HourDebt[]        @relation("HourDebtDeleter")
+  auditLogs          HourDebtAuditLog[]
+
   // Roles de plataforma (opcional)
   rolesSistema  UsuarioRol[]
 
@@ -401,4 +415,122 @@ model UsuarioRol {
 
   @@id([usuarioId, rolSistemaId])
   @@map("usuarios_roles")
+}
+
+// ==========================
+// Sistema de Deuda de Horas
+// ==========================
+
+enum DebtStatus {
+  ACTIVE
+  FULLY_PAID
+  CANCELLED
+}
+
+enum DebtDeletionReason {
+  RECORD_REJECTED
+  RECORD_DELETED
+  HOURS_EDITED
+  ADMIN_CORRECTION
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  CANCEL
+  DELETE
+  REACTIVATE
+}
+
+enum RecordSource {
+  MANUAL
+  TIMER
+}
+
+enum TimerStatus {
+  RUNNING
+  PAUSED
+  STOPPED
+}
+
+model HourDebt {
+  id                Int       @id @default(autoincrement())
+  negocioId         Int       @map("negocio_id")
+  usuarioId         Int       @map("usuario_id")
+
+  date              DateTime  @db.Date
+  minutesOwed       Int       @map("minutes_owed")
+  remainingMinutes  Int       @map("remaining_minutes")
+  reason            String?
+  status            DebtStatus @default(ACTIVE)
+
+  createdById       Int       @map("created_by_id")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  editedById        Int?      @map("edited_by_id")
+  editedAt          DateTime? @map("edited_at")
+  deletedById       Int?      @map("deleted_by_id")
+  deletedAt         DateTime? @map("deleted_at")
+
+  negocio           Negocio             @relation(fields: [negocioId], references: [id])
+  usuario           Usuario             @relation("HourDebtUsuario", fields: [usuarioId], references: [id])
+  createdBy         Usuario             @relation("HourDebtCreator", fields: [createdById], references: [id])
+  editedBy          Usuario?            @relation("HourDebtEditor", fields: [editedById], references: [id])
+  deletedBy         Usuario?            @relation("HourDebtDeleter", fields: [deletedById], references: [id])
+  deductions        DebtDeduction[]
+  auditLogs         HourDebtAuditLog[]
+
+  @@index([negocioId])
+  @@index([negocioId, usuarioId])
+  @@index([negocioId, status])
+  @@index([usuarioId, date])
+  @@map("hour_debts")
+}
+
+model DebtDeduction {
+  id                   Int             @id @default(autoincrement())
+  debtId               Int             @map("debt_id")
+  registroHorasId      Int             @map("registro_horas_id")
+
+  minutesDeducted      Int             @map("minutes_deducted")
+  excessMinutes        Int             @default(0) @map("excess_minutes")
+
+  deductedAt           DateTime        @default(now()) @map("deducted_at")
+
+  deletedAt            DateTime?       @map("deleted_at")
+  deletedReason        DebtDeletionReason? @map("deleted_reason")
+
+  debt                 HourDebt        @relation(fields: [debtId], references: [id])
+  registroHoras        RegistroHoras   @relation(fields: [registroHorasId], references: [id], onDelete: Restrict)
+
+  @@unique([registroHorasId, debtId])
+  @@index([debtId])
+  @@index([registroHorasId])
+  @@index([deletedAt])
+  @@map("debt_deductions")
+}
+
+model HourDebtAuditLog {
+  id              Int       @id @default(autoincrement())
+  debtId          Int       @map("debt_id")
+  action          AuditAction
+
+  beforeState     Json?     @map("before_state")
+  afterState      Json      @map("after_state")
+  changedFields   String[]  @map("changed_fields")
+  adminReason     String?   @map("admin_reason")
+
+  performedBy     Int       @map("performed_by")
+  performedAt     DateTime  @default(now()) @map("performed_at")
+  ipAddress       String?   @map("ip_address")
+  userAgent       String?   @map("user_agent")
+
+  debt            HourDebt  @relation(fields: [debtId], references: [id])
+  performedByUser Usuario   @relation(fields: [performedBy], references: [id])
+
+  @@index([debtId])
+  @@index([performedAt])
+  @@index([action])
+  @@map("hour_debt_audit_log")
 }

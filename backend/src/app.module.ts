@@ -20,6 +20,9 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { RolesGuard } from './auth/roles.guard';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { CaslModule } from './casl/casl.module';
+import { EmailModule } from './email/email.module';
+import { SettingsModule } from './settings/settings.module';
+import { HourDebtModule } from './hour-debt/hour-debt.module';
 
 @Module({
   imports: [
@@ -45,6 +48,9 @@ import { CaslModule } from './casl/casl.module';
     VSCategoriasModule,
     AuthModule,
     UsuariosModule,
+    EmailModule,
+    SettingsModule,
+    HourDebtModule,
   ],
   controllers: [AppController],
   providers: [

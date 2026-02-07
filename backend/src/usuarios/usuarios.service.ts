@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { EmailService } from '../email/email.service';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 
@@ -42,7 +43,10 @@ interface UpdateUsuarioData {
 export class UsuariosService {
   private readonly logger = new Logger(UsuariosService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private emailService: EmailService,
+  ) {}
 
   async findAll(negocioId: number) {
     return this.prisma.usuario.findMany({
@@ -291,8 +295,19 @@ export class UsuariosService {
 
     this.logger.log(`Token de reset generado para: ${email}`);
 
-    // TODO: Enviar email con EmailService cuando esté implementado
-    // await this.emailService.sendPasswordResetEmail(usuario.email, usuario.nombre, resetToken);
+    // Send password reset email
+    try {
+      await this.emailService.sendPasswordResetEmail(
+        usuario.negocioId,
+        usuario.email,
+        usuario.nombre,
+        resetToken,
+      );
+      this.logger.log(`Password reset email sent to: ${email}`);
+    } catch (error) {
+      this.logger.error(`Failed to send password reset email:`, error);
+      // Don't fail the request if email fails
+    }
 
     return { message: 'Si el email existe, recibirás instrucciones de recuperación' };
   }
@@ -351,8 +366,18 @@ export class UsuariosService {
 
     this.logger.log(`Cuenta activada para usuario ID: ${usuario.id}`);
 
-    // TODO: Enviar email de bienvenida cuando EmailService esté implementado
-    // await this.emailService.sendWelcomeEmail(usuario.email, usuario.nombre);
+    // Send activation email
+    try {
+      await this.emailService.sendActivationEmail(
+        usuario.negocioId,
+        usuario.email,
+        usuario.nombre,
+        token, // Use activation token as reference
+      );
+      this.logger.log(`Activation email sent to: ${usuario.email}`);
+    } catch (error) {
+      this.logger.error(`Failed to send activation email:`, error);
+    }
 
     return { message: 'Cuenta activada exitosamente' };
   }
