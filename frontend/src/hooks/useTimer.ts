@@ -54,12 +54,19 @@ export function useTimer(): UseTimerReturn {
   useEffect(() => {
     if (!activeTimer || !isRunning) return;
 
-    const interval = setInterval(() => {
+    const calculateElapsed = () => {
       const start = new Date(activeTimer.timerInicio!).getTime();
       const now = Date.now();
       const elapsed = (now - start) / (1000 * 60 * 60); // Hours
-      setElapsedTime(activeTimer.horas + elapsed);
-    }, 1000);
+      // Ensure elapsed time is never negative (can happen with timezone differences)
+      const totalElapsed = activeTimer.horas + Math.max(0, elapsed);
+      setElapsedTime(Math.max(0, totalElapsed));
+    };
+
+    // Calculate immediately on mount
+    calculateElapsed();
+
+    const interval = setInterval(calculateElapsed, 1000);
 
     return () => clearInterval(interval);
   }, [activeTimer, isRunning]);

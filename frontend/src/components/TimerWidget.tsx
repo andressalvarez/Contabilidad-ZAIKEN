@@ -59,10 +59,12 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ usuarioId, onStop }) =
 
   // Format elapsed time
   const formatTime = (hours: number): string => {
-    const totalMinutes = Math.floor(hours * 60);
-    const h = Math.floor(totalMinutes / 60);
-    const m = totalMinutes % 60;
-    const s = Math.floor((hours * 3600) % 60);
+    // Ensure hours is never negative (can happen briefly with timezone differences)
+    const safeHours = Math.max(0, hours);
+    const totalSeconds = Math.floor(safeHours * 3600);
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
