@@ -276,6 +276,9 @@ assets/uploads/
 *.ico
 *.webp
 
+# Exception: Allow favicon/logo
+!**/zaiken.png
+
 # Videos
 *.mp4
 *.avi
