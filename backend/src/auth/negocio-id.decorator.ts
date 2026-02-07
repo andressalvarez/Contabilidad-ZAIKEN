@@ -1,4 +1,4 @@
-import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import { createParamDecorator, ExecutionContext, UnauthorizedException } from '@nestjs/common';
 
 /**
  * Decorator para extraer el negocioId del JWT en el request
@@ -10,5 +10,13 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
  */
 export const NegocioId = createParamDecorator((data: unknown, ctx: ExecutionContext): number => {
   const request = ctx.switchToHttp().getRequest();
-  return request.user?.negocioId;
+  const negocioId = request.user?.negocioId;
+
+  if (!negocioId) {
+    throw new UnauthorizedException(
+      'Token inválido: negocioId no encontrado. Por favor cierre sesión y vuelva a iniciar sesión.'
+    );
+  }
+
+  return negocioId;
 });
