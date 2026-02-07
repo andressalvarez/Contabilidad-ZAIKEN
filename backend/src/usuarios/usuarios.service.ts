@@ -339,6 +339,48 @@ export class UsuariosService {
   }
 
   /**
+   * Admin sends password reset email to a specific user
+   */
+  async sendPasswordResetToUser(userId: number, negocioId: number) {
+    const usuario = await this.prisma.usuario.findFirst({
+      where: { id: userId, negocioId },
+    });
+
+    if (!usuario) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    // Generate token with 1 hour expiration
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetExpires = new Date(Date.now() + 3600000); // 1 hour
+
+    await this.prisma.usuario.update({
+      where: { id: usuario.id },
+      data: {
+        resetPasswordToken: resetToken,
+        resetPasswordExpires: resetExpires,
+      },
+    });
+
+    this.logger.log(`Reset token generated for user: ${usuario.email}`);
+
+    // Send password reset email
+    try {
+      await this.emailService.sendPasswordResetEmail(
+        negocioId,
+        usuario.email,
+        usuario.nombre,
+        resetToken,
+      );
+      this.logger.log(`Password reset email sent to: ${usuario.email}`);
+      return { message: `Correo de recuperación enviado a ${usuario.email}` };
+    } catch (error) {
+      this.logger.error(`Failed to send password reset email:`, error);
+      throw new BadRequestException('Error al enviar el correo. Verifica la configuración SMTP.');
+    }
+  }
+
+  /**
    * Activar cuenta con token
    */
   async activateAccount(token: string) {

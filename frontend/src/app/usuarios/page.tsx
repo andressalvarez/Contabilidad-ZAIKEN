@@ -18,7 +18,9 @@ import {
   TrendingUp,
   DollarSign,
   FileText,
-  Percent
+  Percent,
+  Send,
+  Loader2
 } from 'lucide-react';
 import { useUsuarios } from '@/hooks/useUsuarios';
 import { UsuariosService } from '@/services/usuarios.service';
@@ -102,6 +104,22 @@ export default function UsuariosPage() {
       toast.error(error.response?.data?.message || 'Error al eliminar usuario');
     },
   });
+
+  const sendPasswordResetMutation = useMutation({
+    mutationFn: (userId: number) => UsuariosService.sendPasswordReset(userId),
+    onSuccess: (data) => {
+      toast.success(data.message || 'Correo de recuperación enviado');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Error al enviar correo de recuperación');
+    },
+  });
+
+  const handleSendPasswordReset = async (usuario: Usuario) => {
+    if (confirm(`¿Enviar correo de recuperación de contraseña a ${usuario.email}?`)) {
+      await sendPasswordResetMutation.mutateAsync(usuario.id);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -355,17 +373,31 @@ export default function UsuariosPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => handleSendPasswordReset(usuario)}
+                              className="text-amber-600 hover:text-amber-900 p-1.5 hover:bg-amber-50 rounded transition-colors"
+                              disabled={sendPasswordResetMutation.isPending}
+                              title="Enviar correo de recuperación"
+                            >
+                              {sendPasswordResetMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Send className="h-4 w-4" />
+                              )}
+                            </button>
                             <button
                               onClick={() => handleEdit(usuario)}
-                              className="text-indigo-600 hover:text-indigo-900 p-1 hover:bg-indigo-50 rounded"
+                              className="text-indigo-600 hover:text-indigo-900 p-1.5 hover:bg-indigo-50 rounded transition-colors"
+                              title="Editar usuario"
                             >
                               <Edit className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => handleDelete(usuario.id)}
-                              className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded"
+                              className="text-red-600 hover:text-red-900 p-1.5 hover:bg-red-50 rounded transition-colors"
                               disabled={deleteMutation.isPending}
+                              title="Eliminar usuario"
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>

@@ -118,6 +118,23 @@ export class UsuariosController {
       }),
     };
   }
+
+  /**
+   * Admin sends password recovery email to a specific user
+   */
+  @Roles('ADMIN')
+  @Post(':id/send-password-reset')
+  @HttpCode(HttpStatus.OK)
+  async sendPasswordResetToUser(
+    @Param('id', ParseIntPipe) id: number,
+    @NegocioId() negocioId: number,
+  ) {
+    const result = await this.service.sendPasswordResetToUser(id, negocioId);
+    return {
+      success: true,
+      message: result.message,
+    };
+  }
 }
 
 

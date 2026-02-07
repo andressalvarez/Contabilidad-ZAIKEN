@@ -40,9 +40,15 @@ export const UsuariosService = {
     return data?.data || { usuarios: [], totales: { participacionTotal: 0, horasTotales: 0, inversionTotal: 0 } }
   },
 
-  // Authentication and password recovery methods
+  // Admin sends password reset email to a specific user
+  sendPasswordReset: async (userId: number): Promise<{ success: boolean; message: string }> => {
+    const { data } = await api.post(`/usuarios/${userId}/send-password-reset`)
+    return data
+  },
+
+  // Authentication and password recovery methods (public)
   requestPasswordReset: async (email: string) => {
-    const { data } = await api.post('/auth/request-password-reset', { email })
+    const { data } = await api.post('/auth/forgot-password', { email })
     return data
   },
 
