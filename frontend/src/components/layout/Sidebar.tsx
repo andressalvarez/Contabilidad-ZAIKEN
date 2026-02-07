@@ -1,19 +1,28 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Settings } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { Settings, LogOut } from 'lucide-react'
 import { useRegistroHoras } from '@/hooks/useRegistroHoras'
 import { useCan } from '@/hooks/usePermissions'
 import { Action } from '@/types/permissions'
+import { clearAuthToken } from '@/lib/auth'
+import { useUser } from '@/hooks/useUser'
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
+  const { user } = useUser()
   const { data: registrosHoras = [] } = useRegistroHoras()
   const canApprove = useCan(Action.Approve, 'RegistroHoras')
   const canManageDebt = useCan(Action.Manage, 'HourDebt')
   const canReadDebt = useCan(Action.Read, 'HourDebt')
   const canManageSettings = useCan(Action.Manage, 'Settings')
+
+  const handleLogout = () => {
+    clearAuthToken()
+    router.push('/login')
+  }
 
   // Count hours pending approval
   const pendingCount = registrosHoras.filter(
@@ -263,6 +272,23 @@ export default function Sidebar() {
               </li>
             )}
           </ul>
+        </div>
+
+        {/* User info and logout */}
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          {user && (
+            <div className="px-3 py-2 mb-2">
+              <p className="text-sm font-medium text-gray-900 truncate">{user.email}</p>
+              <p className="text-xs text-gray-500">{user.rol}</p>
+            </div>
+          )}
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 w-full px-3 py-2 text-sm font-medium rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Cerrar Sesión</span>
+          </button>
         </div>
       </nav>
     </aside>
