@@ -23,7 +23,7 @@
     "prisma:migrate:prod": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "db:seed": "ts-node prisma/seed.ts",
-    "db:seed:security": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\" prisma/seed-security.ts",
+    "db:seed:security": "node prisma/seed-security-runner.cjs",
     "import:data": "ts-node data-importer.ts",
     "import:backup": "ts-node data-importer.ts ./backup_2025-07-15.json",
     "import:backup:debug": "ts-node data-importer.ts ./backup_2025-07-15.json",
