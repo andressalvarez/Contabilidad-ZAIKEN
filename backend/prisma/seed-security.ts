@@ -12,36 +12,36 @@ type PermissionSpec = {
 };
 
 const ACTION_VERB: Record<string, string> = {
-  read: 'consult',
-  create: 'create',
-  update: 'update',
-  delete: 'delete',
-  manage: 'manage',
-  approve: 'approve',
-  reject: 'reject',
-  export: 'export',
+  read: 'consultar',
+  create: 'crear',
+  update: 'actualizar',
+  delete: 'eliminar',
+  manage: 'gestionar',
+  approve: 'aprobar',
+  reject: 'rechazar',
+  export: 'exportar',
 };
 
 const SUBJECT_LABEL: Record<string, string> = {
-  Usuario: 'users',
-  SecurityRole: 'security roles and permissions',
-  SecurityAuditLog: 'security audit logs',
-  SecuritySettings: 'security settings',
-  SecuritySession: 'active sessions',
-  Permission: 'permission catalog',
-  RegistroHoras: 'time entries',
-  HourDebt: 'hour debt',
-  Transaccion: 'transactions',
-  Categoria: 'categories',
-  Campana: 'campaigns',
-  DistribucionUtilidades: 'profit distribution',
-  Settings: 'general settings',
-  Negocio: 'business data',
+  Usuario: 'usuarios',
+  SecurityRole: 'roles de seguridad',
+  SecurityAuditLog: 'auditoria de seguridad',
+  SecuritySettings: 'configuracion de seguridad',
+  SecuritySession: 'sesiones activas',
+  Permission: 'catalogo de permisos',
+  RegistroHoras: 'registro de horas',
+  HourDebt: 'deuda de horas',
+  Transaccion: 'transacciones',
+  Categoria: 'categorias',
+  Campana: 'campanas',
+  DistribucionUtilidades: 'distribucion de utilidades',
+  Settings: 'configuracion general',
+  Negocio: 'datos del negocio',
   Dashboard: 'dashboard',
-  Estadisticas: 'statistics',
-  ValorHora: 'hour value',
-  BusinessRole: 'business roles',
-  all: 'all system resources',
+  Estadisticas: 'estadisticas',
+  ValorHora: 'valor por hora',
+  BusinessRole: 'roles de negocio',
+  all: 'todo el sistema',
 };
 
 const SUBJECT_SCOPE: Record<string, string> = {
@@ -168,22 +168,22 @@ function buildCoreCapability(spec: PermissionSpec): string {
 
   if (spec.action === 'manage') {
     if (spec.subject === 'RegistroHoras') {
-      return `Allows full management of ${label}, including approve and reject.`;
+      return `Permite gestionar ${label}, incluyendo aprobar y rechazar.`;
     }
-    return `Allows full management of ${label} (create, update, delete).`;
+    return `Permite gestionar ${label} (crear, actualizar y eliminar).`;
   }
 
   const verb = ACTION_VERB[spec.action] ?? spec.action;
-  return `Allows ${verb} on ${label}.`;
+  return `Permite ${verb} ${label}.`;
 }
 
 function buildDescription(spec: PermissionSpec): string {
   const scope = spec.route ?? SUBJECT_SCOPE[spec.subject] ?? `/${toResource(spec.subject).toLowerCase()}`;
   const deps = spec.dependencies && spec.dependencies.length > 0
-    ? `Dependencies: ${spec.dependencies.join(', ')}.`
-    : 'Dependencies: none.';
+    ? `Dependencias: ${spec.dependencies.join(', ')}.`
+    : 'Dependencias: ninguna.';
 
-  return `${buildCoreCapability(spec)} Main route: ${scope}. ${deps}`;
+  return `${buildCoreCapability(spec)} Ruta: ${scope}. ${deps}`;
 }
 
 async function seedPermissions() {

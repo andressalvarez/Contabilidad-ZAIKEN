@@ -14,7 +14,7 @@ import {
   ChevronDown,
   ChevronRight,
   Lock,
-  AlertCircle
+  AlertCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { SecurityService, SecurityRole, Permission, CreateRoleDto, UpdateRoleDto } from '@/services/security.service';
@@ -55,6 +55,28 @@ const ACTION_LABELS: Record<string, string> = {
   export: 'Exportar',
 };
 
+const SUBJECT_LABELS: Record<string, string> = {
+  Usuario: 'usuarios',
+  SecurityRole: 'roles de seguridad',
+  SecurityAuditLog: 'auditoria de seguridad',
+  SecuritySettings: 'configuracion de seguridad',
+  SecuritySession: 'sesiones',
+  Permission: 'permisos',
+  RegistroHoras: 'registro de horas',
+  HourDebt: 'deuda de horas',
+  Transaccion: 'transacciones',
+  Categoria: 'categorias',
+  Campana: 'campanas',
+  DistribucionUtilidades: 'distribucion de utilidades',
+  Settings: 'configuracion',
+  Negocio: 'negocio',
+  Dashboard: 'dashboard',
+  Estadisticas: 'estadisticas',
+  ValorHora: 'valor por hora',
+  BusinessRole: 'roles de negocio',
+  all: 'todo el sistema',
+};
+
 function sanitizeMojibake(value?: string | null): string {
   if (!value) return '';
   let text = value;
@@ -81,6 +103,12 @@ function buildPermissionDescription(permission: Permission): string {
     ? permission.dependencies.join(', ')
     : 'sin dependencias';
   return `Permite ${verb.toLowerCase()} en ${route}. Requiere ${deps}.`;
+}
+
+function buildPermissionShortLabel(permission: Permission): string {
+  const verb = ACTION_LABELS[permission.action] || permission.action;
+  const subject = SUBJECT_LABELS[permission.subject] || permission.subject;
+  return `${verb} ${subject}`;
 }
 
 function getPermissionDependencies(permission: Permission): string[] {
@@ -554,7 +582,13 @@ export default function SecurityRolesPage() {
                                   <div className="flex-1 min-w-0">
                                     <div className="flex flex-wrap items-center gap-2">
                                       <span className="text-sm font-medium text-gray-900 truncate">
-                                        {buildPermissionDescription(permission)}
+                                        {buildPermissionShortLabel(permission)}
+                                      </span>
+                                      <span
+                                        className="inline-flex items-center justify-center w-5 h-5 text-[11px] font-bold rounded-full bg-gray-100 text-gray-600"
+                                        title={buildPermissionDescription(permission)}
+                                      >
+                                        ?
                                       </span>
                                       <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
                                         {ACTION_LABELS[permission.action] || permission.action}
