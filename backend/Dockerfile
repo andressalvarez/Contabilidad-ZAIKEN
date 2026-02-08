@@ -1,5 +1,5 @@
 # Dockerfile para Backend - Easypanel
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 # Instalar herramientas necesarias
 RUN apk add --no-cache libc6-compat bash postgresql-client
@@ -25,7 +25,7 @@ RUN npm run build
 # ========================================
 # Imagen de producción
 # ========================================
-FROM node:18-alpine AS runner
+FROM node:20-alpine AS runner
 
 # Instalar bash y postgresql-client para scripts
 RUN apk add --no-cache bash postgresql-client
