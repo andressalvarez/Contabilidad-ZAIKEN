@@ -1,7 +1,7 @@
 ﻿'use client';
 
-import { ReactNode } from 'react';
-import { usePathname } from 'next/navigation';
+import { ReactNode, useEffect, useMemo } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { Action, useAbility } from '@/contexts/AbilityContext';
 
 interface PermissionRouteGuardProps {
@@ -52,12 +52,66 @@ const ROUTE_PERMISSIONS: Array<{
 
 export default function PermissionRouteGuard({ children }: PermissionRouteGuardProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const ability = useAbility();
   const routePermission = ROUTE_PERMISSIONS.find((item) => item.match.test(pathname));
 
   const canAccess = routePermission
     ? ability.can(routePermission.action, routePermission.subject)
     : true;
+  const isRootRoute = pathname === '/';
+
+  const fallbackRoute = useMemo(() => {
+    const candidates: Array<{
+      path: string;
+      action: Action;
+      subject:
+        | 'SecurityRole'
+        | 'SecurityAuditLog'
+        | 'SecuritySettings'
+        | 'BusinessRole'
+        | 'Usuario'
+        | 'Settings'
+        | 'RegistroHoras'
+        | 'HourDebt'
+        | 'Campana'
+        | 'Categoria'
+        | 'Transaccion'
+        | 'DistribucionUtilidades'
+        | 'DistribucionDetalle'
+        | 'ValorHora'
+        | 'Estadisticas'
+        | 'Dashboard';
+    }> = [
+      { path: '/registro-horas', action: Action.Read, subject: 'RegistroHoras' },
+      { path: '/horas-pendientes', action: Action.Approve, subject: 'RegistroHoras' },
+      { path: '/deuda-horas', action: Action.Read, subject: 'HourDebt' },
+      { path: '/transacciones', action: Action.Read, subject: 'Transaccion' },
+      { path: '/campanas', action: Action.Read, subject: 'Campana' },
+      { path: '/categorias', action: Action.Read, subject: 'Categoria' },
+      { path: '/distribucion-utilidades', action: Action.Read, subject: 'DistribucionUtilidades' },
+      { path: '/distribucion-detalle', action: Action.Read, subject: 'DistribucionDetalle' },
+      { path: '/valor-hora', action: Action.Read, subject: 'ValorHora' },
+      { path: '/roles', action: Action.Read, subject: 'BusinessRole' },
+      { path: '/estadisticas', action: Action.Read, subject: 'Estadisticas' },
+      { path: '/usuarios', action: Action.Read, subject: 'Usuario' },
+      { path: '/admin/seguridad/roles', action: Action.Read, subject: 'SecurityRole' },
+      { path: '/admin/seguridad/auditoria', action: Action.Read, subject: 'SecurityAuditLog' },
+      { path: '/configuracion', action: Action.Read, subject: 'Settings' },
+    ];
+
+    return candidates.find((candidate) => ability.can(candidate.action, candidate.subject))?.path ?? null;
+  }, [ability]);
+
+  useEffect(() => {
+    if (isRootRoute && !canAccess && fallbackRoute) {
+      router.replace(fallbackRoute);
+    }
+  }, [canAccess, fallbackRoute, isRootRoute, router]);
+
+  if (isRootRoute && !canAccess && fallbackRoute) {
+    return null;
+  }
 
   if (!canAccess) {
     return (
