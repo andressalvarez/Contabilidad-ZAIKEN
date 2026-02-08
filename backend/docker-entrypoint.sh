@@ -77,6 +77,14 @@ if [ "$IMPORT_ON_BOOT" = "true" ]; then
   fi
 fi
 
+# Optional: seed only security data (permissions + base roles + role-permissions)
+SEED_SECURITY_ON_BOOT=${SEED_SECURITY_ON_BOOT:-false}
+if [ "$SEED_SECURITY_ON_BOOT" = "true" ]; then
+  echo "[entrypoint] Running security seed..."
+  npm run db:seed:security || { echo "[entrypoint] Security seed failed"; exit 1; }
+  echo "[entrypoint] Security seed finished"
+fi
+
 echo "[entrypoint] Starting NestJS..."
 
 # En desarrollo usa hot-reload (CMD del Dockerfile), en prod usa dist directamente
@@ -86,5 +94,4 @@ if [ "$NODE_ENV" = "development" ]; then
 else
   exec node dist/src/main.js
 fi
-
 
