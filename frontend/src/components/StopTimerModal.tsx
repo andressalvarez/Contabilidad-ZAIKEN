@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { RegistroHorasService } from '@/services';
 import { X, Save, Clock, Calendar, AlertCircle } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import { RegistroHoras } from '@/types';
 import { motion } from 'framer-motion';
 

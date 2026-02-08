@@ -23,7 +23,8 @@ import {
   Info
 } from 'lucide-react';
 import { ValorHora, CreateValorHoraDto } from '@/types';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
+import { ScrollableTable } from '@/components/ui/ScrollableTable';
 
 interface FormData {
   usuarioId: number;  valor: number;
@@ -230,79 +231,81 @@ export default function ValorHoraPage() {
 
   return (
     <MainLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 sm:gap-6">
             <div>
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2">
                 <div className="p-2 bg-indigo-100 rounded-lg">
-                  <DollarSign className="text-indigo-600" size={28} />
+                  <DollarSign className="text-indigo-600" size={24} />
                 </div>
-                <h1 className="text-3xl font-bold text-gray-900">Gestión de Valor por Hora</h1>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Valor por Hora</h1>
               </div>
-              <p className="text-gray-600 ml-12">Administra las tarifas por hora de trabajo de cada persona</p>
+              <p className="text-sm sm:text-base text-gray-600 ml-10 sm:ml-12">Administra las tarifas por hora de trabajo</p>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
               <button
                 onClick={exportarValorHora}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg transition-colors shadow-sm"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 min-h-[44px] bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg transition-colors shadow-sm text-sm"
               >
                 <Download className="h-4 w-4" />
-                Exportar CSV
+                <span className="hidden sm:inline">Exportar CSV</span>
+                <span className="sm:hidden">Exportar</span>
               </button>
               <button
                 onClick={recalcularTodo}
                 disabled={isLoading}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 min-h-[44px] bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
                 <RotateCcw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                {isLoading ? 'Recalculando...' : 'Recalcular'}
+                <span className="hidden sm:inline">{isLoading ? 'Recalculando...' : 'Recalcular'}</span>
+                <span className="sm:hidden">{isLoading ? '...' : 'Recalc.'}</span>
               </button>
             </div>
           </div>
         </div>
 
         {/* Estadísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-indigo-100 rounded-lg">
-                <DollarSign className="text-indigo-600" size={24} />
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 lg:gap-6">
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-3 sm:p-4 lg:p-6">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-indigo-100 rounded-lg">
+                <DollarSign className="text-indigo-600" size={20} />
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Valor Promedio</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {stats ? formatCurrency(stats.valorPromedio) : 'Cargando...'}
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-gray-600">Valor Promedio</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
+                  {stats ? formatCurrency(stats.valorPromedio) : '...'}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <Users className="text-green-600" size={24} />
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-3 sm:p-4 lg:p-6">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-green-100 rounded-lg">
+                <Users className="text-green-600" size={20} />
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Usuarios con Valor</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {stats ? stats.usuariosConValor : 'Cargando...'}
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-gray-600">Con Valor</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
+                  {stats ? stats.usuariosConValor : '...'}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <TrendingUp className="text-purple-600" size={24} />
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-3 sm:p-4 lg:p-6 col-span-2 lg:col-span-1">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-purple-100 rounded-lg">
+                <TrendingUp className="text-purple-600" size={20} />
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Valor Máximo</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {stats ? formatCurrency(stats.valorMaximo) : 'Cargando...'}
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-gray-600">Valor Máximo</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
+                  {stats ? formatCurrency(stats.valorMaximo) : '...'}
                 </p>
               </div>
             </div>

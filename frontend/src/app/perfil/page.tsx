@@ -5,7 +5,7 @@ import { AuthService, UsuariosService } from '@/services';
 import { UserProfile } from '@/services/auth.service';
 import MainLayout from '@/components/layout/MainLayout';
 import { User, Mail, Briefcase, Building2, Save, Eye, EyeOff, RefreshCw } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 
 export default function PerfilPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);

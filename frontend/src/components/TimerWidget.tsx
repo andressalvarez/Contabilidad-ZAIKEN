@@ -6,7 +6,7 @@ import { useUser } from '@/hooks/useUser';
 import { StopTimerModal } from './StopTimerModal';
 import { Play, Pause, Square, X, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 
 interface TimerWidgetProps {
   usuarioId?: number;

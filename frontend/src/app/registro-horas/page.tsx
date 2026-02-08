@@ -45,10 +45,11 @@ import {
   Send
 } from 'lucide-react';
 import { RegistroHoras, CreateRegistroHorasDto } from '@/types';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import Link from 'next/link';
 import { StopTimerModal } from '@/components/StopTimerModal';
 import HourDebtWidget from '@/components/hour-debt/HourDebtWidget';
+import { ScrollableTable } from '@/components/ui/ScrollableTable';
 import CreateDebtModal from '@/components/CreateDebtModal';
 import DebtHistoryTable from '@/components/DebtHistoryTable';
 
@@ -82,21 +83,20 @@ function AnimatedClock({ isRunning, elapsedSeconds }: { isRunning: boolean; elap
       />
 
       {/* Inner circle */}
-      <div className="relative z-10 w-48 h-48 rounded-full bg-white shadow-2xl flex flex-col items-center justify-center m-2">
+      <div className="relative z-10 w-36 h-36 sm:w-48 sm:h-48 rounded-full bg-white shadow-2xl flex flex-col items-center justify-center m-2">
         {/* Animated clock icon */}
         <motion.div
           animate={isRunning ? { scale: [1, 1.1, 1] } : { scale: 1 }}
           transition={isRunning ? { duration: 1, repeat: Infinity } : {}}
-          className="mb-2"
+          className="mb-1 sm:mb-2"
         >
           <Clock
-            size={40}
-            className={isRunning ? 'text-indigo-600' : 'text-gray-400'}
+            className={`h-7 w-7 sm:h-10 sm:w-10 ${isRunning ? 'text-indigo-600' : 'text-gray-400'}`}
           />
         </motion.div>
 
         {/* Time display */}
-        <div className={`text-3xl font-mono font-bold ${isRunning ? 'text-indigo-600' : 'text-gray-600'}`}>
+        <div className={`text-xl sm:text-3xl font-mono font-bold ${isRunning ? 'text-indigo-600' : 'text-gray-600'}`}>
           <span>{formatNumber(hours)}</span>
           <motion.span
             animate={isRunning ? { opacity: [1, 0.3, 1] } : { opacity: 1 }}
@@ -112,7 +112,7 @@ function AnimatedClock({ isRunning, elapsedSeconds }: { isRunning: boolean; elap
 
         {/* Status */}
         <motion.p
-          className={`text-sm mt-2 font-medium ${isRunning ? 'text-green-600' : 'text-gray-500'}`}
+          className={`text-xs sm:text-sm mt-1 sm:mt-2 font-medium ${isRunning ? 'text-green-600' : 'text-gray-500'}`}
           animate={isRunning ? { opacity: [1, 0.7, 1] } : {}}
           transition={{ duration: 2, repeat: Infinity }}
         >
@@ -219,15 +219,15 @@ function TimerWidget({
   const selectedUser = users.find(u => u.id === selectedUserId);
 
   return (
-    <div className="bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-2xl shadow-xl border border-indigo-100 p-8">
-      <div className="flex flex-col lg:flex-row items-center gap-8">
+    <div className="bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-xl sm:rounded-2xl shadow-xl border border-indigo-100 p-4 sm:p-6 lg:p-8">
+      <div className="flex flex-col lg:flex-row items-center gap-4 sm:gap-6 lg:gap-8">
         {/* Animated Clock */}
         <div className="flex-shrink-0">
           <AnimatedClock isRunning={isRunning} elapsedSeconds={elapsedSeconds} />
         </div>
 
         {/* Controls */}
-        <div className="flex-1 w-full space-y-6">
+        <div className="flex-1 w-full space-y-4 sm:space-y-6">
           {/* User Selector */}
           <div>
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
@@ -293,7 +293,7 @@ function TimerWidget({
           </div>
 
           {/* Control Buttons */}
-          <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 justify-center lg:justify-start">
             {!hasActiveTimer ? (
               /* START Button */
               <motion.button
@@ -301,9 +301,9 @@ function TimerWidget({
                 disabled={!selectedUserId || startTimerMutation.isPending}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-2xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold text-lg"
+                className="flex items-center justify-center gap-2 sm:gap-3 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl sm:rounded-2xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold text-base sm:text-lg min-h-[48px]"
               >
-                <Play className="h-6 w-6" fill="white" />
+                <Play className="h-5 w-5 sm:h-6 sm:w-6" fill="white" />
                 {startTimerMutation.isPending ? 'Iniciando...' : 'Iniciar Timer'}
               </motion.button>
             ) : (
@@ -313,9 +313,9 @@ function TimerWidget({
                   onClick={handleStop}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-2xl shadow-lg transition-all font-semibold text-lg"
+                  className="flex items-center justify-center gap-2 sm:gap-3 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl sm:rounded-2xl shadow-lg transition-all font-semibold text-base sm:text-lg min-h-[48px]"
                 >
-                  <Square className="h-6 w-6" fill="white" />
+                  <Square className="h-5 w-5 sm:h-6 sm:w-6" fill="white" />
                   Finalizar y Guardar
                 </motion.button>
 
@@ -325,7 +325,7 @@ function TimerWidget({
                   disabled={cancelTimerMutation.isPending}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="flex items-center gap-2 px-4 py-4 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-2xl transition-all"
+                  className="flex items-center justify-center gap-2 px-4 py-3 sm:py-4 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl sm:rounded-2xl transition-all min-h-[48px]"
                   title="Cancelar sin guardar"
                 >
                   <X className="h-5 w-5" />
@@ -390,55 +390,55 @@ function RecentTimerRecord({
       initial={{ opacity: 0, y: -20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -20, scale: 0.95 }}
-      className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6 shadow-lg"
+      className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg sm:rounded-xl p-4 sm:p-6 shadow-lg"
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
+      <div className="flex items-start sm:items-center justify-between mb-3 sm:mb-4">
+        <div className="flex items-center gap-2 sm:gap-3">
           <motion.div
             animate={{ scale: [1, 1.2, 1] }}
             transition={{ duration: 0.5, repeat: 2 }}
-            className="p-2 bg-green-500 rounded-full"
+            className="p-1.5 sm:p-2 bg-green-500 rounded-full flex-shrink-0"
           >
-            <CheckCircle className="h-5 w-5 text-white" />
+            <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
           </motion.div>
           <div>
-            <h3 className="font-bold text-green-800">¡Tiempo registrado!</h3>
-            <p className="text-sm text-green-600">Puedes agregar una descripción</p>
+            <h3 className="font-bold text-green-800 text-sm sm:text-base">¡Tiempo registrado!</h3>
+            <p className="text-xs sm:text-sm text-green-600">Puedes agregar una descripción</p>
           </div>
         </div>
         <button
           onClick={onDismiss}
-          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          className="p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
         >
           <X className="h-5 w-5" />
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-3 sm:mb-4">
         {/* User */}
-        <div className="flex items-center gap-2 p-3 bg-white rounded-lg">
-          <User className="h-4 w-4 text-indigo-600" />
-          <span className="font-medium">{user?.nombre || 'Usuario'}</span>
+        <div className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-3 bg-white rounded-lg">
+          <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-indigo-600 flex-shrink-0" />
+          <span className="font-medium text-xs sm:text-sm truncate">{user?.nombre || 'Usuario'}</span>
         </div>
 
         {/* Date */}
-        <div className="flex items-center gap-2 p-3 bg-white rounded-lg">
-          <Calendar className="h-4 w-4 text-indigo-600" />
-          <span>{new Date(record.fecha).toLocaleDateString('es-CO')}</span>
+        <div className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-3 bg-white rounded-lg">
+          <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-indigo-600 flex-shrink-0" />
+          <span className="text-xs sm:text-sm">{new Date(record.fecha).toLocaleDateString('es-CO')}</span>
         </div>
 
         {/* Hours (read-only) */}
-        <div className="flex items-center gap-2 p-3 bg-white rounded-lg">
-          <Clock className="h-4 w-4 text-indigo-600" />
-          <span className="font-bold text-indigo-600">{record.horas.toFixed(2)}h</span>
+        <div className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-3 bg-white rounded-lg">
+          <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-indigo-600 flex-shrink-0" />
+          <span className="font-bold text-indigo-600 text-xs sm:text-sm">{record.horas.toFixed(2)}h</span>
         </div>
       </div>
 
       {/* Time Range if from timer */}
       {record.origen === 'TIMER' && formatTimeRange() && (
-        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="flex items-center gap-2 text-sm text-blue-800">
-            <Clock className="h-4 w-4" />
+        <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-blue-800">
+            <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span className="font-medium">Horario:</span>
             <span>{formatTimeRange()}</span>
           </div>
@@ -824,37 +824,37 @@ export default function RegistroHorasPage() {
 
   return (
     <MainLayout>
-      <div className="p-6 space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Header con estadisticas personales prominentes */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-indigo-100 rounded-lg">
-                  <Timer className="text-indigo-600" size={28} />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Control de Tiempo</h1>
-                  {currentUserData && (
-                    <p className="text-gray-600">
-                      Hola, <span className="font-semibold text-indigo-600">{currentUserData.nombre}</span>!
-                    </p>
-                  )}
-                </div>
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
+          <div className="flex flex-col gap-4">
+            {/* Title row */}
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-indigo-100 rounded-lg">
+                <Timer className="text-indigo-600 h-6 w-6 sm:h-7 sm:w-7" />
+              </div>
+              <div>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Control de Tiempo</h1>
+                {currentUserData && (
+                  <p className="text-sm sm:text-base text-gray-600">
+                    Hola, <span className="font-semibold text-indigo-600">{currentUserData.nombre}</span>!
+                  </p>
+                )}
               </div>
             </div>
 
-            {/* Total del dia del usuario */}
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-3 rounded-xl shadow-lg">
-                <div className="text-center">
+            {/* Stats and controls row */}
+            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
+              {/* Today stats badge */}
+              <div className="flex items-center gap-3 sm:gap-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl shadow-lg">
+                <div className="text-center flex-1 sm:flex-none">
                   <p className="text-xs opacity-80">Mis Horas Hoy</p>
-                  <p className="text-2xl font-bold">{myTodayStats.totalHorasHoy.toFixed(1)}h</p>
+                  <p className="text-xl sm:text-2xl font-bold">{myTodayStats.totalHorasHoy.toFixed(1)}h</p>
                 </div>
-                <div className="w-px h-10 bg-white/30" />
-                <div className="text-center">
+                <div className="w-px h-8 sm:h-10 bg-white/30" />
+                <div className="text-center flex-1 sm:flex-none">
                   <p className="text-xs opacity-80">Registros</p>
-                  <p className="text-2xl font-bold">{myTodayStats.registrosHoy}</p>
+                  <p className="text-xl sm:text-2xl font-bold">{myTodayStats.registrosHoy}</p>
                 </div>
               </div>
 
@@ -862,31 +862,32 @@ export default function RegistroHorasPage() {
               {viewMode === 'personal' && (
                 <button
                   onClick={() => setShowDebtModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-md"
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors shadow-md text-sm sm:text-base min-h-[44px]"
                 >
                   <AlertCircle className="h-4 w-4" />
-                  Registrar Deuda
+                  <span className="hidden sm:inline">Registrar</span> Deuda
                 </button>
               )}
 
               {/* Toggle Admin View */}
               {isAdmin && (
                 <>
-                  <div className="flex bg-gray-100 rounded-xl p-1">
+                  <div className="flex bg-gray-100 rounded-lg sm:rounded-xl p-1">
                     <button
                       onClick={() => setViewMode('personal')}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                      className={`flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg transition-all text-sm min-h-[40px] ${
                         viewMode === 'personal'
                           ? 'bg-white shadow-md text-indigo-600'
                           : 'text-gray-600 hover:text-gray-900'
                       }`}
                     >
                       <User className="h-4 w-4" />
-                      Mi Tiempo
+                      <span className="hidden sm:inline">Mi Tiempo</span>
+                      <span className="sm:hidden">Yo</span>
                     </button>
                     <button
                       onClick={() => setViewMode('team')}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                      className={`flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg transition-all text-sm min-h-[40px] ${
                         viewMode === 'team'
                           ? 'bg-white shadow-md text-indigo-600'
                           : 'text-gray-600 hover:text-gray-900'
@@ -898,10 +899,10 @@ export default function RegistroHorasPage() {
                   </div>
                   <Link
                     href="/horas-pendientes"
-                    className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors shadow-md"
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors shadow-md text-sm sm:text-base min-h-[44px]"
                   >
                     <CheckCircle className="h-4 w-4" />
-                    Aprobar Horas
+                    <span className="hidden sm:inline">Aprobar</span> Horas
                   </Link>
                 </>
               )}
@@ -933,39 +934,39 @@ export default function RegistroHorasPage() {
         {viewMode === 'personal' ? (
           // VISTA PERSONAL: Estadisticas del usuario actual
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-indigo-100 rounded-lg">
-                    <Clock className="text-indigo-600" size={24} />
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-6">
+              <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-3 sm:p-4 lg:p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+                  <div className="p-2 sm:p-3 bg-indigo-100 rounded-lg">
+                    <Clock className="text-indigo-600 h-5 w-5 sm:h-6 sm:w-6" />
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Mis Horas Totales</p>
-                    <p className="text-2xl font-bold text-gray-900">{myTotalStats.totalHoras.toFixed(1)}h</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-green-100 rounded-lg">
-                    <CheckCircle className="text-green-600" size={24} />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Mis Registros</p>
-                    <p className="text-2xl font-bold text-gray-900">{myTotalStats.totalRegistros}</p>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-600">Mis Horas Totales</p>
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">{myTotalStats.totalHoras.toFixed(1)}h</p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-amber-100 rounded-lg">
-                    <Target className="text-amber-600" size={24} />
+              <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-3 sm:p-4 lg:p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+                  <div className="p-2 sm:p-3 bg-green-100 rounded-lg">
+                    <CheckCircle className="text-green-600 h-5 w-5 sm:h-6 sm:w-6" />
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Promedio Diario</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-600">Mis Registros</p>
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">{myTotalStats.totalRegistros}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-3 sm:p-4 lg:p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+                  <div className="p-2 sm:p-3 bg-amber-100 rounded-lg">
+                    <Target className="text-amber-600 h-5 w-5 sm:h-6 sm:w-6" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-600">Promedio Diario</p>
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
                       {myTotalStats.totalRegistros > 0
                         ? (myTotalStats.totalHoras / Math.max(1, myTotalStats.totalRegistros)).toFixed(1)
                         : '0'}h
@@ -981,63 +982,63 @@ export default function RegistroHorasPage() {
         ) : (
           // VISTA EQUIPO (ADMIN): Dashboard completo
           <>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-indigo-100 rounded-lg">
-                    <Clock className="text-indigo-600" size={24} />
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-6">
+              <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-3 sm:p-4 lg:p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+                  <div className="p-2 sm:p-3 bg-indigo-100 rounded-lg">
+                    <Clock className="text-indigo-600 h-5 w-5 sm:h-6 sm:w-6" />
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Horas Hoy (Equipo)</p>
-                    <p className="text-2xl font-bold text-gray-900">{teamStats.totalHorasHoy.toFixed(1)}h</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-green-100 rounded-lg">
-                    <TrendingUp className="text-green-600" size={24} />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Horas Totales</p>
-                    <p className="text-2xl font-bold text-gray-900">{teamStats.totalHoras.toFixed(1)}h</p>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-600">Horas Hoy (Equipo)</p>
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">{teamStats.totalHorasHoy.toFixed(1)}h</p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-purple-100 rounded-lg">
-                    <Users className="text-purple-600" size={24} />
+              <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-3 sm:p-4 lg:p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+                  <div className="p-2 sm:p-3 bg-green-100 rounded-lg">
+                    <TrendingUp className="text-green-600 h-5 w-5 sm:h-6 sm:w-6" />
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Activos Hoy</p>
-                    <p className="text-2xl font-bold text-gray-900">{teamStats.usersActivos}</p>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-600">Horas Totales</p>
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">{teamStats.totalHoras.toFixed(1)}h</p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-amber-100 rounded-lg">
-                    <Award className="text-amber-600" size={24} />
+              <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-3 sm:p-4 lg:p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+                  <div className="p-2 sm:p-3 bg-purple-100 rounded-lg">
+                    <Users className="text-purple-600 h-5 w-5 sm:h-6 sm:w-6" />
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Registros Hoy</p>
-                    <p className="text-2xl font-bold text-gray-900">{teamStats.registrosHoy}</p>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-600">Activos Hoy</p>
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">{teamStats.usersActivos}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-3 sm:p-4 lg:p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+                  <div className="p-2 sm:p-3 bg-amber-100 rounded-lg">
+                    <Award className="text-amber-600 h-5 w-5 sm:h-6 sm:w-6" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-600">Registros Hoy</p>
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">{teamStats.registrosHoy}</p>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Grafico de Barras: Horas por Usuario Hoy */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-6">
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
+              <div className="flex items-center gap-3 mb-4 sm:mb-6">
                 <div className="p-2 bg-purple-100 rounded-lg">
-                  <PieChart className="text-purple-600" size={20} />
+                  <PieChart className="text-purple-600 h-5 w-5" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">Productividad del Equipo Hoy</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Productividad del Equipo Hoy</h3>
               </div>
 
               {statsByUser.filter(u => u.horasHoy > 0).length === 0 ? (
@@ -1097,16 +1098,16 @@ export default function RegistroHorasPage() {
         )}
 
         {/* Toggle Formulario Manual */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 overflow-hidden">
           <button
             onClick={() => setShowManualForm(!showManualForm)}
-            className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            className="w-full px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="p-2 bg-amber-100 rounded-lg">
-                <Plus className="text-amber-600" size={20} />
+                <Plus className="text-amber-600 h-5 w-5" />
               </div>
-              <span className="text-lg font-semibold text-gray-800">Agregar Horas Manualmente</span>
+              <span className="text-base sm:text-lg font-semibold text-gray-800">Agregar Horas Manualmente</span>
             </div>
             {showManualForm ? <ChevronUp className="h-5 w-5 text-gray-500" /> : <ChevronDown className="h-5 w-5 text-gray-500" />}
           </button>
@@ -1120,9 +1121,9 @@ export default function RegistroHorasPage() {
                 transition={{ duration: 0.2 }}
                 className="overflow-hidden"
               >
-                <div className="px-6 pb-6 border-t border-gray-100">
+                <div className="px-4 sm:px-6 pb-4 sm:pb-6 border-t border-gray-100">
                   <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                       <div>
                         <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                           <Calendar className="h-4 w-4" />
@@ -1216,24 +1217,24 @@ export default function RegistroHorasPage() {
         </div>
 
         {/* Tabla de Registros de Horas */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-3">
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+            <div className="flex flex-col gap-3 sm:gap-4">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
-                  <BarChart3 className="text-blue-600" size={20} />
+                  <BarChart3 className="text-blue-600 h-5 w-5" />
                 </div>
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-900">
                   {viewMode === 'personal' ? 'Mis Registros' : 'Registros del Equipo'} ({filteredRegistros.length})
                 </h2>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                 {/* Status Filter */}
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as any)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm min-h-[44px]"
                 >
                   <option value="all">Todos ({timeRecords.length})</option>
                   <option value="pending">Pendientes ({approvalStats.pending})</option>
@@ -1242,14 +1243,14 @@ export default function RegistroHorasPage() {
                 </select>
 
                 {/* Search */}
-                <div className="relative">
+                <div className="relative flex-1 sm:flex-none">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <input
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Buscar registros..."
-                    className="pl-10 w-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                    className="pl-10 w-full sm:w-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white min-h-[44px]"
                   />
                 </div>
               </div>
@@ -1258,58 +1259,52 @@ export default function RegistroHorasPage() {
 
           {/* Approval Stats Summary */}
           {viewMode === 'personal' && (
-            <div className="px-6 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  <CheckCircle className="h-3 w-3" />
-                  {approvalStats.approved} Aprobados
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                  <Clock className="h-3 w-3" />
-                  {approvalStats.pending} Pendientes
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                  <XCircle className="h-3 w-3" />
-                  {approvalStats.rejected} Rechazados
-                </span>
-              </div>
+            <div className="px-4 sm:px-6 py-2 sm:py-3 bg-gray-50 border-b border-gray-200 flex flex-wrap items-center gap-2 sm:gap-6">
+              <span className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                <CheckCircle className="h-3 w-3" />
+                {approvalStats.approved} Aprobados
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                <Clock className="h-3 w-3" />
+                {approvalStats.pending} Pendientes
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                <XCircle className="h-3 w-3" />
+                {approvalStats.rejected} Rechazados
+              </span>
             </div>
           )}
 
-          <div className="overflow-x-auto">
+          <ScrollableTable>
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Horas</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Horario</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notas</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Horas</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Horario</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notas</th>
+                  <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-12 text-center">
+                    <td colSpan={8} className="px-4 sm:px-6 py-8 sm:py-12 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
-                      <p className="text-gray-600 mt-2">Cargando registros de horas...</p>
+                      <p className="text-gray-600 mt-2 text-sm sm:text-base">Cargando registros de horas...</p>
                     </td>
                   </tr>
                 ) : filteredRegistros.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-12 text-center">
-                      <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    <td colSpan={8} className="px-4 sm:px-6 py-8 sm:py-12 text-center">
+                      <Clock className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                      <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
                         {searchTerm ? 'No se encontraron registros' : 'No hay registros de horas'}
                       </h3>
-                      <p className="text-gray-600">
+                      <p className="text-gray-600 text-sm sm:text-base">
                         {searchTerm ? 'Intenta con otro termino de busqueda' : 'Usa el timer de arriba para comenzar a registrar tiempo'}
                       </p>
                     </td>
@@ -1317,10 +1312,10 @@ export default function RegistroHorasPage() {
                 ) : (
                   filteredRegistros.map((registroHoras) => (
                     <tr key={registroHoras.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         <span className="text-sm text-gray-900">#{registroHoras.id}</span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">
                         {editingId === registroHoras.id ? (
                           <input
                             type="date"
@@ -1335,7 +1330,7 @@ export default function RegistroHorasPage() {
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         {editingId === registroHoras.id ? (
                           <select
                             value={editingData.usuarioId || registroHoras.usuarioId}
@@ -1350,14 +1345,14 @@ export default function RegistroHorasPage() {
                           </select>
                         ) : (
                           <div className="flex items-center gap-2">
-                            <div className="p-1.5 bg-indigo-100 rounded">
-                              <User className="h-3.5 w-3.5 text-indigo-600" />
+                            <div className="p-1 sm:p-1.5 bg-indigo-100 rounded">
+                              <User className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-indigo-600" />
                             </div>
-                            <span className="font-medium text-gray-900">{getUserName(registroHoras)}</span>
+                            <span className="font-medium text-gray-900 text-sm">{getUserName(registroHoras)}</span>
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         {editingId === registroHoras.id ? (
                           <input
                             type="number"
@@ -1374,10 +1369,10 @@ export default function RegistroHorasPage() {
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm">
                         {registroHoras.origen === 'TIMER' && registroHoras.timerInicio ? (
                           <div className="flex flex-col">
-                            <span className="text-gray-900">
+                            <span className="text-gray-900 text-xs sm:text-sm">
                               {new Date(registroHoras.timerInicio).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
                               {' - '}
                               {registroHoras.timerFin
@@ -1392,7 +1387,7 @@ export default function RegistroHorasPage() {
                           <span className="text-gray-400">-</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         {registroHoras.aprobado ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                             <CheckCircle className="h-3 w-3" />
@@ -1423,7 +1418,7 @@ export default function RegistroHorasPage() {
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm text-gray-600 max-w-[120px] sm:max-w-xs truncate">
                         {editingId === registroHoras.id ? (
                           <input
                             type="text"
@@ -1436,7 +1431,7 @@ export default function RegistroHorasPage() {
                           registroHoras.descripcion || '-'
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-right text-sm font-medium">
                         {editingId === registroHoras.id ? (
                           <div className="flex items-center justify-end gap-2">
                             <button
@@ -1505,7 +1500,7 @@ export default function RegistroHorasPage() {
                 )}
               </tbody>
             </table>
-          </div>
+          </ScrollableTable>
         </div>
 
         {/* Debt History Table - Solo en vista personal */}
@@ -1513,15 +1508,15 @@ export default function RegistroHorasPage() {
 
         {/* Informacion y Sugerencias - Solo en vista personal */}
         {viewMode === 'personal' && (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-4">
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
               <div className="p-2 bg-blue-100 rounded-lg">
-                <Info className="text-blue-600" size={20} />
+                <Info className="text-blue-600 h-5 w-5" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">Como usar el Timer?</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900">Como usar el Timer?</h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <ul className="text-gray-600 text-sm space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <ul className="text-gray-600 text-xs sm:text-sm space-y-2">
                 <li className="flex items-start gap-2">
                   <span className="text-green-600 font-bold">1.</span>
                   <span>Presiona "Iniciar Timer" para comenzar</span>
@@ -1535,7 +1530,7 @@ export default function RegistroHorasPage() {
                   <span>Presiona "Finalizar y Guardar" cuando termines</span>
                 </li>
               </ul>
-              <ul className="text-gray-600 text-sm space-y-2">
+              <ul className="text-gray-600 text-xs sm:text-sm space-y-2">
                 <li className="flex items-start gap-2">
                   <span className="text-purple-600 font-bold">4.</span>
                   <span>Si necesitas corregir el horario, usa el boton de reloj</span>
@@ -1555,24 +1550,24 @@ export default function RegistroHorasPage() {
 
         {/* Info para admins en modo equipo */}
         {viewMode === 'team' && isAdmin && (
-          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 p-6">
-            <div className="flex items-center gap-3 mb-4">
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg sm:rounded-xl border border-indigo-200 p-4 sm:p-6">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
               <div className="p-2 bg-indigo-100 rounded-lg">
-                <Users className="text-indigo-600" size={20} />
+                <Users className="text-indigo-600 h-5 w-5" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">Vista de Equipo</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900">Vista de Equipo</h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600">
               <div className="flex items-start gap-2">
-                <BarChart3 className="h-5 w-5 text-indigo-500 flex-shrink-0 mt-0.5" />
+                <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-500 flex-shrink-0 mt-0.5" />
                 <span>Visualiza las horas de todo el equipo en tiempo real</span>
               </div>
               <div className="flex items-start gap-2">
-                <Award className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                <Award className="h-4 w-4 sm:h-5 sm:w-5 text-amber-500 flex-shrink-0 mt-0.5" />
                 <span>Ve quien lidera en productividad hoy</span>
               </div>
               <div className="flex items-start gap-2">
-                <Timer className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                <Timer className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0 mt-0.5" />
                 <span>Registra tiempo para cualquier miembro del equipo</span>
               </div>
             </div>
@@ -1654,63 +1649,63 @@ function TimeEditModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-50"
       onClick={onClose}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl"
+        className="bg-white rounded-lg sm:rounded-xl max-w-md w-full p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div className="p-2 bg-purple-100 rounded-lg">
-              <Clock className="text-purple-600" size={20} />
+              <Clock className="text-purple-600 h-5 w-5" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900">Editar Horario</h3>
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Editar Horario</h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600"
+            className="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Form */}
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
               Hora de Inicio
             </label>
             <input
               type="datetime-local"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base min-h-[44px]"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
               Hora de Fin
             </label>
             <input
               type="datetime-local"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base min-h-[44px]"
             />
           </div>
 
           {/* Calculated Hours Preview */}
-          <div className="p-4 bg-gray-50 rounded-lg">
+          <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Total calculado:</span>
-              <span className={`text-2xl font-bold ${isValidTime ? 'text-purple-600' : 'text-red-600'}`}>
+              <span className="text-gray-600 text-sm sm:text-base">Total calculado:</span>
+              <span className={`text-xl sm:text-2xl font-bold ${isValidTime ? 'text-purple-600' : 'text-red-600'}`}>
                 {calculatedHours.toFixed(2)}h
               </span>
             </div>
@@ -1756,17 +1751,17 @@ function TimeEditModal({
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3 mt-6">
+        <div className="flex gap-2 sm:gap-3 mt-4 sm:mt-6">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base min-h-[44px]"
           >
             Cancelar
           </button>
           <button
             onClick={handleSubmit}
             disabled={!startTime || !endTime || !isValidTime || isLoading}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm sm:text-base min-h-[44px]"
           >
             <Save className="h-4 w-4" />
             {isLoading ? 'Guardando...' : 'Guardar'}

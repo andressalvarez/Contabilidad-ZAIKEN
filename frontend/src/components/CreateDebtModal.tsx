@@ -3,7 +3,7 @@
 import { useState, FormEvent } from 'react';
 import { X, AlertCircle, Clock, Calendar, FileText, Save } from 'lucide-react';
 import { useCreateDebt } from '@/hooks/useHourDebt';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 
 interface CreateDebtModalProps {
   isOpen: boolean;

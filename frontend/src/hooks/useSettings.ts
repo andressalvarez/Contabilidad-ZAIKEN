@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import SettingsService, { SmtpConfig } from '@/services/settings.service';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 
 export function useSmtpConfig() {
   return useQuery({

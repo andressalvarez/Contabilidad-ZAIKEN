@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2, KeyRound } from 'lucide-react';
 import { UsuariosService } from '@/services/usuarios.service';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import Link from 'next/link';
 
 function ResetPasswordForm() {

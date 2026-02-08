@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { RegistroHorasService } from '@/services/registro-horas.service';
 import { CreateRegistroHorasDto, UpdateRegistroHorasDto } from '@/types';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 
 // Query keys
 export const timeRecordKeys = {

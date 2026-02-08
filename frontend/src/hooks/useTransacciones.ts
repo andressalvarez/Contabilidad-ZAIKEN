@@ -7,7 +7,7 @@ import type {
   TendenciaMensual
 } from '@/services/transacciones.service';
 import { CreateTransaccionDto, UpdateTransaccionDto } from '@/types';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 
 // Query keys
 export const transaccionesKeys = {

@@ -55,7 +55,20 @@ export class UsuariosController {
   @Roles('ADMIN')
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() body: { email: string; nombre: string; rol: string; password: string; activo?: boolean; negocioId: number }) {
+  async create(
+    @NegocioId() negocioId: number,
+    @Body() body: {
+      email: string;
+      nombre: string;
+      rol: string;
+      password: string;
+      activo?: boolean;
+      rolId?: number;
+      participacionPorc?: number;
+      valorHora?: number;
+      notas?: string;
+    },
+  ) {
     const passwordHash = await bcrypt.hash(body.password, 10);
     return {
       success: true,
@@ -66,7 +79,11 @@ export class UsuariosController {
         rol: body.rol,
         activo: body.activo,
         passwordHash,
-        negocioId: body.negocioId,
+        negocioId,
+        rolId: body.rolId,
+        participacionPorc: body.participacionPorc,
+        valorHora: body.valorHora,
+        notas: body.notas,
       }),
     };
   }
@@ -76,13 +93,33 @@ export class UsuariosController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @NegocioId() negocioId: number,
-    @Body() body: Partial<{ email: string; nombre: string; rol: string; password: string; activo: boolean }>,
+    @Body() body: Partial<{
+      email: string;
+      nombre: string;
+      rol: string;
+      password: string;
+      activo: boolean;
+      rolId: number;
+      participacionPorc: number;
+      valorHora: number;
+      notas: string;
+    }>,
   ) {
     const passwordHash = body.password ? await bcrypt.hash(body.password, 10) : undefined;
     return {
       success: true,
       message: 'Usuario actualizado exitosamente',
-      data: await this.service.update(id, negocioId, { ...body, passwordHash }),
+      data: await this.service.update(id, negocioId, {
+        email: body.email,
+        nombre: body.nombre,
+        rol: body.rol,
+        activo: body.activo,
+        passwordHash,
+        rolId: body.rolId,
+        participacionPorc: body.participacionPorc,
+        valorHora: body.valorHora,
+        notas: body.notas,
+      }),
     };
   }
 
