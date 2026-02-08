@@ -27,6 +27,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
+import { ScrollableTable } from '@/components/ui/ScrollableTable';
 
 // Import Chart.js dynamically
 import dynamic from 'next/dynamic';
@@ -431,92 +432,101 @@ export default function GastosPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-            <h2 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
-              <i className="bi bi-receipt text-blue-600"></i>
-              Gestión de Gastos
-            </h2>
-            <div className="flex gap-2 mt-4 md:mt-0">
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-md p-4 sm:p-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4 sm:mb-6">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <BarChart3 className="text-blue-600 h-5 w-5 sm:h-6 sm:w-6" />
+              </div>
+              <div>
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800">
+                  Gestión de Gastos
+                </h2>
+                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">Administración de campañas y gastos</p>
+              </div>
+            </div>
+            <div className="flex gap-2 w-full sm:w-auto">
               <button
                 onClick={() => setShowCharts(!showCharts)}
-                className="btn btn-outline flex items-center gap-2"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 min-h-[44px] border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors text-sm"
               >
                 {showCharts ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                {showCharts ? 'Ocultar' : 'Mostrar'} Gráficos
+                <span className="hidden sm:inline">{showCharts ? 'Ocultar' : 'Mostrar'} Gráficos</span>
+                <span className="sm:hidden">{showCharts ? 'Ocultar' : 'Ver'}</span>
               </button>
               <button
                 onClick={handleExportar}
-                className="btn btn-success flex items-center gap-2"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 min-h-[44px] bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors text-sm"
               >
                 <Download className="h-4 w-4" />
-                Exportar CSV
+                <span className="hidden sm:inline">Exportar CSV</span>
+                <span className="sm:hidden">Exportar</span>
               </button>
             </div>
           </div>
 
           {/* Estadísticas */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-4 shadow-lg">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 mb-4 sm:mb-6">
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-3 sm:p-4 shadow-lg">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm opacity-90">Total Campañas</p>
-                  <p className="text-2xl font-bold">{stats.total}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm opacity-90">Total Campañas</p>
+                  <p className="text-lg sm:text-2xl font-bold truncate">{stats.total}</p>
                 </div>
-                <BarChart3 className="h-8 w-8 opacity-80" />
+                <BarChart3 className="h-6 w-6 sm:h-8 sm:w-8 opacity-80 flex-shrink-0 ml-2" />
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg p-4 shadow-lg">
+            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg p-3 sm:p-4 shadow-lg">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm opacity-90">Rentables</p>
-                  <p className="text-2xl font-bold">{stats.rentables}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm opacity-90">Rentables</p>
+                  <p className="text-lg sm:text-2xl font-bold">{stats.rentables}</p>
                   <p className="text-xs opacity-80">{stats.porcentajeRentables}%</p>
                 </div>
-                <TrendingUp className="h-8 w-8 opacity-80" />
+                <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 opacity-80 flex-shrink-0 ml-2" />
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg p-4 shadow-lg">
+            <div className="bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg p-3 sm:p-4 shadow-lg">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm opacity-90">No Rentables</p>
-                  <p className="text-2xl font-bold">{stats.noRentables}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm opacity-90">No Rentables</p>
+                  <p className="text-lg sm:text-2xl font-bold">{stats.noRentables}</p>
                 </div>
-                <TrendingDown className="h-8 w-8 opacity-80" />
+                <TrendingDown className="h-6 w-6 sm:h-8 sm:w-8 opacity-80 flex-shrink-0 ml-2" />
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg p-4 shadow-lg">
+            <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg p-3 sm:p-4 shadow-lg col-span-2 lg:col-span-1">
               <div className="flex items-center justify-between">
-      <div>
-                  <p className="text-sm opacity-90">Rentabilidad Total</p>
-                  <p className="text-2xl font-bold">{formatCurrency(stats.totalRentabilidad)}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm opacity-90">Rentabilidad Total</p>
+                  <p className="text-lg sm:text-2xl font-bold truncate">{formatCurrency(stats.totalRentabilidad)}</p>
                 </div>
-                <DollarSign className="h-8 w-8 opacity-80" />
+                <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 opacity-80 flex-shrink-0 ml-2" />
               </div>
             </div>
           </div>
 
           {/* Filtros y búsqueda */}
-          <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-gray-50 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <input
                   type="text"
                   placeholder="Buscar campañas..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
 
               <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
               >
@@ -526,7 +536,7 @@ export default function GastosPage() {
                 <option value="activa">Solo activas</option>
               </select>
 
-              <div className="text-sm text-gray-600 flex items-center gap-2">
+              <div className="text-sm text-gray-600 flex items-center gap-2 py-2 sm:col-span-2 lg:col-span-1">
                 <Filter className="h-4 w-4" />
                 {filteredCampanas.length} de {campanas.length} campañas
               </div>
@@ -534,51 +544,51 @@ export default function GastosPage() {
         </div>
 
           {/* Formulario de agregar campaña */}
-          <div className="bg-blue-50 rounded-lg p-6 mb-6 border border-blue-200">
-            <h3 className="text-lg font-semibold text-blue-800 mb-4 flex items-center gap-2">
-              <Plus className="h-5 w-5" />
+          <div className="bg-blue-50 rounded-lg p-4 sm:p-6 border border-blue-200">
+            <h3 className="text-base sm:text-lg font-semibold text-blue-800 mb-3 sm:mb-4 flex items-center gap-2">
+              <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
               Nueva Campaña
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-3 sm:mb-4">
               <input
                 type="text"
                 placeholder="Nombre campaña"
-                className="w-full px-3 py-2 border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 min-h-[44px] border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 value={formData.nombre}
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
               />
               <input
                 type="date"
-                className="w-full px-3 py-2 border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 min-h-[44px] border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 value={formData.fechaInicio}
                 onChange={(e) => setFormData({ ...formData, fechaInicio: e.target.value })}
               />
               <input
                 type="date"
-                className="w-full px-3 py-2 border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 min-h-[44px] border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:col-span-2 lg:col-span-1"
                 value={formData.fechaFin}
                 onChange={(e) => setFormData({ ...formData, fechaFin: e.target.value })}
               />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               <input
                 type="number"
                 placeholder="Presupuesto"
-                className="w-full px-3 py-2 border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 min-h-[44px] border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 value={formData.presupuesto}
                 onChange={(e) => setFormData({ ...formData, presupuesto: e.target.value })}
               />
               <input
                 type="number"
                 placeholder="Objetivo ingresos"
-                className="w-full px-3 py-2 border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 min-h-[44px] border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 value={formData.objetivoIngresos}
                 onChange={(e) => setFormData({ ...formData, objetivoIngresos: e.target.value })}
               />
               <button
                 onClick={handleAgregarCampana}
                 disabled={createCampana.isPending}
-                className="btn btn-primary flex items-center justify-center gap-2"
+                className="w-full sm:col-span-2 lg:col-span-1 flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors text-sm font-medium disabled:opacity-50"
               >
                 {createCampana.isPending ? (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -593,23 +603,23 @@ export default function GastosPage() {
 
         {/* Gráficos */}
         {showCharts && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-blue-600" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-md p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                 Ingresos vs Gastos
               </h3>
-              <div className="h-80">
+              <div className="h-60 sm:h-72 lg:h-80">
                 <canvas ref={chartIngGastRef}></canvas>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <PieChart className="h-5 w-5 text-green-600" />
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-md p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
+                <PieChart className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                 Rentabilidad por Campaña
               </h3>
-              <div className="h-80">
+              <div className="h-60 sm:h-72 lg:h-80">
                 <canvas ref={chartRentabilidadRef}></canvas>
               </div>
             </div>
@@ -617,47 +627,47 @@ export default function GastosPage() {
         )}
 
         {/* Tabla de campañas */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <Activity className="h-5 w-5 text-purple-600" />
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-md p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
+            <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
             Lista de Campañas ({filteredCampanas.length})
           </h3>
 
-            <div className="overflow-x-auto">
+            <ScrollableTable>
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     ID
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Nombre
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <Calendar className="h-4 w-4 inline mr-1" />
-                    Fechas
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 inline mr-1" />
+                    <span className="hidden sm:inline">Fechas</span>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <Target className="h-4 w-4 inline mr-1" />
-                    Presupuesto
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <Target className="h-3.5 w-3.5 sm:h-4 sm:w-4 inline mr-1" />
+                    <span className="hidden sm:inline">Presupuesto</span>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <Clock className="h-4 w-4 inline mr-1" />
-                    Horas
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 inline mr-1" />
+                    <span className="hidden sm:inline">Horas</span>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <TrendingDown className="h-4 w-4 inline mr-1" />
-                    Gasto Real
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <TrendingDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 inline mr-1" />
+                    <span className="hidden sm:inline">Gasto Real</span>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <TrendingUp className="h-4 w-4 inline mr-1" />
-                    Ingreso Real
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 inline mr-1" />
+                    <span className="hidden sm:inline">Ingreso Real</span>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <DollarSign className="h-4 w-4 inline mr-1" />
-                    Rentabilidad
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <DollarSign className="h-3.5 w-3.5 sm:h-4 sm:w-4 inline mr-1" />
+                    <span className="hidden sm:inline">Rentabilidad</span>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Acciones
                     </th>
                   </tr>
@@ -665,126 +675,126 @@ export default function GastosPage() {
                 <tbody className="bg-white divide-y divide-gray-200">
                 {filteredCampanas.map((campana) => (
                   <tr key={campana.id} className="hover:bg-gray-50 transition-colors duration-150">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 font-medium">
                       #{campana.id}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                       {editingId === campana.id ? (
                         <input
                           type="text"
-                          className="w-full px-2 py-1 border border-gray-300 rounded"
+                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm min-h-[36px]"
                           value={editingData.nombre}
                           onChange={(e) => setEditingData({ ...editingData, nombre: e.target.value })}
                         />
                       ) : (
                         <div>
-                          <div className="text-sm font-medium text-gray-900">{campana.nombre}</div>
+                          <div className="text-xs sm:text-sm font-medium text-gray-900">{campana.nombre}</div>
                           {campana.descripcion && (
-                            <div className="text-xs text-gray-500">{campana.descripcion}</div>
+                            <div className="text-xs text-gray-500 truncate max-w-[150px] sm:max-w-none">{campana.descripcion}</div>
                           )}
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                       {editingId === campana.id ? (
                         <div className="space-y-1">
                           <input
                             type="date"
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-xs min-h-[32px]"
                             value={editingData.fechaInicio}
                             onChange={(e) => setEditingData({ ...editingData, fechaInicio: e.target.value })}
                           />
                           <input
                             type="date"
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-xs min-h-[32px]"
                             value={editingData.fechaFin}
                             onChange={(e) => setEditingData({ ...editingData, fechaFin: e.target.value })}
                           />
                         </div>
                       ) : (
-                        <div className="text-sm text-gray-900">
-                          <div>Inicio: {formatDate(campana.fechaInicio)}</div>
-                          <div>Fin: {formatDate(campana.fechaFin)}</div>
+                        <div className="text-xs sm:text-sm text-gray-900">
+                          <div>{formatDate(campana.fechaInicio)}</div>
+                          <div className="text-gray-500">{formatDate(campana.fechaFin)}</div>
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                       {editingId === campana.id ? (
                         <div className="space-y-1">
                           <input
                             type="number"
                             placeholder="Presupuesto"
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-xs min-h-[32px]"
                             value={editingData.presupuesto}
                             onChange={(e) => setEditingData({ ...editingData, presupuesto: e.target.value })}
                           />
                           <input
                             type="number"
                             placeholder="Objetivo"
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-xs min-h-[32px]"
                             value={editingData.objetivoIngresos}
                             onChange={(e) => setEditingData({ ...editingData, objetivoIngresos: e.target.value })}
                           />
                         </div>
                       ) : (
-                        <div className="text-sm text-gray-900">
+                        <div className="text-xs sm:text-sm text-gray-900">
                           <div className="font-medium">{formatCurrency(campana.presupuesto || 0)}</div>
-                          <div className="text-xs text-gray-500">Obj: {formatCurrency(campana.objetivoIngresos || 0)}</div>
+                          <div className="text-xs text-gray-500 hidden sm:block">Obj: {formatCurrency(campana.objetivoIngresos || 0)}</div>
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 flex items-center gap-1">
-                        <Clock className="h-4 w-4 text-blue-600" />
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                      <div className="text-xs sm:text-sm text-gray-900 flex items-center gap-1">
+                        <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
                         {(campana.horasInvertidas || 0) + 'h'}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-red-600 font-semibold">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                      <div className="text-xs sm:text-sm text-red-600 font-semibold">
                         {formatCurrency(campana.gastoTotalReal || 0)}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-green-600 font-semibold">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                      <div className="text-xs sm:text-sm text-green-600 font-semibold">
                         {formatCurrency(campana.ingresoTotalReal || 0)}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className={`text-sm font-semibold flex items-center gap-1 ${
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                      <div className={`text-xs sm:text-sm font-semibold flex items-center gap-1 ${
                         (campana.rentabilidadReal || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
                         {(campana.rentabilidadReal || 0) >= 0 ? (
-                          <TrendingUp className="h-4 w-4" />
+                          <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         ) : (
-                          <TrendingDown className="h-4 w-4" />
+                          <TrendingDown className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         )}
                         {formatCurrency(campana.rentabilidadReal || 0)}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm font-medium">
                       {editingId === campana.id ? (
-                        <div className="flex gap-2">
+                        <div className="flex gap-1 sm:gap-2">
                           <button
                             onClick={() => handleSaveEdit(campana.id)}
                             disabled={updateCampana.isPending}
-                            className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50 transition-colors duration-150"
+                            className="text-green-600 hover:text-green-900 p-1.5 sm:p-1 rounded hover:bg-green-50 transition-colors duration-150 min-h-[36px] min-w-[36px] flex items-center justify-center"
                             title="Guardar"
                           >
                             <Save className="h-4 w-4" />
                       </button>
                           <button
                             onClick={handleCancelEdit}
-                            className="text-gray-600 hover:text-gray-900 p-1 rounded hover:bg-gray-50 transition-colors duration-150"
+                            className="text-gray-600 hover:text-gray-900 p-1.5 sm:p-1 rounded hover:bg-gray-50 transition-colors duration-150 min-h-[36px] min-w-[36px] flex items-center justify-center"
                             title="Cancelar"
                           >
                             <X className="h-4 w-4" />
                       </button>
                         </div>
                       ) : (
-                        <div className="flex gap-2">
+                        <div className="flex gap-1 sm:gap-2">
                           <button
                             onClick={() => handleEdit(campana)}
-                            className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50 transition-colors duration-150"
+                            className="text-indigo-600 hover:text-indigo-900 p-1.5 sm:p-1 rounded hover:bg-indigo-50 transition-colors duration-150 min-h-[36px] min-w-[36px] flex items-center justify-center"
                             title="Editar"
                           >
                             <Edit className="h-4 w-4" />
@@ -792,7 +802,7 @@ export default function GastosPage() {
                           <button
                             onClick={() => handleDelete(campana)}
                             disabled={deleteCampana.isPending}
-                            className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors duration-150"
+                            className="text-red-600 hover:text-red-900 p-1.5 sm:p-1 rounded hover:bg-red-50 transition-colors duration-150 min-h-[36px] min-w-[36px] flex items-center justify-center"
                             title="Eliminar"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -804,31 +814,16 @@ export default function GastosPage() {
                 ))}
                 </tbody>
               </table>
-            </div>
+            </ScrollableTable>
 
           {filteredCampanas.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              <BarChart3 className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p>No se encontraron campañas con los filtros aplicados</p>
+            <div className="text-center py-6 sm:py-8 text-gray-500">
+              <BarChart3 className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-gray-300" />
+              <p className="text-sm sm:text-base">No se encontraron campañas con los filtros aplicados</p>
           </div>
           )}
         </div>
       </div>
-
-      <style jsx>{`
-        .btn {
-          @apply px-4 py-2 rounded-md font-medium transition-colors duration-150;
-        }
-        .btn-primary {
-          @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
-        }
-        .btn-success {
-          @apply bg-green-600 text-white hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2;
-        }
-        .btn-outline {
-          @apply border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2;
-        }
-      `}</style>
 
       {/* Modal de eliminación */}
       {deletingCampana && (

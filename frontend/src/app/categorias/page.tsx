@@ -167,39 +167,43 @@ export default function CategoriasPage() {
 
   return (
     <MainLayout>
-      <div className="p-6 space-y-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Tags className="h-6 w-6 text-blue-600" />
-          <h1 className="text-2xl font-bold text-gray-900">Gestión de Categorías</h1>
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+        <div className="flex items-center gap-2 mb-3 sm:mb-4">
+          <div className="p-2 bg-blue-100 rounded-lg">
+            <Tags className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+          </div>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Gestión de Categorías</h1>
         </div>
-        <div className="flex gap-2 mb-4">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-3 sm:mb-4">
           <input
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleAdd()}
             placeholder="Nombre de la categoría"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             disabled={createCategoriaMutation.isPending}
           />
           <button
             onClick={handleAdd}
             disabled={createCategoriaMutation.isPending}
-            className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="w-full sm:w-auto bg-blue-600 text-white px-4 sm:px-6 py-2 min-h-[44px] rounded-lg hover:bg-blue-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm whitespace-nowrap"
           >
             {createCategoriaMutation.isPending ? (
               <>
                 <Loader2 className="animate-spin" size={18} />
-                Guardando...
+                <span className="hidden sm:inline">Guardando...</span>
+                <span className="sm:hidden">...</span>
               </>
             ) : (
               <>
                 <Plus size={18} />
-                Agregar Categoría
+                <span className="hidden sm:inline">Agregar Categoría</span>
+                <span className="sm:hidden">Agregar</span>
               </>
             )}
           </button>
         </div>
-        <div className="bg-white rounded-lg shadow overflow-x-auto">
+        <div className="bg-white rounded-lg sm:rounded-xl shadow overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               {table.getHeaderGroups().map((headerGroup) => (
@@ -207,7 +211,7 @@ export default function CategoriasPage() {
                   {headerGroup.headers.map((header) => (
                     <th
                       key={header.id}
-                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                       style={{ width: header.getSize() }}
                     >
                       {flexRender(header.column.columnDef.header, header.getContext())}
@@ -219,15 +223,15 @@ export default function CategoriasPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {table.getRowModel().rows.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-500">
-                    No hay categorías registradas. Agrega una nueva categoría arriba.
+                  <td colSpan={columns.length} className="px-3 sm:px-4 py-6 sm:py-8 text-center text-sm text-gray-500">
+                    No hay categorías. Agrega una nueva arriba.
                   </td>
                 </tr>
               ) : (
                 table.getRowModel().rows.map((row) => (
                   <tr key={row.id} className="hover:bg-gray-50 transition-colors">
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="px-4 py-3 whitespace-nowrap">
+                      <td key={cell.id} className="px-3 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-sm">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     ))}
@@ -239,22 +243,22 @@ export default function CategoriasPage() {
         </div>
         {/* Paginación */}
         {table.getPageCount() > 1 && (
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-gray-600">
-              Página {table.getState().pagination.pageIndex + 1} de {table.getPageCount()}
+          <div className="flex items-center justify-between mt-3 sm:mt-4">
+            <div className="text-xs sm:text-sm text-gray-600">
+              Pág. {table.getState().pagination.pageIndex + 1}/{table.getPageCount()}
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => table.previousPage()}
                 disabled={!table.getCanPreviousPage()}
-                className="px-3 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50"
+                className="px-3 py-2 min-h-[36px] rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50"
               >
                 <ChevronLeft size={16} />
               </button>
               <button
                 onClick={() => table.nextPage()}
                 disabled={!table.getCanNextPage()}
-                className="px-3 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50"
+                className="px-3 py-2 min-h-[36px] rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50"
               >
                 <ChevronRight size={16} />
               </button>

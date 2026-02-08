@@ -27,6 +27,11 @@ export type Subjects =
   | 'DebtDeduction'
   | 'HourDebtAuditLog'
   | 'Settings'
+  | 'SecurityRole'
+  | 'Permission'
+  | 'SecurityAuditLog'
+  | 'SecuritySession'
+  | 'SecuritySettings'
   | 'all';
 
 export type AppAbility = MongoAbility<[Action, Subjects]>;
@@ -87,7 +92,13 @@ export const createAbilityForUser = (rol: string): AppAbility => {
       { action: Action.Manage, subject: 'DebtDeduction' },
       { action: Action.Read, subject: 'HourDebtAuditLog' },
       // Configuración del sistema (SMTP, etc.)
-      { action: Action.Manage, subject: 'Settings' }
+      { action: Action.Manage, subject: 'Settings' },
+      // Security Management
+      { action: Action.Manage, subject: 'SecurityRole' },
+      { action: Action.Read, subject: 'Permission' },
+      { action: Action.Read, subject: 'SecurityAuditLog' },
+      { action: Action.Manage, subject: 'SecuritySession' },
+      { action: Action.Manage, subject: 'SecuritySettings' }
     );
   } else if (rol === 'MANAGER') {
     rules.push(

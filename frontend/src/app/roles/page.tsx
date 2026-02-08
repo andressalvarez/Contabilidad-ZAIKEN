@@ -30,6 +30,7 @@ import {
 import { useUsuarios } from '@/hooks/useUsuarios';
 import { Rol, CreateRolDto } from '@/types';
 import MainLayout from '@/components/layout/MainLayout';
+import { ScrollableTable } from '@/components/ui/ScrollableTable';
 
 interface FormData {
   nombreRol: string;
@@ -244,91 +245,93 @@ export default function RolesPage() {
 
   return (
     <MainLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 sm:gap-6">
             <div>
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2">
                 <div className="p-2 bg-indigo-100 rounded-lg">
-                  <Shield className="text-indigo-600" size={28} />
+                  <Shield className="text-indigo-600" size={24} />
                 </div>
-                <h1 className="text-3xl font-bold text-gray-900">Gestión de Roles</h1>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Gestión de Roles</h1>
               </div>
-              <p className="text-gray-600 ml-12">Define roles y su porcentaje de importancia en la distribución de utilidades</p>
+              <p className="text-sm sm:text-base text-gray-600 ml-10 sm:ml-12">Define roles y su porcentaje de importancia</p>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
               <button
                 onClick={exportarRoles}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg transition-colors shadow-sm"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 min-h-[44px] bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg transition-colors shadow-sm text-sm"
               >
                 <Download className="h-4 w-4" />
-                Exportar CSV
+                <span className="hidden sm:inline">Exportar CSV</span>
+                <span className="sm:hidden">Exportar</span>
               </button>
               <button
                 onClick={recalcularTodo}
                 disabled={isRecalculating}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 min-h-[44px] bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
                 <RotateCcw className={`h-4 w-4 ${isRecalculating ? 'animate-spin' : ''}`} />
-                {isRecalculating ? 'Recalculando...' : 'Recalcular'}
+                <span className="hidden sm:inline">{isRecalculating ? 'Recalculando...' : 'Recalcular'}</span>
+                <span className="sm:hidden">{isRecalculating ? '...' : 'Recalc.'}</span>
               </button>
             </div>
           </div>
         </div>
 
         {/* Estadísticas Rápidas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-indigo-100 rounded-lg">
-                <BarChart3 className="text-indigo-600" size={24} />
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 lg:gap-6">
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-3 sm:p-4 lg:p-6">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-indigo-100 rounded-lg">
+                <BarChart3 className="text-indigo-600" size={20} />
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Total Roles</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalRoles}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <TrendingUp className="text-green-600" size={24} />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Importancia Total</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.importanciaTotal}%</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-gray-600">Total Roles</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">{stats.totalRoles}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-amber-100 rounded-lg">
-                <Users className="text-amber-600" size={24} />
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-3 sm:p-4 lg:p-6">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-green-100 rounded-lg">
+                <TrendingUp className="text-green-600" size={20} />
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Usuarios Asignados</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.usuariosAsignados}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-gray-600">Importancia</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">{stats.importanciaTotal}%</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-3 sm:p-4 lg:p-6 col-span-2 lg:col-span-1">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-amber-100 rounded-lg">
+                <Users className="text-amber-600" size={20} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-gray-600">Usuarios Asignados</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">{stats.usuariosAsignados}</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Formulario de Agregar Rol */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-          <div className="flex items-center gap-3 mb-6">
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
+          <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
             <div className="p-2 bg-green-100 rounded-lg">
-              <Plus className="text-green-600" size={20} />
+              <Plus className="text-green-600" size={18} />
             </div>
-            <h3 className="text-lg font-semibold text-gray-800">Agregar Nuevo Rol</h3>
+            <h3 className="text-base sm:text-lg font-semibold text-gray-800">Agregar Nuevo Rol</h3>
           </div>
 
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div>
-              <label htmlFor="rol-nombreRol" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="rol-nombreRol" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                 Nombre del Rol *
               </label>
               <input
@@ -336,14 +339,14 @@ export default function RolesPage() {
                 id="rol-nombreRol"
                 value={formData.nombreRol}
                 onChange={(e) => setFormData({ ...formData, nombreRol: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                className="w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
                 placeholder="Ej: Director"
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="rol-importancia" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="rol-importancia" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                 Importancia (%) *
               </label>
               <input
@@ -351,7 +354,7 @@ export default function RolesPage() {
                 id="rol-importancia"
                 value={formData.importancia}
                 onChange={(e) => setFormData({ ...formData, importancia: parseInt(e.target.value) || 0 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                className="w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
                 placeholder="40"
                 min="0"
                 max="100"
@@ -359,8 +362,8 @@ export default function RolesPage() {
               />
             </div>
 
-            <div>
-              <label htmlFor="rol-descripcion" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="sm:col-span-2 lg:col-span-1">
+              <label htmlFor="rol-descripcion" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                 Descripción
               </label>
               <input
@@ -368,16 +371,16 @@ export default function RolesPage() {
                 id="rol-descripcion"
                 value={formData.descripcion}
                 onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                className="w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
                 placeholder="Gestión general..."
               />
             </div>
 
-            <div className="flex items-end">
+            <div className="flex items-end sm:col-span-2 lg:col-span-1">
               <button
                 type="submit"
                 disabled={createMutation.isPending}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
                 <Plus className="h-4 w-4" />
                 {createMutation.isPending ? 'Agregando...' : 'Agregar Rol'}
@@ -387,35 +390,35 @@ export default function RolesPage() {
         </div>
 
         {/* Tabla de Roles */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-3">
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+            <div className="flex flex-col gap-3 sm:gap-4">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
-                  <BarChart3 className="text-blue-600" size={20} />
+                  <BarChart3 className="text-blue-600" size={18} />
                 </div>
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-900">
                   Listado de Roles ({filteredRoles.length})
                 </h2>
               </div>
 
-              <div className="flex gap-2">
-                <div className="relative">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <input
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 w-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                    className="pl-10 w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
                     placeholder="Buscar roles..."
                   />
                 </div>
                 <button
                   onClick={refreshTable}
-                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg transition-colors"
+                  className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg transition-colors text-sm"
                 >
                   <RefreshCw className="h-4 w-4" />
-                  Refrescar
+                  <span className="sm:inline">Refrescar</span>
                 </button>
               </div>
             </div>
@@ -439,26 +442,26 @@ export default function RolesPage() {
 
           {/* Roles Table */}
           {!isLoading && !error && (
-            <div className="overflow-x-auto">
+            <ScrollableTable>
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       ID
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Rol
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Importancia
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
                       Descripción
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Usuarios
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Acciones
                     </th>
                   </tr>
@@ -466,57 +469,57 @@ export default function RolesPage() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredRoles.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="text-center py-12">
-                        <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      <td colSpan={6} className="text-center py-8 sm:py-12">
+                        <Shield className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
                           {searchTerm ? 'No se encontraron roles' : 'No hay roles'}
                         </h3>
-                        <p className="text-gray-600">
-                          {searchTerm ? 'Intenta con otro término de búsqueda' : 'Comienza creando tu primer rol'}
+                        <p className="text-sm text-gray-600">
+                          {searchTerm ? 'Intenta con otro término' : 'Comienza creando tu primer rol'}
                         </p>
                       </td>
                     </tr>
                   ) : (
                     filteredRoles.map((rol) => (
                       <tr key={rol.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm text-gray-900">#{rol.id}</span>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                          <span className="text-xs sm:text-sm text-gray-900">#{rol.id}</span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <div className="p-1.5 bg-indigo-100 rounded">
-                              <Shield className="h-3.5 w-3.5 text-indigo-600" />
+                            <div className="p-1 sm:p-1.5 bg-indigo-100 rounded">
+                              <Shield className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-indigo-600" />
                             </div>
-                            <span className="font-medium text-gray-900">{rol.nombreRol}</span>
+                            <span className="text-xs sm:text-sm font-medium text-gray-900">{rol.nombreRol}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
                             <Target className="h-3 w-3" />
                             {rol.importancia}%
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600 max-w-[150px] sm:max-w-xs truncate hidden sm:table-cell">
                           {rol.descripcion || 'Sin descripción'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                             <Users className="h-3 w-3" />
                             {getUsuariosCount(rol.id)}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center justify-end gap-2">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex items-center justify-end gap-1 sm:gap-2">
                             <button
                               onClick={() => handleEdit(rol)}
-                              className="text-indigo-600 hover:text-indigo-900 p-1 hover:bg-indigo-50 rounded"
+                              className="text-indigo-600 hover:text-indigo-900 p-1.5 sm:p-1 hover:bg-indigo-50 rounded min-h-[36px] min-w-[36px] flex items-center justify-center"
                             >
                               <Edit className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => handleDelete(rol)}
                               disabled={deleteMutation.isPending}
-                              className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded disabled:opacity-50"
+                              className="text-red-600 hover:text-red-900 p-1.5 sm:p-1 hover:bg-red-50 rounded disabled:opacity-50 min-h-[36px] min-w-[36px] flex items-center justify-center"
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
@@ -527,62 +530,62 @@ export default function RolesPage() {
                   )}
                 </tbody>
               </table>
-            </div>
+            </ScrollableTable>
           )}
         </div>
 
         {/* Información Adicional */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
               <div className="p-2 bg-blue-100 rounded-lg">
-                <Info className="text-blue-600" size={20} />
+                <Info className="text-blue-600" size={18} />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">Información sobre Roles</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900">Información sobre Roles</h3>
             </div>
-            <div className="space-y-3 text-sm text-gray-600">
+            <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-gray-600">
               <p>• Los roles definen la importancia de cada usuario en el negocio.</p>
-              <p>• El porcentaje de importancia afecta directamente la distribución de utilidades.</p>
+              <p>• El porcentaje de importancia afecta la distribución de utilidades.</p>
               <p>• La suma de importancias no necesariamente debe ser 100%.</p>
-              <p>• Cada usuario debe tener un rol asignado para participar en distribuciones.</p>
+              <p>• Cada usuario debe tener un rol asignado para distribuciones.</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-4">
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
               <div className="p-2 bg-amber-100 rounded-lg">
-                <Lightbulb className="text-amber-600" size={20} />
+                <Lightbulb className="text-amber-600" size={18} />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">Sugerencias de Roles</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900">Sugerencias de Roles</h3>
             </div>
             <div className="space-y-2">
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <div className="flex justify-between items-center p-2 sm:p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <div className="flex items-center gap-2">
                   <Award className="h-4 w-4 text-purple-600" />
-                  <span className="text-sm font-medium text-gray-900">Director/CEO</span>
+                  <span className="text-xs sm:text-sm font-medium text-gray-900">Director/CEO</span>
                 </div>
-                <span className="text-xs bg-purple-100 text-purple-800 px-2.5 py-1 rounded-full font-medium">40-50%</span>
+                <span className="text-xs bg-purple-100 text-purple-800 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full font-medium">40-50%</span>
               </div>
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <div className="flex justify-between items-center p-2 sm:p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <div className="flex items-center gap-2">
                   <Award className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-gray-900">Gerente/Manager</span>
+                  <span className="text-xs sm:text-sm font-medium text-gray-900">Gerente/Manager</span>
                 </div>
-                <span className="text-xs bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full font-medium">25-35%</span>
+                <span className="text-xs bg-blue-100 text-blue-800 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full font-medium">25-35%</span>
               </div>
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <div className="flex justify-between items-center p-2 sm:p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <div className="flex items-center gap-2">
                   <Award className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-medium text-gray-900">Especialista</span>
+                  <span className="text-xs sm:text-sm font-medium text-gray-900">Especialista</span>
                 </div>
-                <span className="text-xs bg-green-100 text-green-800 px-2.5 py-1 rounded-full font-medium">15-25%</span>
+                <span className="text-xs bg-green-100 text-green-800 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full font-medium">15-25%</span>
               </div>
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <div className="flex justify-between items-center p-2 sm:p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <div className="flex items-center gap-2">
                   <Award className="h-4 w-4 text-amber-600" />
-                  <span className="text-sm font-medium text-gray-900">Asistente</span>
+                  <span className="text-xs sm:text-sm font-medium text-gray-900">Asistente</span>
                 </div>
-                <span className="text-xs bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-medium">10-20%</span>
+                <span className="text-xs bg-amber-100 text-amber-800 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full font-medium">10-20%</span>
               </div>
             </div>
           </div>
@@ -591,40 +594,40 @@ export default function RolesPage() {
         {/* Modal de Edición */}
         {isEditModalOpen && editingRol && (
           <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
+            <div className="bg-white rounded-lg sm:rounded-xl max-w-md w-full p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <div className="p-2 bg-indigo-100 rounded-lg">
-                    <Edit className="text-indigo-600" size={20} />
+                    <Edit className="text-indigo-600" size={18} />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900">
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900">
                     Editar Rol
                   </h3>
                 </div>
                 <button
                   onClick={handleCloseEditModal}
-                  className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded"
+                  className="text-gray-400 hover:text-gray-600 p-1.5 hover:bg-gray-100 rounded min-h-[36px] min-w-[36px] flex items-center justify-center"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
-              <form onSubmit={handleSaveEdit} className="space-y-4">
+              <form onSubmit={handleSaveEdit} className="space-y-3 sm:space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Nombre del Rol *
                   </label>
                   <input
                     type="text"
                     value={editingRol.nombreRol}
                     onChange={(e) => setEditingRol({ ...editingRol, nombreRol: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                    className="w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Importancia (%) *
                   </label>
                   <input
@@ -633,39 +636,39 @@ export default function RolesPage() {
                     max="100"
                     value={editingRol.importancia}
                     onChange={(e) => setEditingRol({ ...editingRol, importancia: parseInt(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                    className="w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Descripción
                   </label>
                   <textarea
                     value={editingRol.descripcion}
                     onChange={(e) => setEditingRol({ ...editingRol, descripcion: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
                     rows={3}
-                    placeholder="Describe las responsabilidades del rol..."
+                    placeholder="Describe las responsabilidades..."
                   />
                 </div>
 
-                <div className="flex gap-3 pt-4">
+                <div className="flex gap-2 sm:gap-3 pt-3 sm:pt-4">
                   <button
                     type="button"
                     onClick={handleCloseEditModal}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex-1 px-4 py-2 min-h-[44px] border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={updateMutation.isPending}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                   >
                     <Save className="h-4 w-4" />
-                    {updateMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
+                    {updateMutation.isPending ? 'Guardando...' : 'Guardar'}
                   </button>
                 </div>
               </form>

@@ -8,3 +8,5 @@ export { RegistroHorasService } from './registro-horas.service';
 export { CampanasService } from './campanas.service';
 export { DistribucionUtilidadesService } from './distribucion-utilidades.service';
 export { UsuariosService } from './usuarios.service';
+export { SecurityService } from './security.service';
+export { SettingsService } from './settings.service';

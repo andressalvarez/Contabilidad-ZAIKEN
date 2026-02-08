@@ -201,20 +201,20 @@ export default function DeudaHorasPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 sm:gap-6">
             <div>
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2">
                 <div className="p-2 bg-amber-100 rounded-lg">
-                  <Clock className="text-amber-600" size={28} />
+                  <Clock className="text-amber-600 h-5 w-5 sm:h-7 sm:w-7" />
                 </div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
                   {canManageDebt ? 'Gestión de Deuda de Horas' : 'Mi Deuda de Horas'}
                 </h1>
               </div>
-              <p className="text-gray-600 ml-12">
+              <p className="text-sm sm:text-base text-gray-600 ml-9 sm:ml-12">
                 {canManageDebt
                   ? 'Sistema automático de compensación de horas con excesos de trabajo'
                   : 'Consulta y registra tus deudas de horas'}
@@ -223,7 +223,7 @@ export default function DeudaHorasPage() {
 
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors shadow-sm"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors shadow-sm text-sm sm:text-base"
             >
               <Plus className="h-4 w-4" />
               Nueva Deuda
@@ -234,18 +234,18 @@ export default function DeudaHorasPage() {
         {/* Statistics - Different for admin vs user */}
         {canManageDebt ? (
           // Admin statistics
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-amber-100 rounded-lg">
-                  <Clock className="text-amber-600" size={24} />
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 lg:gap-6">
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-3 sm:p-4 lg:p-6">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="p-2 sm:p-3 bg-amber-100 rounded-lg">
+                  <Clock className="text-amber-600 h-5 w-5 sm:h-6 sm:w-6" />
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Deuda Total Activa</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm text-gray-600">Deuda Total Activa</p>
                   {statsLoading ? (
-                    <div className="animate-pulse bg-gray-200 h-8 w-24 rounded mt-1"></div>
+                    <div className="animate-pulse bg-gray-200 h-6 sm:h-8 w-20 sm:w-24 rounded mt-1"></div>
                   ) : (
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
                       {HourDebtService.minutesToHoursString(stats?.totalActiveDebt || 0)}
                     </p>
                   )}
@@ -253,17 +253,17 @@ export default function DeudaHorasPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-indigo-100 rounded-lg">
-                  <Users className="text-indigo-600" size={24} />
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-3 sm:p-4 lg:p-6">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="p-2 sm:p-3 bg-indigo-100 rounded-lg">
+                  <Users className="text-indigo-600 h-5 w-5 sm:h-6 sm:w-6" />
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Usuarios con Deuda</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm text-gray-600">Usuarios con Deuda</p>
                   {statsLoading ? (
-                    <div className="animate-pulse bg-gray-200 h-8 w-24 rounded mt-1"></div>
+                    <div className="animate-pulse bg-gray-200 h-6 sm:h-8 w-20 sm:w-24 rounded mt-1"></div>
                   ) : (
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
                       {stats?.usersWithDebt || 0}
                     </p>
                   )}
@@ -271,17 +271,17 @@ export default function DeudaHorasPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <TrendingDown className="text-green-600" size={24} />
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-3 sm:p-4 lg:p-6 col-span-2 lg:col-span-1">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="p-2 sm:p-3 bg-green-100 rounded-lg">
+                  <TrendingDown className="text-green-600 h-5 w-5 sm:h-6 sm:w-6" />
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Pagado Este Mes</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm text-gray-600">Pagado Este Mes</p>
                   {statsLoading ? (
-                    <div className="animate-pulse bg-gray-200 h-8 w-24 rounded mt-1"></div>
+                    <div className="animate-pulse bg-gray-200 h-6 sm:h-8 w-20 sm:w-24 rounded mt-1"></div>
                   ) : (
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
                       {HourDebtService.minutesToHoursString(stats?.paidThisMonth || 0)}
                     </p>
                   )}
@@ -291,22 +291,22 @@ export default function DeudaHorasPage() {
           </div>
         ) : (
           // User balance card
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-lg ${(myBalance || 0) > 0 ? 'bg-amber-100' : 'bg-green-100'}`}>
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className={`p-2 sm:p-3 rounded-lg ${(myBalance || 0) > 0 ? 'bg-amber-100' : 'bg-green-100'}`}>
                   {(myBalance || 0) > 0 ? (
-                    <AlertCircle className="text-amber-600" size={24} />
+                    <AlertCircle className="text-amber-600 h-5 w-5 sm:h-6 sm:w-6" />
                   ) : (
-                    <CheckCircle className="text-green-600" size={24} />
+                    <CheckCircle className="text-green-600 h-5 w-5 sm:h-6 sm:w-6" />
                   )}
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Mi Deuda Actual</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Mi Deuda Actual</p>
                   {myBalanceLoading ? (
-                    <div className="animate-pulse bg-gray-200 h-8 w-24 rounded mt-1"></div>
+                    <div className="animate-pulse bg-gray-200 h-6 sm:h-8 w-20 sm:w-24 rounded mt-1"></div>
                   ) : (
-                    <p className={`text-2xl font-bold ${(myBalance || 0) > 0 ? 'text-amber-600' : 'text-green-600'}`}>
+                    <p className={`text-lg sm:text-xl lg:text-2xl font-bold ${(myBalance || 0) > 0 ? 'text-amber-600' : 'text-green-600'}`}>
                       {(myBalance || 0) > 0
                         ? HourDebtService.minutesToHoursString(myBalance || 0)
                         : '¡Al día!'}
@@ -315,8 +315,8 @@ export default function DeudaHorasPage() {
                 </div>
               </div>
               {(myBalance || 0) > 0 && (
-                <div className="text-right">
-                  <p className="text-sm text-gray-500">
+                <div className="text-left sm:text-right">
+                  <p className="text-xs sm:text-sm text-gray-500">
                     Las horas extra trabajadas (más de 8h/día) reducen automáticamente tu deuda
                   </p>
                 </div>
@@ -326,13 +326,13 @@ export default function DeudaHorasPage() {
         )}
 
         {/* Info Card */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 flex items-start gap-2 sm:gap-3">
+          <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 mt-0.5 flex-shrink-0" />
           <div>
-            <h3 className="text-sm font-medium text-blue-900">
+            <h3 className="text-xs sm:text-sm font-medium text-blue-900">
               Cómo funciona el sistema
             </h3>
-            <ul className="text-sm text-blue-700 mt-2 space-y-1">
+            <ul className="text-xs sm:text-sm text-blue-700 mt-1.5 sm:mt-2 space-y-1">
               <li className="flex items-start gap-2">
                 <span className="text-blue-600 font-bold">•</span>
                 <span>
@@ -359,25 +359,25 @@ export default function DeudaHorasPage() {
         </div>
 
         {/* Debts Table */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 overflow-hidden">
           {/* Header */}
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-3">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+            <div className="flex flex-col gap-3 sm:gap-4">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <div className="p-2 bg-amber-100 rounded-lg">
-                  <BarChart3 className="text-amber-600" size={20} />
+                  <BarChart3 className="text-amber-600 h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-900">
                   {canManageDebt ? 'Registro de Deudas' : 'Mi Historial de Deudas'} ({filteredDebts?.length || 0})
                 </h2>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                 {/* Status Filter */}
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as DebtStatus | 'ALL')}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                  className="px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
                 >
                   <option value="ALL">Todos</option>
                   <option value={DebtStatus.ACTIVE}>Activas</option>
@@ -387,14 +387,14 @@ export default function DeudaHorasPage() {
 
                 {/* Search - only for admin */}
                 {canManageDebt && (
-                  <div className="relative">
+                  <div className="relative flex-1 sm:flex-none">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input
                       type="text"
                       placeholder="Buscar..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 w-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                      className="pl-10 w-full sm:w-64 px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
                     />
                   </div>
                 )}
@@ -404,9 +404,9 @@ export default function DeudaHorasPage() {
 
           {/* Table */}
           {debtsLoading ? (
-            <div className="text-center py-12">
+            <div className="text-center py-8 sm:py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
-              <p className="text-gray-600 mt-2">Cargando deudas...</p>
+              <p className="text-gray-600 mt-2 text-sm sm:text-base">Cargando deudas...</p>
             </div>
           ) : filteredDebts && filteredDebts.length > 0 ? (
             <div className="overflow-x-auto">
@@ -414,26 +414,26 @@ export default function DeudaHorasPage() {
                 <thead className="bg-gray-50">
                   <tr>
                     {canManageDebt && (
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Usuario
                       </th>
                     )}
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Fecha
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                       Deuda Original
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Pendiente
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Estado
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
                       Motivo
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Acciones
                     </th>
                   </tr>
@@ -447,38 +447,38 @@ export default function DeudaHorasPage() {
                       className="hover:bg-gray-50"
                     >
                       {canManageDebt && (
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <div className="p-1.5 bg-indigo-100 rounded">
-                              <User className="h-3.5 w-3.5 text-indigo-600" />
+                            <div className="p-1 sm:p-1.5 bg-indigo-100 rounded">
+                              <User className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-indigo-600" />
                             </div>
-                            <span className="font-medium text-gray-900">
+                            <span className="font-medium text-gray-900 text-xs sm:text-sm">
                               {debt.usuario?.nombre}
                             </span>
                           </div>
                         </td>
                       )}
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         <div className="flex items-center gap-1">
-                          <Calendar className="h-3.5 w-3.5 text-gray-400" />
-                          <span className="text-sm text-gray-900">
+                          <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-gray-400" />
+                          <span className="text-xs sm:text-sm text-gray-900">
                             {format(new Date(debt.date), 'dd MMM yyyy', { locale: es })}
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm font-semibold text-gray-900">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                        <span className="text-xs sm:text-sm font-semibold text-gray-900">
                           {HourDebtService.minutesToHoursString(debt.minutesOwed)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm font-semibold text-amber-900">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                        <span className="text-xs sm:text-sm font-semibold text-amber-900">
                           {HourDebtService.minutesToHoursString(debt.remainingMinutes)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             debt.status === DebtStatus.ACTIVE
                               ? 'bg-amber-100 text-amber-800'
                               : debt.status === DebtStatus.FULLY_PAID
@@ -488,24 +488,26 @@ export default function DeudaHorasPage() {
                         >
                           {debt.status === DebtStatus.ACTIVE && <AlertCircle className="h-3 w-3" />}
                           {debt.status === DebtStatus.FULLY_PAID && <CheckCircle className="h-3 w-3" />}
-                          {debt.status === DebtStatus.ACTIVE
-                            ? 'Activa'
-                            : debt.status === DebtStatus.FULLY_PAID
-                            ? 'Pagada'
-                            : 'Cancelada'}
+                          <span className="hidden sm:inline">
+                            {debt.status === DebtStatus.ACTIVE
+                              ? 'Activa'
+                              : debt.status === DebtStatus.FULLY_PAID
+                              ? 'Pagada'
+                              : 'Cancelada'}
+                          </span>
                         </span>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-gray-600 max-w-xs truncate block">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 hidden sm:table-cell">
+                        <span className="text-xs sm:text-sm text-gray-600 max-w-xs truncate block">
                           {debt.reason || '-'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-right">
+                        <div className="flex items-center justify-end gap-1 sm:gap-2">
                           {/* View deduction history */}
                           <button
                             onClick={() => setViewingHistoryDebt(debt)}
-                            className="text-indigo-600 hover:text-indigo-900 p-1 hover:bg-indigo-50 rounded"
+                            className="text-indigo-600 hover:text-indigo-900 p-1.5 hover:bg-indigo-50 rounded min-h-[36px] min-w-[36px] flex items-center justify-center"
                             title="Ver historial de pagos"
                           >
                             <History className="h-4 w-4" />
@@ -516,7 +518,7 @@ export default function DeudaHorasPage() {
                               {/* Edit */}
                               <button
                                 onClick={() => openEditModal(debt)}
-                                className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded"
+                                className="text-blue-600 hover:text-blue-900 p-1.5 hover:bg-blue-50 rounded min-h-[36px] min-w-[36px] flex items-center justify-center"
                                 title="Editar deuda"
                               >
                                 <Edit className="h-4 w-4" />
@@ -525,7 +527,7 @@ export default function DeudaHorasPage() {
                               {debt.status === DebtStatus.ACTIVE && (
                                 <button
                                   onClick={() => handleCancel(debt)}
-                                  className="text-amber-600 hover:text-amber-900 p-1 hover:bg-amber-50 rounded"
+                                  className="text-amber-600 hover:text-amber-900 p-1.5 hover:bg-amber-50 rounded min-h-[36px] min-w-[36px] flex items-center justify-center"
                                   title="Cancelar deuda"
                                 >
                                   <X className="h-4 w-4" />
@@ -534,7 +536,7 @@ export default function DeudaHorasPage() {
                               {/* Delete */}
                               <button
                                 onClick={() => setDeletingDebt(debt)}
-                                className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded"
+                                className="text-red-600 hover:text-red-900 p-1.5 hover:bg-red-50 rounded min-h-[36px] min-w-[36px] flex items-center justify-center"
                                 title="Eliminar"
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -549,14 +551,14 @@ export default function DeudaHorasPage() {
               </table>
             </div>
           ) : (
-            <div className="text-center py-12">
-              <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <div className="text-center py-8 sm:py-12">
+              <Clock className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
                 {searchTerm || statusFilter !== 'ALL'
                   ? 'No se encontraron resultados'
                   : canManageDebt ? 'No hay deudas registradas' : 'No tienes deudas registradas'}
               </h3>
-              <p className="text-gray-600">
+              <p className="text-sm sm:text-base text-gray-600">
                 {searchTerm || statusFilter !== 'ALL'
                   ? 'Intenta con otros filtros'
                   : canManageDebt ? 'Comienza agregando la primera deuda' : 'Registra una nueva deuda si es necesario'}
@@ -569,35 +571,35 @@ export default function DeudaHorasPage() {
       {/* Create Modal */}
       <AnimatePresence>
         {showCreateModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-50">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl"
+              className="bg-white rounded-lg sm:rounded-xl max-w-md w-full p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
             >
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <div className="p-2 bg-amber-100 rounded-lg">
-                    <Plus className="text-amber-600" size={20} />
+                    <Plus className="text-amber-600 h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900">
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900">
                     Nueva Deuda de Horas
                   </h3>
                 </div>
                 <button
                   onClick={() => setShowCreateModal(false)}
-                  className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded"
+                  className="text-gray-400 hover:text-gray-600 p-1.5 hover:bg-gray-100 rounded min-h-[36px] min-w-[36px] flex items-center justify-center"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
-              <form onSubmit={handleCreate} className="space-y-4">
+              <form onSubmit={handleCreate} className="space-y-3 sm:space-y-4">
                 {/* User selector - only for admin */}
                 {canManageDebt && (
                   <div>
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                    <label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                       <User className="h-4 w-4" />
                       Usuario *
                     </label>
@@ -609,7 +611,7 @@ export default function DeudaHorasPage() {
                           usuarioId: e.target.value ? parseInt(e.target.value) : undefined,
                         })
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                      className="w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
                       required
                     >
                       <option value="">Selecciona un usuario...</option>
@@ -623,11 +625,11 @@ export default function DeudaHorasPage() {
                 )}
 
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                     <Clock className="h-4 w-4" />
                     Tiempo Adeudado *
                   </label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     <div>
                       <label className="text-xs text-gray-500 mb-1 block">Horas</label>
                       <input
@@ -636,7 +638,7 @@ export default function DeudaHorasPage() {
                         max="16"
                         value={hoursInput}
                         onChange={(e) => setHoursInput(Math.max(0, Math.min(16, parseInt(e.target.value) || 0)))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                        className="w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
                         placeholder="0"
                       />
                     </div>
@@ -648,7 +650,7 @@ export default function DeudaHorasPage() {
                         max="59"
                         value={minutesInput}
                         onChange={(e) => setMinutesInput(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                        className="w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
                         placeholder="0"
                       />
                     </div>
@@ -659,7 +661,7 @@ export default function DeudaHorasPage() {
                 </div>
 
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                     <Calendar className="h-4 w-4" />
                     Fecha *
                   </label>
@@ -669,13 +671,13 @@ export default function DeudaHorasPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, date: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                    className="w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2 block">
                     Motivo (opcional)
                   </label>
                   <textarea
@@ -684,23 +686,23 @@ export default function DeudaHorasPage() {
                       setFormData({ ...formData, reason: e.target.value })
                     }
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
                     placeholder="Ej: Ausencia por motivos personales"
                   />
                 </div>
 
-                <div className="flex gap-3 pt-4">
+                <div className="flex gap-2 sm:gap-3 pt-3 sm:pt-4">
                   <button
                     type="button"
                     onClick={() => setShowCreateModal(false)}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex-1 px-4 py-2 min-h-[44px] border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={createMutation.isPending}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                   >
                     <Plus className="h-4 w-4" />
                     {createMutation.isPending ? 'Creando...' : 'Crear Deuda'}
@@ -715,42 +717,42 @@ export default function DeudaHorasPage() {
       {/* Edit Modal - Admin Only */}
       <AnimatePresence>
         {editingDebt && canManageDebt && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-50">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl"
+              className="bg-white rounded-lg sm:rounded-xl max-w-md w-full p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
             >
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <div className="p-2 bg-blue-100 rounded-lg">
-                    <Edit className="text-blue-600" size={20} />
+                    <Edit className="text-blue-600 h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-900">
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-900">
                       Editar Deuda
                     </h3>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-xs sm:text-sm text-gray-500">
                       {editingDebt.usuario?.nombre}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setEditingDebt(null)}
-                  className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded"
+                  className="text-gray-400 hover:text-gray-600 p-1.5 hover:bg-gray-100 rounded min-h-[36px] min-w-[36px] flex items-center justify-center"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
-              <form onSubmit={handleEdit} className="space-y-4">
+              <form onSubmit={handleEdit} className="space-y-3 sm:space-y-4">
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                     <Clock className="h-4 w-4" />
                     Deuda Original
                   </label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     <div>
                       <label className="text-xs text-gray-500 mb-1 block">Horas</label>
                       <input
@@ -759,7 +761,7 @@ export default function DeudaHorasPage() {
                         max="16"
                         value={editHoursOwed}
                         onChange={(e) => setEditHoursOwed(Math.max(0, Math.min(16, parseInt(e.target.value) || 0)))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                        className="w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
                       />
                     </div>
                     <div>
@@ -770,18 +772,18 @@ export default function DeudaHorasPage() {
                         max="59"
                         value={editMinutesOwed}
                         onChange={(e) => setEditMinutesOwed(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                        className="w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
                       />
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                     <Clock className="h-4 w-4" />
                     Pendiente
                   </label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     <div>
                       <label className="text-xs text-gray-500 mb-1 block">Horas</label>
                       <input
@@ -790,7 +792,7 @@ export default function DeudaHorasPage() {
                         max="16"
                         value={editHoursRemaining}
                         onChange={(e) => setEditHoursRemaining(Math.max(0, Math.min(16, parseInt(e.target.value) || 0)))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                        className="w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
                       />
                     </div>
                     <div>
@@ -801,14 +803,14 @@ export default function DeudaHorasPage() {
                         max="59"
                         value={editMinutesRemaining}
                         onChange={(e) => setEditMinutesRemaining(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                        className="w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
                       />
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2 block">
                     Motivo de Edición *
                   </label>
                   <textarea
@@ -817,7 +819,7 @@ export default function DeudaHorasPage() {
                       setEditFormData({ ...editFormData, adminReason: e.target.value })
                     }
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
                     placeholder="Describe el motivo de esta modificación..."
                     required
                   />
@@ -826,21 +828,21 @@ export default function DeudaHorasPage() {
                   </p>
                 </div>
 
-                <div className="flex gap-3 pt-4">
+                <div className="flex gap-2 sm:gap-3 pt-3 sm:pt-4">
                   <button
                     type="button"
                     onClick={() => setEditingDebt(null)}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex-1 px-4 py-2 min-h-[44px] border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={updateMutation.isPending}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                   >
                     <Edit className="h-4 w-4" />
-                    {updateMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
+                    {updateMutation.isPending ? 'Guardando...' : 'Guardar'}
                   </button>
                 </div>
               </form>
@@ -852,38 +854,38 @@ export default function DeudaHorasPage() {
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {deletingDebt && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-50">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl"
+              className="bg-white rounded-lg sm:rounded-xl max-w-md w-full p-4 sm:p-6 shadow-2xl"
             >
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                 <div className="p-2 bg-red-100 rounded-lg">
-                  <Trash2 className="text-red-600" size={20} />
+                  <Trash2 className="text-red-600 h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900">
                   Eliminar Deuda
                 </h3>
               </div>
 
-              <p className="text-gray-600 mb-6">
+              <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
                 ¿Estás seguro de eliminar esta deuda de <strong>{deletingDebt.usuario?.nombre}</strong>?
                 Esta acción no se puede deshacer.
               </p>
 
-              <div className="flex gap-3">
+              <div className="flex gap-2 sm:gap-3">
                 <button
                   onClick={() => setDeletingDebt(null)}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-2 min-h-[44px] border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleDelete}
                   disabled={deleteMutation.isPending}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   <Trash2 className="h-4 w-4" />
                   {deleteMutation.isPending ? 'Eliminando...' : 'Eliminar'}
@@ -897,52 +899,52 @@ export default function DeudaHorasPage() {
       {/* Deduction History Modal */}
       <AnimatePresence>
         {viewingHistoryDebt && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-50">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-white rounded-xl max-w-2xl w-full p-6 shadow-2xl max-h-[80vh] overflow-hidden flex flex-col"
+              className="bg-white rounded-lg sm:rounded-xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-hidden flex flex-col"
             >
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <div className="p-2 bg-indigo-100 rounded-lg">
-                    <History className="text-indigo-600" size={20} />
+                    <History className="text-indigo-600 h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-900">
                       Historial de Pagos
                     </h3>
-                    <p className="text-sm text-gray-600">
-                      {viewingHistoryDebt.usuario?.nombre || 'Mi deuda'} - Deuda del {format(new Date(viewingHistoryDebt.date), 'dd MMM yyyy', { locale: es })}
+                    <p className="text-xs sm:text-sm text-gray-600 truncate">
+                      {viewingHistoryDebt.usuario?.nombre || 'Mi deuda'} - {format(new Date(viewingHistoryDebt.date), 'dd MMM yyyy', { locale: es })}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setViewingHistoryDebt(null)}
-                  className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded"
+                  className="text-gray-400 hover:text-gray-600 p-1.5 hover:bg-gray-100 rounded min-h-[36px] min-w-[36px] flex items-center justify-center flex-shrink-0"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
               {/* Debt Summary */}
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-amber-50 rounded-lg p-4 text-center">
-                  <p className="text-xs text-amber-600 font-medium mb-1">Deuda Original</p>
-                  <p className="text-xl font-bold text-amber-900">
+              <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
+                <div className="bg-amber-50 rounded-lg p-2 sm:p-4 text-center">
+                  <p className="text-xs text-amber-600 font-medium mb-1">Original</p>
+                  <p className="text-base sm:text-xl font-bold text-amber-900">
                     {HourDebtService.minutesToHoursString(viewingHistoryDebt.minutesOwed)}
                   </p>
                 </div>
-                <div className="bg-green-50 rounded-lg p-4 text-center">
-                  <p className="text-xs text-green-600 font-medium mb-1">Ya Pagado</p>
-                  <p className="text-xl font-bold text-green-900">
+                <div className="bg-green-50 rounded-lg p-2 sm:p-4 text-center">
+                  <p className="text-xs text-green-600 font-medium mb-1">Pagado</p>
+                  <p className="text-base sm:text-xl font-bold text-green-900">
                     {HourDebtService.minutesToHoursString(viewingHistoryDebt.minutesOwed - viewingHistoryDebt.remainingMinutes)}
                   </p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4 text-center">
+                <div className="bg-gray-50 rounded-lg p-2 sm:p-4 text-center">
                   <p className="text-xs text-gray-600 font-medium mb-1">Pendiente</p>
-                  <p className="text-xl font-bold text-gray-900">
+                  <p className="text-base sm:text-xl font-bold text-gray-900">
                     {HourDebtService.minutesToHoursString(viewingHistoryDebt.remainingMinutes)}
                   </p>
                 </div>
@@ -950,43 +952,43 @@ export default function DeudaHorasPage() {
 
               {/* Deduction Timeline */}
               <div className="flex-1 overflow-y-auto">
-                <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <h4 className="text-xs sm:text-sm font-semibold text-gray-700 mb-2 sm:mb-3 flex items-center gap-2">
                   <FileText className="h-4 w-4" />
                   Pagos Realizados
                 </h4>
 
                 {historyLoading ? (
-                  <div className="text-center py-8">
+                  <div className="text-center py-6 sm:py-8">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600 mx-auto"></div>
-                    <p className="text-sm text-gray-500 mt-2">Cargando historial...</p>
+                    <p className="text-xs sm:text-sm text-gray-500 mt-2">Cargando historial...</p>
                   </div>
                 ) : deductionHistory && deductionHistory.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="space-y-2 sm:space-y-3">
                     {deductionHistory.map((deduction, index) => (
                       <motion.div
                         key={deduction.id}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.1 }}
-                        className="flex items-start gap-3 p-3 bg-green-50 border border-green-100 rounded-lg"
+                        className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-green-50 border border-green-100 rounded-lg"
                       >
-                        <div className="p-1.5 bg-green-100 rounded-full mt-0.5">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        <div className="p-1 sm:p-1.5 bg-green-100 rounded-full mt-0.5 flex-shrink-0">
+                          <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
                         </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <p className="font-medium text-green-900">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                            <p className="font-medium text-green-900 text-sm">
                               -{HourDebtService.minutesToHoursString(deduction.minutesDeducted)}
                             </p>
                             <span className="text-xs text-gray-500">
                               {format(new Date(deduction.deductedAt), 'dd MMM yyyy HH:mm', { locale: es })}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-600 mt-1">
-                            Pagado con registro de trabajo #{deduction.registroHorasId}
+                          <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                            Registro #{deduction.registroHorasId}
                             {deduction.registroHoras && (
                               <span className="ml-1">
-                                ({format(new Date(deduction.registroHoras.fecha), 'dd MMM', { locale: es })} - {deduction.registroHoras.horas}h trabajadas)
+                                ({format(new Date(deduction.registroHoras.fecha), 'dd MMM', { locale: es })} - {deduction.registroHoras.horas}h)
                               </span>
                             )}
                           </p>
@@ -995,9 +997,9 @@ export default function DeudaHorasPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <Clock className="h-10 w-10 mx-auto mb-2 text-gray-300" />
-                    <p className="text-sm">Esta deuda aún no tiene pagos registrados</p>
+                  <div className="text-center py-6 sm:py-8 text-gray-500">
+                    <Clock className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 text-gray-300" />
+                    <p className="text-xs sm:text-sm">Esta deuda aún no tiene pagos registrados</p>
                     <p className="text-xs mt-1">
                       Los pagos se realizan automáticamente cuando trabajas más de 8h diarias
                     </p>
@@ -1005,10 +1007,10 @@ export default function DeudaHorasPage() {
                 )}
               </div>
 
-              <div className="mt-6 pt-4 border-t border-gray-200">
+              <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-gray-200">
                 <button
                   onClick={() => setViewingHistoryDebt(null)}
-                  className="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                  className="w-full px-4 py-2 min-h-[44px] bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm"
                 >
                   Cerrar
                 </button>

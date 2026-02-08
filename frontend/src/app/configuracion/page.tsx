@@ -117,46 +117,44 @@ function SmtpConfigSection() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Section Header */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900">Configuración de Correo SMTP</h2>
-        <p className="text-gray-600 mt-1">
-          Configura el servidor SMTP para envío de notificaciones por correo electrónico
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Configuración de Correo SMTP</h2>
+        <p className="text-sm sm:text-base text-gray-600 mt-1">
+          Configura el servidor SMTP para envío de notificaciones
         </p>
       </div>
 
       {/* Info Card */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
-        <Mail className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 flex items-start gap-2 sm:gap-3">
+        <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 mt-0.5 flex-shrink-0" />
         <div>
-          <h3 className="text-sm font-medium text-blue-900">Información</h3>
-          <p className="text-sm text-blue-700 mt-1">
-            El sistema enviará correos para recuperación de contraseña y
-            activación de cuentas. Asegúrate de usar una contraseña de
-            aplicación (no tu contraseña normal) para servicios como Gmail.
+          <h3 className="text-xs sm:text-sm font-medium text-blue-900">Información</h3>
+          <p className="text-xs sm:text-sm text-blue-700 mt-1">
+            Usa una contraseña de aplicación (no tu contraseña normal) para Gmail.
           </p>
         </div>
       </div>
 
       {/* Status indicator */}
       {config && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
-          <CheckCircle className="h-5 w-5 text-green-600" />
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+          <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
           <div>
-            <h3 className="text-sm font-medium text-green-900">SMTP Configurado</h3>
-            <p className="text-sm text-green-700">
-              El servidor SMTP está configurado y listo para enviar correos.
+            <h3 className="text-xs sm:text-sm font-medium text-green-900">SMTP Configurado</h3>
+            <p className="text-xs sm:text-sm text-green-700">
+              El servidor SMTP está listo para enviar correos.
             </p>
           </div>
         </div>
       )}
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
         {/* SMTP Host */}
         <div>
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+          <label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
             <Server className="h-4 w-4" />
             Servidor SMTP *
           </label>
@@ -164,43 +162,43 @@ function SmtpConfigSection() {
             type="text"
             value={formData.host}
             onChange={(e) => setFormData({ ...formData, host: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+            className="w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
             placeholder="smtp.gmail.com"
             required
           />
           <p className="text-xs text-gray-500 mt-1">
-            Ejemplo: smtp.gmail.com, smtp.office365.com, smtp-mail.outlook.com
+            Ej: smtp.gmail.com, smtp.office365.com
           </p>
         </div>
 
         {/* Port + Secure */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">
+            <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2 block">
               Puerto *
             </label>
             <input
               type="number"
               value={formData.port}
               onChange={(e) => setFormData({ ...formData, port: parseInt(e.target.value) })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+              className="w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
               placeholder="587"
               required
             />
             <p className="text-xs text-gray-500 mt-1">
-              Común: 587 (STARTTLS), 465 (SSL)
+              587 (STARTTLS), 465 (SSL)
             </p>
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">
+            <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2 block">
               Seguridad
             </label>
-            <label className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+            <label className="flex items-center gap-2 px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
               <input
                 type="checkbox"
                 checked={formData.secure}
                 onChange={(e) => setFormData({ ...formData, secure: e.target.checked })}
-                className="rounded border-gray-300"
+                className="rounded border-gray-300 h-4 w-4"
               />
               <span className="text-sm">Usar SSL/TLS</span>
             </label>
@@ -209,7 +207,7 @@ function SmtpConfigSection() {
 
         {/* Auth User */}
         <div>
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+          <label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
             <Mail className="h-4 w-4" />
             Usuario (Email) *
           </label>
@@ -222,7 +220,7 @@ function SmtpConfigSection() {
                 auth: { ...formData.auth, user: e.target.value },
               })
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+            className="w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
             placeholder="tu-email@gmail.com"
             required
           />
@@ -230,7 +228,7 @@ function SmtpConfigSection() {
 
         {/* Auth Password */}
         <div>
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+          <label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
             <Lock className="h-4 w-4" />
             Contraseña de Aplicación *
           </label>
@@ -244,36 +242,35 @@ function SmtpConfigSection() {
                   auth: { ...formData.auth, pass: e.target.value },
                 })
               }
-              className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+              className="w-full px-3 py-2 pr-12 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
               placeholder="••••••••••••••••"
               required
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-2 min-h-[36px] min-w-[36px] flex items-center justify-center"
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
           <p className="text-xs text-gray-500 mt-1">
-            Para Gmail:{' '}
             <a
               href="https://myaccount.google.com/apppasswords"
               target="_blank"
               rel="noopener noreferrer"
               className="text-indigo-600 hover:underline"
             >
-              Genera una contraseña de aplicación aquí
+              Generar contraseña de aplicación (Gmail)
             </a>
           </p>
         </div>
 
         {/* From Name + Email */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">
-              Nombre del Remitente *
+            <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2 block">
+              Nombre Remitente *
             </label>
             <input
               type="text"
@@ -284,14 +281,14 @@ function SmtpConfigSection() {
                   from: { ...formData.from, name: e.target.value },
                 })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+              className="w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
               placeholder="Sistema Zaiken"
               required
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">
-              Email del Remitente *
+            <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2 block">
+              Email Remitente *
             </label>
             <input
               type="email"
@@ -302,7 +299,7 @@ function SmtpConfigSection() {
                   from: { ...formData.from, email: e.target.value },
                 })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+              className="w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
               placeholder="noreply@zaiken.com"
               required
             />
@@ -310,12 +307,12 @@ function SmtpConfigSection() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 pt-4 border-t border-gray-200">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4 border-t border-gray-200">
           <button
             type="button"
             onClick={handleTestConnection}
             disabled={testMutation.isPending}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
           >
             <Send className="h-4 w-4" />
             {testMutation.isPending ? 'Probando...' : 'Probar Conexión'}
@@ -323,10 +320,10 @@ function SmtpConfigSection() {
           <button
             type="submit"
             disabled={updateMutation.isPending}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
           >
             <Save className="h-4 w-4" />
-            {updateMutation.isPending ? 'Guardando...' : 'Guardar Configuración'}
+            {updateMutation.isPending ? 'Guardando...' : 'Guardar'}
           </button>
         </div>
       </form>
@@ -339,13 +336,13 @@ function ComingSoonSection({ section }: { section: ConfigSection }) {
   const Icon = section.icon;
 
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="p-4 bg-gray-100 rounded-full mb-4">
-        <Icon className="h-12 w-12 text-gray-400" />
+    <div className="flex flex-col items-center justify-center py-8 sm:py-16 text-center px-4">
+      <div className="p-3 sm:p-4 bg-gray-100 rounded-full mb-3 sm:mb-4">
+        <Icon className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400" />
       </div>
-      <h2 className="text-xl font-semibold text-gray-900 mb-2">{section.name}</h2>
-      <p className="text-gray-600 mb-4">{section.description}</p>
-      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800">
+      <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">{section.name}</h2>
+      <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">{section.description}</p>
+      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-amber-100 text-amber-800">
         Próximamente
       </span>
     </div>
@@ -359,13 +356,13 @@ export default function ConfiguracionPage() {
   if (!canManage) {
     return (
       <MainLayout>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-[60vh] flex items-center justify-center p-4">
           <div className="text-center">
-            <AlertCircle size={64} className="text-red-600 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <AlertCircle className="h-12 w-12 sm:h-16 sm:w-16 text-red-600 mx-auto mb-3 sm:mb-4" />
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
               Acceso Denegado
             </h1>
-            <p className="text-gray-600">
+            <p className="text-sm sm:text-base text-gray-600">
               No tienes permisos para acceder a esta página
             </p>
           </div>
@@ -397,34 +394,34 @@ export default function ConfiguracionPage() {
 
   return (
     <MainLayout>
-      <div className="p-6">
-        <div className="max-w-6xl mx-auto space-y-6">
+      <div className="p-4 sm:p-6">
+        <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
           {/* Header */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-            <div className="flex items-center gap-3">
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="p-2 bg-indigo-100 rounded-lg">
-                <Settings className="text-indigo-600" size={28} />
+                <Settings className="text-indigo-600 h-5 w-5 sm:h-7 sm:w-7" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
-                  Configuración del Sistema
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+                  Configuración
                 </h1>
-                <p className="text-gray-600">
-                  Administra las opciones y preferencias del sistema
+                <p className="text-sm sm:text-base text-gray-600">
+                  Administra las opciones del sistema
                 </p>
               </div>
             </div>
           </div>
 
           {/* Main Content: Sidebar + Content Area */}
-          <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
             {/* Sidebar - Section Menu */}
             <div className="lg:w-72 flex-shrink-0">
-              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
-                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 px-2">
+              <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-3 sm:p-4">
+                <h3 className="text-xs sm:text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2 sm:mb-3 px-2">
                   Secciones
                 </h3>
-                <nav className="space-y-1">
+                <nav className="flex flex-row lg:flex-col gap-2 lg:gap-1 overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0">
                   {CONFIG_SECTIONS.map((section) => {
                     const Icon = section.icon;
                     const isActive = activeSection === section.id;
@@ -433,22 +430,22 @@ export default function ConfiguracionPage() {
                       <button
                         key={section.id}
                         onClick={() => setActiveSection(section.id)}
-                        className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors ${
+                        className={`flex-shrink-0 lg:w-full flex items-center gap-2 sm:gap-3 px-3 py-2 sm:py-3 min-h-[44px] rounded-lg text-left transition-colors ${
                           isActive
                             ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                            : 'text-gray-700 hover:bg-gray-50'
+                            : 'text-gray-700 hover:bg-gray-50 border border-transparent'
                         }`}
                       >
-                        <div className={`p-2 rounded-lg ${
+                        <div className={`p-1.5 sm:p-2 rounded-lg flex-shrink-0 ${
                           isActive ? 'bg-indigo-100' : 'bg-gray-100'
                         }`}>
-                          <Icon className={`h-5 w-5 ${
+                          <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${
                             isActive ? 'text-indigo-600' : 'text-gray-500'
                           }`} />
                         </div>
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 hidden lg:block">
                           <div className="flex items-center gap-2">
-                            <span className={`font-medium truncate ${
+                            <span className={`text-sm font-medium truncate ${
                               isActive ? 'text-indigo-700' : 'text-gray-900'
                             }`}>
                               {section.name}
@@ -463,8 +460,13 @@ export default function ConfiguracionPage() {
                             {section.description}
                           </p>
                         </div>
+                        <span className={`lg:hidden text-xs sm:text-sm font-medium whitespace-nowrap ${
+                          isActive ? 'text-indigo-700' : 'text-gray-900'
+                        }`}>
+                          {section.name}
+                        </span>
                         {isActive && (
-                          <ChevronRight className="h-4 w-4 text-indigo-400 flex-shrink-0" />
+                          <ChevronRight className="h-4 w-4 text-indigo-400 flex-shrink-0 hidden lg:block" />
                         )}
                       </button>
                     );
@@ -475,7 +477,7 @@ export default function ConfiguracionPage() {
 
             {/* Content Area */}
             <div className="flex-1 min-w-0">
-              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+              <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
                 {renderSectionContent()}
               </div>
             </div>

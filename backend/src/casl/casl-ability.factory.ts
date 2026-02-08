@@ -6,10 +6,18 @@ import {
   PureAbility,
 } from '@casl/ability';
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { Action } from './action.enum';
 import { Subjects } from './subjects.type';
 
 export type AppAbility = PureAbility<[Action, Subjects]>;
+
+// Permission from database with resolved values
+export interface DynamicPermission {
+  subject: string;
+  action: string;
+  conditions?: object | null;
+}
 
 // Helper function para detectar el tipo de subject
 function detectSubjectType(item: any): ExtractSubjectType<Subjects> {
@@ -22,7 +30,94 @@ function detectSubjectType(item: any): ExtractSubjectType<Subjects> {
 
 @Injectable()
 export class CaslAbilityFactory {
-  createForUser(user: { id: number; rol: string; negocioId: number }) {
+  constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * Create ability for user with dynamic permissions (async)
+   * Uses database-stored permissions if user has a securityRoleId
+   */
+  async createForUserAsync(user: {
+    id: number;
+    rol: string;
+    negocioId: number;
+    securityRoleId?: number | null;
+  }): Promise<AppAbility> {
+    // If user has a security role, load permissions from database
+    if (user.securityRoleId) {
+      const permissions = await this.loadDynamicPermissions(user.securityRoleId);
+      return this.buildAbilityFromPermissions(permissions, user);
+    }
+
+    // Fall back to legacy hardcoded permissions
+    return this.createForUser(user);
+  }
+
+  /**
+   * Load permissions for a security role from the database
+   */
+  private async loadDynamicPermissions(roleId: number): Promise<DynamicPermission[]> {
+    const rolePermissions = await this.prisma.rolePermission.findMany({
+      where: { roleId },
+      include: { permission: true },
+    });
+
+    return rolePermissions.map((rp) => ({
+      subject: rp.permission.subject,
+      action: rp.permission.action,
+      conditions: rp.conditions as object | null,
+    }));
+  }
+
+  /**
+   * Build ability from dynamic permissions
+   */
+  private buildAbilityFromPermissions(
+    permissions: DynamicPermission[],
+    user: { id: number },
+  ): AppAbility {
+    const { can, build } = new AbilityBuilder<AppAbility>(
+      PureAbility as AbilityClass<AppAbility>,
+    );
+
+    for (const permission of permissions) {
+      // Handle special "own" condition - replace with actual user id
+      let conditions = permission.conditions;
+      if (conditions && typeof conditions === 'object') {
+        conditions = this.resolveConditions(conditions, user);
+      }
+
+      if (conditions) {
+        can(permission.action as Action, permission.subject as any, conditions);
+      } else {
+        can(permission.action as Action, permission.subject as any);
+      }
+    }
+
+    return build({ detectSubjectType });
+  }
+
+  /**
+   * Resolve dynamic conditions like { usuarioId: "own" } -> { usuarioId: 123 }
+   */
+  private resolveConditions(conditions: object, user: { id: number }): object {
+    const resolved: Record<string, any> = {};
+
+    for (const [key, value] of Object.entries(conditions)) {
+      if (value === 'own' || value === '$own') {
+        resolved[key] = user.id;
+      } else {
+        resolved[key] = value;
+      }
+    }
+
+    return resolved;
+  }
+
+  /**
+   * Create ability for user using legacy hardcoded permissions (sync)
+   * Used when user doesn't have a securityRoleId
+   */
+  createForUser(user: { id: number; rol: string; negocioId: number }): AppAbility {
     const { can, cannot, build } = new AbilityBuilder<AppAbility>(
       PureAbility as AbilityClass<AppAbility>,
     );
@@ -80,6 +175,16 @@ export class CaslAbilityFactory {
 
       // Settings (SMTP, configuración del sistema)
       can(Action.Manage, 'Settings');
+
+      // Security Management
+      can(Action.Manage, 'SecurityRole');
+      can(Action.Read, 'Permission');
+      can(Action.Read, 'SecurityAuditLog');
+      can(Action.Manage, 'SecuritySession');
+      can(Action.Manage, 'SecuritySettings');
+      can(Action.Read, 'Dashboard');
+      can(Action.Read, 'Estadisticas');
+      can(Action.Manage, 'Negocio');
 
       return build({ detectSubjectType });
     }

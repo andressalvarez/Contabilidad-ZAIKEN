@@ -13,6 +13,12 @@ import {
   HourDebt,
   DebtDeduction,
   HourDebtAuditLog,
+  SecurityRole,
+  Permission,
+  RolePermission,
+  SecurityAuditLog,
+  SecuritySession,
+  SecuritySettings,
 } from '@prisma/client';
 
 export type Subjects =
@@ -45,4 +51,20 @@ export type Subjects =
   | 'HourDebtAuditLog'
   | HourDebtAuditLog
   | 'Settings'
+  // Security Management
+  | 'SecurityRole'
+  | SecurityRole
+  | 'Permission'
+  | Permission
+  | 'RolePermission'
+  | RolePermission
+  | 'SecurityAuditLog'
+  | SecurityAuditLog
+  | 'SecuritySession'
+  | SecuritySession
+  | 'SecuritySettings'
+  | SecuritySettings
+  | 'Dashboard'
+  | 'Estadisticas'
+  | 'Negocio'
   | 'all';

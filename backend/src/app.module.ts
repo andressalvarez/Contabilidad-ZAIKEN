@@ -22,6 +22,7 @@ import { CaslModule } from './casl/casl.module';
 import { EmailModule } from './email/email.module';
 import { SettingsModule } from './settings/settings.module';
 import { HourDebtModule } from './hour-debt/hour-debt.module';
+import { SecurityModule } from './security/security.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { HourDebtModule } from './hour-debt/hour-debt.module';
     EmailModule,
     SettingsModule,
     HourDebtModule,
+    SecurityModule,
   ],
   controllers: [AppController],
   providers: [

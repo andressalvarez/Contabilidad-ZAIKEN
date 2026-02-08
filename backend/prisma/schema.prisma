@@ -33,6 +33,11 @@ model Negocio {
   vsConfiguraciones        VSConfiguracion[]
   hourDebts                HourDebt[]
 
+  // Sistema de seguridad
+  securityRoles            SecurityRole[]
+  securityAuditLogs        SecurityAuditLog[]
+  securitySettings         SecuritySettings?
+
   @@map("negocios")
 }
 
@@ -234,7 +239,7 @@ model Usuario {
   email     String   @unique
   password  String
   nombre    String
-  rol       String   @default("USER") // ADMIN_NEGOCIO, USER, EMPLEADO
+  rol       String   @default("USER") // ADMIN_NEGOCIO, USER, EMPLEADO (legacy)
   activo    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -255,9 +260,21 @@ model Usuario {
   resetPasswordToken   String?                    // Token de recuperación de contraseña
   resetPasswordExpires DateTime?                  // Expiración del token de reset
 
+  // Sistema de seguridad dinámico
+  securityRoleId       Int?                       // FK al rol de seguridad dinámico
+  failedLoginAttempts  Int       @default(0)      // Intentos fallidos de login
+  lockedUntil          DateTime?                  // Bloqueado hasta esta fecha
+  lastPasswordChange   DateTime?                  // Último cambio de contraseña
+  mustChangePassword   Boolean   @default(false)  // Debe cambiar contraseña
+
   // Relación con negocio
   negocio       Negocio   @relation(fields: [negocioId], references: [id])
   rolNegocio    Rol?      @relation("UsuarioRolNegocio", fields: [rolId], references: [id])
+
+  // Sistema de seguridad
+  securityRole         SecurityRole?     @relation(fields: [securityRoleId], references: [id])
+  securityAuditLogs    SecurityAuditLog[]
+  securitySessions     SecuritySession[]
 
   // Relaciones inversas (propiedad)
   categorias    Categoria[]
@@ -284,6 +301,8 @@ model Usuario {
   @@index([rolId])
   @@index([activationToken])
   @@index([resetPasswordToken])
+  @@index([securityRoleId])
+  @@index([lockedUntil])
   @@map("usuarios")
 }
 
@@ -491,4 +510,142 @@ model HourDebtAuditLog {
   @@index([performedAt])
   @@index([action])
   @@map("hour_debt_audit_log")
+}
+
+// ==========================
+// SISTEMA DE SEGURIDAD DINÁMICO
+// ==========================
+
+// Roles de seguridad configurables por negocio
+model SecurityRole {
+  id          Int       @id @default(autoincrement())
+  negocioId   Int       @map("negocio_id")
+  name        String    // "Contador", "Supervisor", etc.
+  description String?
+  color       String?   // Color para UI (hex)
+  isSystem    Boolean   @default(false) @map("is_system") // true = no editable (ADMIN, etc.)
+  priority    Int       @default(0) // Mayor = más importante
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  negocio     Negocio   @relation(fields: [negocioId], references: [id])
+  permissions RolePermission[]
+  users       Usuario[]
+
+  @@unique([negocioId, name])
+  @@index([negocioId])
+  @@index([negocioId, active])
+  @@map("security_roles")
+}
+
+// Catálogo de permisos disponibles (global, no por negocio)
+model Permission {
+  id           Int       @id @default(autoincrement())
+  subject      String    // "Usuario", "RegistroHoras", "Transaccion", etc.
+  action       String    // "create", "read", "update", "delete", "approve", "manage"
+  description  String    // Descripción legible
+  category     String    // "users", "hours", "finance", "security", "settings"
+  displayOrder Int       @default(0) @map("display_order") // Orden en UI
+
+  rolePermissions RolePermission[]
+
+  @@unique([subject, action])
+  @@index([category])
+  @@map("permissions")
+}
+
+// Permisos asignados a cada rol
+model RolePermission {
+  id           Int       @id @default(autoincrement())
+  roleId       Int       @map("role_id")
+  permissionId Int       @map("permission_id")
+  conditions   Json?     // Condiciones CASL: { "usuarioId": "own" } para permisos sobre propios recursos
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  role         SecurityRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission   @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+// Log de auditoría de seguridad
+model SecurityAuditLog {
+  id          Int       @id @default(autoincrement())
+  negocioId   Int       @map("negocio_id")
+  userId      Int?      @map("user_id")       // null para intentos fallidos
+  eventType   String    @map("event_type")    // LOGIN, LOGOUT, LOGIN_FAILED, PASSWORD_CHANGE, ROLE_ASSIGNED, etc.
+  targetType  String?   @map("target_type")   // "Usuario", "SecurityRole", etc.
+  targetId    Int?      @map("target_id")     // ID del recurso afectado
+  description String                           // Descripción legible del evento
+  metadata    Json?                            // Datos adicionales (cambios, valores anteriores, etc.)
+  ipAddress   String?   @map("ip_address")
+  userAgent   String?   @map("user_agent")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  negocio     Negocio   @relation(fields: [negocioId], references: [id])
+  user        Usuario?  @relation(fields: [userId], references: [id])
+
+  @@index([negocioId, createdAt])
+  @@index([negocioId, eventType])
+  @@index([negocioId, userId])
+  @@index([userId, createdAt])
+  @@map("security_audit_logs")
+}
+
+// Sesiones activas de usuarios
+model SecuritySession {
+  id           String    @id @default(uuid())
+  userId       Int       @map("user_id")
+  negocioId    Int       @map("negocio_id")
+  tokenHash    String    @unique @map("token_hash") // Hash del JWT para invalidación
+  deviceInfo   String?   @map("device_info")        // Información del dispositivo
+  ipAddress    String?   @map("ip_address")
+  lastActivity DateTime  @default(now()) @map("last_activity")
+  expiresAt    DateTime  @map("expires_at")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  user         Usuario   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isActive])
+  @@index([expiresAt])
+  @@index([negocioId])
+  @@map("security_sessions")
+}
+
+// Configuración de seguridad por negocio
+model SecuritySettings {
+  id                      Int      @id @default(autoincrement())
+  negocioId               Int      @unique @map("negocio_id")
+
+  // Políticas de contraseña
+  minPasswordLength       Int      @default(8)  @map("min_password_length")
+  requireUppercase        Boolean  @default(true) @map("require_uppercase")
+  requireNumbers          Boolean  @default(true) @map("require_numbers")
+  requireSpecialChars     Boolean  @default(false) @map("require_special_chars")
+  passwordExpirationDays  Int      @default(0) @map("password_expiration_days") // 0 = no expira
+
+  // Políticas de sesión
+  sessionTimeoutMinutes   Int      @default(480) @map("session_timeout_minutes") // 8 horas
+  maxConcurrentSessions   Int      @default(5) @map("max_concurrent_sessions")
+
+  // Políticas de bloqueo
+  maxLoginAttempts        Int      @default(5) @map("max_login_attempts")
+  lockoutDurationMinutes  Int      @default(15) @map("lockout_duration_minutes")
+
+  // Auditoría
+  auditRetentionDays      Int      @default(365) @map("audit_retention_days")
+  logAllActions           Boolean  @default(true) @map("log_all_actions")
+
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  negocio                 Negocio  @relation(fields: [negocioId], references: [id])
+
+  @@map("security_settings")
 }

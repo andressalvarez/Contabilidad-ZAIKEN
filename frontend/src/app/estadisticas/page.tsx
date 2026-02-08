@@ -740,32 +740,33 @@ export default function EstadisticasPage() {
 
   return (
     <MainLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-8">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 sm:gap-6">
             <div>
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2">
                 <div className="p-2 bg-blue-100 rounded-lg">
-                  <BarChart3 className="text-blue-600" size={28} />
+                  <BarChart3 className="text-blue-600" size={24} />
                 </div>
-                <h1 className="text-3xl font-bold text-gray-900">Estadísticas</h1>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Estadísticas</h1>
               </div>
-              <p className="text-gray-600 ml-12">Análisis completo del rendimiento financiero y operativo</p>
+              <p className="text-sm sm:text-base text-gray-600 ml-10 sm:ml-12">Análisis completo del rendimiento financiero y operativo</p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
               <button
                 onClick={() => setShowCharts(!showCharts)}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors border border-gray-300"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 min-h-[44px] bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors border border-gray-300 text-sm sm:text-base"
               >
                 {showCharts ? <EyeOff size={18} /> : <Eye size={18} />}
-                {showCharts ? 'Ocultar' : 'Mostrar'} Gráficos
+                <span className="hidden sm:inline">{showCharts ? 'Ocultar' : 'Mostrar'} Gráficos</span>
+                <span className="sm:hidden">{showCharts ? 'Ocultar' : 'Ver'}</span>
               </button>
 
               <button
                 onClick={recargarGraficos}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm text-sm sm:text-base"
               >
                 <RefreshCw size={18} />
                 Recargar
@@ -775,15 +776,15 @@ export default function EstadisticasPage() {
         </div>
 
         {/* Filtros */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-8">
-          <div className="flex items-center gap-3 mb-6">
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
+          <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
             <div className="p-2 bg-orange-100 rounded-lg">
-              <Filter className="text-orange-600" size={20} />
+              <Filter className="text-orange-600" size={18} />
             </div>
-            <h3 className="text-lg font-semibold text-gray-800">Filtros de Análisis</h3>
+            <h3 className="text-base sm:text-lg font-semibold text-gray-800">Filtros de Análisis</h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <User size={16} className="inline mr-1" />
@@ -847,72 +848,72 @@ export default function EstadisticasPage() {
 
         {/* Gráficos */}
         {showCharts && (
-          <div className="space-y-8">
+          <div className="space-y-4 sm:space-y-6 lg:space-y-8">
             {/* Primera fila - Ingresos vs Gastos y Gastos por Categoría */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
               {/* Ingresos vs Gastos */}
-              <div id="ingresosGastosContainer" className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                <div className="flex items-center gap-3 mb-6">
+              <div id="ingresosGastosContainer" className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
+                <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
                   <div className="p-2 bg-green-100 rounded-lg">
-                    <DollarSign className="text-green-600" size={24} />
+                    <DollarSign className="text-green-600" size={20} />
                   </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-800">Ingresos vs Gastos</h3>
-                    <p className="text-sm text-gray-600">Análisis financiero general</p>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-800 truncate">Ingresos vs Gastos</h3>
+                    <p className="text-xs sm:text-sm text-gray-600">Análisis financiero general</p>
                   </div>
                 </div>
-                <div className="relative h-80">
+                <div className="relative h-60 sm:h-72 lg:h-80">
                   <canvas id="ingresosGastosChart"></canvas>
                 </div>
               </div>
 
               {/* Gastos por Categoría */}
-              <div id="gastosCategoriaContainer" className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                <div className="flex items-center gap-3 mb-6">
+              <div id="gastosCategoriaContainer" className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
+                <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
                   <div className="p-2 bg-red-100 rounded-lg">
-                    <PieChart className="text-red-600" size={24} />
+                    <PieChart className="text-red-600" size={20} />
                   </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-800">Gastos por Categoría</h3>
-                    <p className="text-sm text-gray-600">Top 10 categorías de gasto</p>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-800 truncate">Gastos por Categoría</h3>
+                    <p className="text-xs sm:text-sm text-gray-600">Top 10 categorías de gasto</p>
                   </div>
                 </div>
-                <div className="relative h-80">
+                <div className="relative h-60 sm:h-72 lg:h-80">
                   <canvas id="gastosCategoriaChart"></canvas>
                 </div>
               </div>
             </div>
 
             {/* Segunda fila - Performance de Campañas y Aportes y Utilidades */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
               {/* Performance de Campañas */}
-              <div id="campanasPerformanceContainer" className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                <div className="flex items-center gap-3 mb-6">
+              <div id="campanasPerformanceContainer" className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
+                <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
                   <div className="p-2 bg-blue-100 rounded-lg">
-                    <Target className="text-blue-600" size={24} />
+                    <Target className="text-blue-600" size={20} />
                   </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-800">Performance de Campañas</h3>
-                    <p className="text-sm text-gray-600">Ranking por utilidad generada</p>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-800 truncate">Performance de Campañas</h3>
+                    <p className="text-xs sm:text-sm text-gray-600">Ranking por utilidad generada</p>
                   </div>
                 </div>
-                <div className="relative h-80">
+                <div className="relative h-60 sm:h-72 lg:h-80">
                   <canvas id="campanasPerformanceChart"></canvas>
                 </div>
               </div>
 
               {/* Aportes por Usuario */}
-              <div id="aportesUtilidadesContainer" className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                <div className="flex items-center gap-3 mb-6">
+              <div id="aportesUtilidadesContainer" className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
+                <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
                   <div className="p-2 bg-purple-100 rounded-lg">
-                    <Users className="text-purple-600" size={24} />
+                    <Users className="text-purple-600" size={20} />
                   </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-800">Aportes por Usuario</h3>
-                    <p className="text-sm text-gray-600">Contribuciones totales por usuario</p>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-800 truncate">Aportes por Usuario</h3>
+                    <p className="text-xs sm:text-sm text-gray-600">Contribuciones totales por usuario</p>
                   </div>
                 </div>
-                <div className="relative h-80">
+                <div className="relative h-60 sm:h-72 lg:h-80">
                   <canvas id="aportesUtilidadesChart"></canvas>
                 </div>
               </div>
