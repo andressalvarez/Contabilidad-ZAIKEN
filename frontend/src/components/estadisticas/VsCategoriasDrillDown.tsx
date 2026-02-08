@@ -9,6 +9,7 @@ import { useCategorias } from '@/hooks/useCategorias';
 import { VSCategoriasService, type VSCarpeta, type VSGrupo, type DatosGrafico } from '@/services/vs-categorias.service';
 import { Transaccion, Usuario } from '@/types';
 import { toast } from 'sonner';
+import { showConfirm } from '@/lib/app-dialog';
 import {
   BarChart3,
   Filter,
@@ -66,7 +67,7 @@ const WhiteBg = {
     const { ctx, chartArea } = chart;
     ctx.save();
     ctx.globalCompositeOperation = 'destination-over';
-    ctx.fillStyle = opts?.color ?? '#ffffff';
+    ctx.fillStyle = opts?.color || '#ffffff';
     ctx.fillRect(chartArea.left, chartArea.top, chartArea.right - chartArea.left, chartArea.bottom - chartArea.top);
     ctx.restore();
   }
@@ -300,7 +301,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       if (selectedTipo) base.tipo = selectedTipo;
 
       if (seg.kind === 'group') {
-        const catIds = s.grupos[seg.id]?.categoriaIds ?? [];
+        const catIds = s.grupos[seg.id]?.categoriaIds || [];
         return { ...base, categoriasIds: catIds };
       } else {
         return { ...base, categoriaId: seg.id };
@@ -410,7 +411,7 @@ const VsCategoriasDrillDownInternal = forwardRef<VsCategoriasDrillDownRef, VsCat
       if (vsConfig.filtros.fechaHasta) rows = rows.filter(t => t.fecha <= vsConfig.filtros.fechaHasta);
 
       if (seg.kind === 'group') {
-        const catIds = vsConfig.grupos[seg.id]?.categoriaIds ?? [];
+        const catIds = vsConfig.grupos[seg.id]?.categoriaIds || [];
         return rows.filter(t => (t.categoriaId && catIds.includes(t.categoriaId)));
       } else {
         return rows.filter(t => t.categoriaId === seg.id);
@@ -2951,7 +2952,13 @@ const ManageModal = ({
       mensaje += `\n\nLos ${gruposEnCarpeta.length} grupos dentro de esta carpeta quedarán sin carpeta.`;
     }
 
-    if (confirm(mensaje)) {
+    const confirmed = await showConfirm({
+      title: 'Eliminar carpeta',
+      message: mensaje,
+      danger: true,
+      confirmText: 'Eliminar',
+    });
+    if (confirmed) {
       try {
         // Delete from database
         await VSCategoriasService.deleteCarpeta(carpetaId);
@@ -2983,7 +2990,13 @@ const ManageModal = ({
 
   const eliminarGrupo = async (grupoId: number) => {
     const grupo = vsConfig.grupos[grupoId];
-    if (confirm(`¿Estás seguro de eliminar el grupo "${grupo.nombre}"?`)) {
+    const confirmed = await showConfirm({
+      title: 'Eliminar grupo',
+      message: `¿Estás seguro de eliminar el grupo "${grupo.nombre}"?`,
+      danger: true,
+      confirmText: 'Eliminar',
+    });
+    if (confirmed) {
       try {
         // Delete from database
         await VSCategoriasService.deleteGrupo(grupoId);

@@ -16,13 +16,13 @@ import { DistribucionDetalleModule } from './distribucion-detalle/distribucion-d
 import { VSCategoriasModule } from './vs-categorias/vs-categorias.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
-import { RolesGuard } from './auth/roles.guard';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { CaslModule } from './casl/casl.module';
 import { EmailModule } from './email/email.module';
 import { SettingsModule } from './settings/settings.module';
 import { HourDebtModule } from './hour-debt/hour-debt.module';
 import { SecurityModule } from './security/security.module';
+import { PermissionsGuard } from './common/guards/permissions.guard';
 
 @Module({
   imports: [
@@ -59,10 +59,7 @@ import { SecurityModule } from './security/security.module';
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
-    {
-      provide: APP_GUARD,
-      useClass: RolesGuard,
-    },
+    PermissionsGuard,
   ],
 })
 export class AppModule {}

@@ -12,6 +12,8 @@ import {
 import { Plus, Trash2, Tags, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { useCategorias, useCreateCategoria, useDeleteCategoria } from '@/hooks/useCategorias';
 import { useTransacciones } from '@/hooks/useTransacciones';
+import { toast } from 'sonner';
+import { showConfirm } from '@/lib/app-dialog';
 
 export default function CategoriasPage() {
   const [inputValue, setInputValue] = useState('');
@@ -31,19 +33,19 @@ export default function CategoriasPage() {
   const handleAdd = () => {
     const nombre = inputValue.trim();
     if (!nombre) {
-      alert('Por favor ingresa el nombre de la categoría');
+      toast.error('Por favor ingresa el nombre de la categoría');
       return;
     }
     if (nombre.length < 2) {
-      alert('El nombre debe tener al menos 2 caracteres');
+      toast.error('El nombre debe tener al menos 2 caracteres');
       return;
     }
     if (nombre.length > 50) {
-      alert('El nombre no puede exceder 50 caracteres');
+      toast.error('El nombre no puede exceder 50 caracteres');
       return;
     }
     if (categorias.some((cat: any) => cat.nombre.toLowerCase() === nombre.toLowerCase())) {
-      alert('Ya existe una categoría con ese nombre');
+      toast.error('Ya existe una categoría con ese nombre');
       return;
     }
 
@@ -55,13 +57,19 @@ export default function CategoriasPage() {
   };
 
   // Delete category
-  const handleDelete = (categoria: any) => {
+  const handleDelete = async (categoria: any) => {
     const uso = getUso(categoria.id);
     if (uso > 0) {
-      alert(`No se puede eliminar: la categoría está en uso en ${uso} transacción(es)`);
+      toast.error(`No se puede eliminar: la categoría está en uso en ${uso} transacción(es)`);
       return;
     }
-    if (window.confirm(`¿Eliminar la categoría "${categoria.nombre}"?`)) {
+    const confirmed = await showConfirm({
+      title: 'Eliminar categoría',
+      message: `¿Eliminar la categoría "${categoria.nombre}"?`,
+      danger: true,
+      confirmText: 'Eliminar',
+    });
+    if (confirmed) {
       deleteCategoriaMutation.mutate(categoria.id);
     }
   };

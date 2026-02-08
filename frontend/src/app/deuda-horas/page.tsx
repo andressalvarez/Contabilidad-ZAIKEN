@@ -37,6 +37,8 @@ import HourDebtService, { HourDebt, DebtStatus, CreateDebtDto, UpdateDebtDto } f
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
+import { showPrompt } from '@/lib/app-dialog';
 
 export default function DeudaHorasPage() {
   const canManageDebt = useCan(Action.Manage, 'HourDebt');
@@ -115,7 +117,7 @@ export default function DeudaHorasPage() {
     e.preventDefault();
     const totalMinutes = (hoursInput * 60) + minutesInput;
     if (totalMinutes < 1) {
-      alert('Ingresa al menos 1 minuto de deuda');
+      toast.error('Ingresa al menos 1 minuto de deuda');
       return;
     }
     await createMutation.mutateAsync({
@@ -136,13 +138,13 @@ export default function DeudaHorasPage() {
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingDebt || !editFormData.adminReason) {
-      alert('Por favor ingresa un motivo para la edición');
+      toast.error('Por favor ingresa un motivo para la edición');
       return;
     }
     const minutesOwed = (editHoursOwed * 60) + editMinutesOwed;
     const remainingMinutes = (editHoursRemaining * 60) + editMinutesRemaining;
     if (minutesOwed < 1) {
-      alert('La deuda original debe ser al menos 1 minuto');
+      toast.error('La deuda original debe ser al menos 1 minuto');
       return;
     }
     await updateMutation.mutateAsync({
@@ -172,7 +174,14 @@ export default function DeudaHorasPage() {
   };
 
   const handleCancel = async (debt: HourDebt) => {
-    const reason = prompt('Motivo de cancelación:');
+    const reason = await showPrompt({
+      title: 'Cancelar deuda',
+      message: 'Motivo de cancelación:',
+      placeholder: 'Motivo',
+      required: true,
+      confirmText: 'Cancelar deuda',
+      danger: true,
+    });
     if (!reason) return;
     await cancelMutation.mutateAsync({ id: debt.id, reason });
   };
@@ -334,21 +343,21 @@ export default function DeudaHorasPage() {
             </h3>
             <ul className="text-xs sm:text-sm text-blue-700 mt-1.5 sm:mt-2 space-y-1">
               <li className="flex items-start gap-2">
-                <span className="text-blue-600 font-bold">•</span>
+                <span className="text-blue-600 font-bold">?</span>
                 <span>
                   Cuando se aprueba un registro que excede el umbral diario (8 horas por defecto),
                   el exceso se descuenta automáticamente de las deudas activas
                 </span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-blue-600 font-bold">•</span>
+                <span className="text-blue-600 font-bold">?</span>
                 <span>
                   Las deducciones se aplican por orden FIFO (primeras deudas primero)
                 </span>
               </li>
               {canManageDebt && (
                 <li className="flex items-start gap-2">
-                  <span className="text-blue-600 font-bold">•</span>
+                  <span className="text-blue-600 font-bold">?</span>
                   <span>
                     Si un registro se rechaza o elimina, las deducciones asociadas se revierten automáticamente
                   </span>
@@ -1022,3 +1031,4 @@ export default function DeudaHorasPage() {
     </MainLayout>
   );
 }
+

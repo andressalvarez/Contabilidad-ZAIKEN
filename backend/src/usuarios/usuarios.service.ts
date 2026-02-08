@@ -7,7 +7,7 @@ import * as crypto from 'crypto';
 interface CreateUsuarioData {
   email: string;
   nombre: string;
-  rol: string;
+  securityRoleId: number;
   activo?: boolean;
   passwordHash: string;
   negocioId: number;
@@ -24,7 +24,7 @@ interface CreateUsuarioData {
 interface UpdateUsuarioData {
   email?: string;
   nombre?: string;
-  rol?: string;
+  securityRoleId?: number;
   activo?: boolean;
   passwordHash?: string;
   rolId?: number;
@@ -56,7 +56,6 @@ export class UsuariosService {
         id: true,
         email: true,
         nombre: true,
-        rol: true,
         activo: true,
         createdAt: true,
               rolId: true,
@@ -72,6 +71,13 @@ export class UsuariosService {
           select: {
             id: true,
             nombreRol: true,
+          },
+        },
+        securityRole: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
           },
         },
       },
@@ -90,7 +96,6 @@ export class UsuariosService {
         id: true,
         email: true,
         nombre: true,
-        rol: true,
         activo: true,
         createdAt: true,
               rolId: true,
@@ -109,6 +114,13 @@ export class UsuariosService {
             nombreRol: true,
           },
         },
+        securityRole: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+          },
+        },
       },
     });
 
@@ -120,7 +132,16 @@ export class UsuariosService {
   }
 
   async create(data: CreateUsuarioData) {
-    const { email, nombre, rol, activo = true, passwordHash, negocioId, participacionPorc = 0, ...rest } = data;
+    const {
+      email,
+      nombre,
+      securityRoleId,
+      activo = true,
+      passwordHash,
+      negocioId,
+      participacionPorc = 0,
+      ...rest
+    } = data;
 
     // Validar participación si se proporciona
     if (participacionPorc > 0) {
@@ -131,10 +152,10 @@ export class UsuariosService {
       data: {
         email,
         nombre,
-        rol,
         activo,
         password: passwordHash,
         negocioId,
+        securityRoleId,
         participacionPorc,
         horasTotales: rest.horasTotales || 0,
         aportesTotales: rest.aportesTotales || 0,
@@ -149,6 +170,13 @@ export class UsuariosService {
           select: {
             id: true,
             nombreRol: true,
+          },
+        },
+        securityRole: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
           },
         },
       },
@@ -168,7 +196,7 @@ export class UsuariosService {
       data: {
         email: data.email,
         nombre: data.nombre,
-        rol: data.rol,
+        securityRoleId: data.securityRoleId,
         activo: data.activo,
         password: data.passwordHash,
               rolId: data.rolId,
@@ -184,7 +212,6 @@ export class UsuariosService {
         id: true,
         email: true,
         nombre: true,
-        rol: true,
         activo: true,
         createdAt: true,
         participacionPorc: true,
@@ -194,6 +221,13 @@ export class UsuariosService {
           select: {
             id: true,
             nombreRol: true,
+          },
+        },
+        securityRole: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
           },
         },
       },
@@ -419,4 +453,3 @@ export class UsuariosService {
     return { message: 'Cuenta activada exitosamente' };
   }
 }
-

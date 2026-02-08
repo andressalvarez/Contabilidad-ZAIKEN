@@ -1,4 +1,4 @@
-import { IsNumber, IsString, IsOptional, IsDateString, Min } from 'class-validator';
+import { IsNumber, IsString, IsOptional, IsDateString, Min, ValidateIf } from 'class-validator';
 
 export class CreateRegistroHorasDto {
   @IsNumber()
@@ -12,9 +12,22 @@ export class CreateRegistroHorasDto {
   @IsDateString()
   fecha: string;
 
+  @IsOptional()
+  @IsDateString()
+  timerInicio?: string;
+
+  @IsOptional()
+  @IsDateString()
+  timerFin?: string;
+
+  @IsOptional()
+  @IsString()
+  origen?: string;
+
+  @ValidateIf((o) => !o.timerInicio || !o.timerFin)
   @IsNumber()
   @Min(0)
-  horas: number;
+  horas?: number;
 
   @IsOptional()
   @IsString()

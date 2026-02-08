@@ -10,17 +10,22 @@ import {
   HttpStatus,
   HttpCode,
   Request,
+  UseGuards,
 } from '@nestjs/common';
 import { UsuariosService } from './usuarios.service';
-import { Roles } from '../auth/roles.decorator';
 import { NegocioId } from '../auth/negocio-id.decorator';
 import * as bcrypt from 'bcrypt';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PermissionsGuard } from '../common/guards/permissions.guard';
+import { Permissions } from '../common/decorators/permissions.decorator';
+import { Action } from '../casl/action.enum';
 
 @Controller('usuarios')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class UsuariosController {
   constructor(private readonly service: UsuariosService) {}
 
-  @Roles('ADMIN')
+  @Permissions({ action: Action.Read, subject: 'Usuario' })
   @Get()
   async findAll(@NegocioId() negocioId: number) {
     return {
@@ -31,6 +36,7 @@ export class UsuariosController {
   }
 
   @Get('summary')
+  @Permissions({ action: Action.Read, subject: 'Usuario' })
   async getSummary(@NegocioId() negocioId: number) {
     return {
       success: true,
@@ -39,7 +45,7 @@ export class UsuariosController {
     };
   }
 
-  @Roles('ADMIN')
+  @Permissions({ action: Action.Read, subject: 'Usuario' })
   @Get(':id')
   async findOne(
     @Param('id', ParseIntPipe) id: number,
@@ -52,7 +58,7 @@ export class UsuariosController {
     };
   }
 
-  @Roles('ADMIN')
+  @Permissions({ action: Action.Create, subject: 'Usuario' })
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(
@@ -60,7 +66,7 @@ export class UsuariosController {
     @Body() body: {
       email: string;
       nombre: string;
-      rol: string;
+      securityRoleId: number;
       password: string;
       activo?: boolean;
       rolId?: number;
@@ -76,7 +82,7 @@ export class UsuariosController {
       data: await this.service.create({
         email: body.email,
         nombre: body.nombre,
-        rol: body.rol,
+        securityRoleId: body.securityRoleId,
         activo: body.activo,
         passwordHash,
         negocioId,
@@ -88,7 +94,7 @@ export class UsuariosController {
     };
   }
 
-  @Roles('ADMIN')
+  @Permissions({ action: Action.Update, subject: 'Usuario' })
   @Patch(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -96,7 +102,7 @@ export class UsuariosController {
     @Body() body: Partial<{
       email: string;
       nombre: string;
-      rol: string;
+      securityRoleId: number;
       password: string;
       activo: boolean;
       rolId: number;
@@ -112,7 +118,7 @@ export class UsuariosController {
       data: await this.service.update(id, negocioId, {
         email: body.email,
         nombre: body.nombre,
-        rol: body.rol,
+        securityRoleId: body.securityRoleId,
         activo: body.activo,
         passwordHash,
         rolId: body.rolId,
@@ -123,7 +129,7 @@ export class UsuariosController {
     };
   }
 
-  @Roles('ADMIN')
+  @Permissions({ action: Action.Delete, subject: 'Usuario' })
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   async remove(
@@ -139,6 +145,7 @@ export class UsuariosController {
 
   // Endpoint para que cualquier usuario actualice su propio perfil
   @Patch('me')
+  @Permissions({ action: Action.Update, subject: 'Usuario' })
   async updateMe(
     @Request() req: any,
     @NegocioId() negocioId: number,
@@ -159,7 +166,7 @@ export class UsuariosController {
   /**
    * Admin sends password recovery email to a specific user
    */
-  @Roles('ADMIN')
+  @Permissions({ action: Action.Update, subject: 'Usuario' })
   @Post(':id/send-password-reset')
   @HttpCode(HttpStatus.OK)
   async sendPasswordResetToUser(
@@ -173,6 +180,4 @@ export class UsuariosController {
     };
   }
 }
-
-
 

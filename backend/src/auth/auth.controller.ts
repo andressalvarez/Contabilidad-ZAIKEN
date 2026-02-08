@@ -19,7 +19,7 @@ export class AuthController {
       email: string;
       password: string;
       nombre: string;
-      rol?: string;
+      securityRoleId?: number;
       negocioId?: number;
       nombreNegocio?: string;
     },
@@ -29,8 +29,11 @@ export class AuthController {
 
   @Post('login')
   @Public()
-  login(@Body() body: { email: string; password: string }) {
-    return this.auth.login(body);
+  login(@Body() body: { email: string; password: string }, @Request() req: any) {
+    const ipAddress =
+      req?.ip || req?.headers?.['x-forwarded-for'] || req?.connection?.remoteAddress;
+    const userAgent = req?.headers?.['user-agent'];
+    return this.auth.login(body, { ipAddress, userAgent });
   }
 
   @Get('me')
@@ -66,5 +69,3 @@ export class AuthController {
     };
   }
 }
-
-

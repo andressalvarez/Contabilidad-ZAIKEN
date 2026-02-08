@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { Providers } from './providers'
 import { Toaster } from 'sonner'
+import AppDialogProvider from '@/components/ui/AppDialogProvider'
 
 export const metadata: Metadata = {
   title: 'Zaiken - Sistema de Gestión Financiera',
@@ -32,6 +33,7 @@ export default function RootLayout({
         <Providers>
           {children}
           <Toaster position="top-right" richColors />
+          <AppDialogProvider />
         </Providers>
       </body>
     </html>

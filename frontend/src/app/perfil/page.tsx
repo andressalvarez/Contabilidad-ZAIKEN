@@ -6,6 +6,7 @@ import { UserProfile } from '@/services/auth.service';
 import MainLayout from '@/components/layout/MainLayout';
 import { User, Mail, Briefcase, Building2, Save, Eye, EyeOff, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatSystemRoleName } from '@/lib/role-labels';
 
 export default function PerfilPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -275,11 +276,11 @@ export default function PerfilPage() {
                     }}
                   >
                     <Briefcase size={16} />
-                    Rol
+                    Rol del Sistema
                   </label>
                   <input
                     type="text"
-                    value={profile.rol}
+                    value={formatSystemRoleName(profile.securityRole?.name)}
                     disabled
                     style={{
                       width: '100%',

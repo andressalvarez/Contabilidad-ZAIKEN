@@ -14,6 +14,8 @@ import {
 } from '@/hooks/useRegistroHoras';
 import { useUsuarios } from '@/hooks/useUsuarios';
 import { useUser } from '@/hooks/useUser';
+import { useCan } from '@/hooks/usePermissions';
+import { Action } from '@/contexts/AbilityContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -52,11 +54,12 @@ import HourDebtWidget from '@/components/hour-debt/HourDebtWidget';
 import { ScrollableTable } from '@/components/ui/ScrollableTable';
 import CreateDebtModal from '@/components/CreateDebtModal';
 import DebtHistoryTable from '@/components/DebtHistoryTable';
+import { showConfirm } from '@/lib/app-dialog';
 
 interface FormData {
-  fecha: string;
   usuarioId: number;
-  horas: number;
+  timerInicio: string;
+  timerFin: string;
   descripcion: string;
 }
 
@@ -121,6 +124,35 @@ function AnimatedClock({ isRunning, elapsedSeconds }: { isRunning: boolean; elap
       </div>
     </div>
   );
+}
+
+function toLocalDateInput(dateInput?: string | Date | null): string {
+  if (!dateInput) return '';
+  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+  return date.toISOString().split('T')[0];
+}
+
+function toLocalDateTimeInput(dateInput?: string | Date | null): string {
+  if (!dateInput) return '';
+  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
+
+function parseLocalDateTime(value: string): string {
+  const date = new Date(value);
+  return date.toISOString();
+}
+
+function formatDateTime(dateInput?: string | Date | null): string {
+  if (!dateInput) return '-';
+  return new Date(dateInput).toLocaleString('es-CO', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 // Main Timer Widget Component
@@ -205,7 +237,12 @@ function TimerWidget({
 
   const handleCancel = async () => {
     if (!activeTimer) return;
-    const confirmed = confirm('¿Cancelar el timer? Los datos no se guardarán.');
+    const confirmed = await showConfirm({
+      title: 'Cancelar timer',
+      message: '¿Cancelar el timer? Los datos no se guardarán.',
+      danger: true,
+      confirmText: 'Cancelar timer',
+    });
     if (!confirmed) return;
     try {
       await cancelTimerMutation.mutateAsync(activeTimer.id);
@@ -502,9 +539,9 @@ function RecentTimerRecord({
 
 export default function RegistroHorasPage() {
   const [formData, setFormData] = useState<FormData>(() => ({
-    fecha: new Date().toISOString().split('T')[0],
     usuarioId: 0, // Se actualizara cuando tengamos el currentUser
-    horas: 0,
+    timerInicio: '',
+    timerFin: '',
     descripcion: ''
   }));
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -514,12 +551,14 @@ export default function RegistroHorasPage() {
   const [showManualForm, setShowManualForm] = useState(false);
   const [viewMode, setViewMode] = useState<'personal' | 'team'>('personal');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [dateFilter, setDateFilter] = useState(new Date().toISOString().split('T')[0]);
   const [timeEditModal, setTimeEditModal] = useState<{ open: boolean; record: RegistroHoras | null }>({ open: false, record: null });
   const [showDebtModal, setShowDebtModal] = useState(false);
 
   // Get current user
   const { user: currentUser, loading: userLoading } = useUser();
-  const isAdmin = currentUser?.rol === 'ADMIN' || currentUser?.rol === 'ADMIN_NEGOCIO';
+  const canApproveHoras = useCan(Action.Approve, 'RegistroHoras');
+  const isAdmin = canApproveHoras;
 
   // React Query hooks
   const { data: timeRecords = [], isLoading, error, refetch } = useRegistroHoras();
@@ -554,10 +593,21 @@ export default function RegistroHorasPage() {
     return myRegistros.filter(r => r.fecha.split('T')[0] === today);
   }, [myRegistros]);
 
+  const manualCalculatedHours = useMemo(() => {
+    if (!formData.timerInicio || !formData.timerFin) return 0;
+    const start = new Date(formData.timerInicio);
+    const end = new Date(formData.timerFin);
+    return Math.max(0, (end.getTime() - start.getTime()) / (1000 * 60 * 60));
+  }, [formData.timerInicio, formData.timerFin]);
+
   // Filter records by search, view mode, and status
   const filteredRegistros = useMemo(() => {
     // If personal mode, only show own records
     let baseRegistros = viewMode === 'personal' ? myRegistros : timeRecords;
+
+    if (dateFilter) {
+      baseRegistros = baseRegistros.filter((r) => toLocalDateInput(r.fecha) === dateFilter);
+    }
 
     // Filter by approval status
     if (statusFilter !== 'all') {
@@ -573,12 +623,12 @@ export default function RegistroHorasPage() {
     return baseRegistros.filter(registro => {
       const usuarioId = registro.usuarioId;
       const usuario = (users || []).find(u => u.id === usuarioId);
-      const nombreUsuario = usuario?.nombre || '';
+      const nombreUsuario = registro.usuario?.nombre || usuario?.nombre || '';
       return nombreUsuario.toLowerCase().includes(searchTerm.toLowerCase()) ||
              registro.descripcion?.toLowerCase().includes(searchTerm.toLowerCase()) ||
              registro.horas.toString().includes(searchTerm);
     });
-  }, [timeRecords, myRegistros, users, searchTerm, viewMode, statusFilter]);
+  }, [timeRecords, myRegistros, users, searchTerm, viewMode, statusFilter, dateFilter]);
 
   // Estadisticas PERSONALES del usuario actual (HOY)
   const myTodayStats = useMemo(() => {
@@ -656,10 +706,65 @@ export default function RegistroHorasPage() {
       .sort((a, b) => b.horasHoy - a.horasHoy);
   }, [timeRecords, users]);
 
+  const startHourDistribution = useMemo(() => {
+    const buckets = Array.from({ length: 24 }, (_, hour) => ({ hour, count: 0 }));
+    timeRecords.forEach((record) => {
+      if (!record.timerInicio) return;
+      const hour = new Date(record.timerInicio).getHours();
+      buckets[hour].count += 1;
+    });
+    return buckets;
+  }, [timeRecords]);
+
+  const overnightRecords = useMemo(() => {
+    return timeRecords.filter((record) => {
+      if (!record.timerInicio || !record.timerFin) return false;
+      const start = new Date(record.timerInicio);
+      const end = new Date(record.timerFin);
+      return start.toDateString() !== end.toDateString();
+    });
+  }, [timeRecords]);
+
+  const pauseStatsByUser = useMemo(() => {
+    const map = new Map<number, { id: number; nombre: string; pauseCount: number; pausedMinutes: number }>();
+
+    users.forEach((u) => {
+      map.set(u.id, { id: u.id, nombre: u.nombre, pauseCount: 0, pausedMinutes: 0 });
+    });
+
+    timeRecords.forEach((record) => {
+      if (!record.usuarioId || !map.has(record.usuarioId) || record.origen !== 'TIMER') return;
+
+      const start = record.timerInicio ? new Date(record.timerInicio) : null;
+      const end = record.timerFin ? new Date(record.timerFin) : null;
+      const spanMinutes = start && end ? Math.max(0, Math.round((end.getTime() - start.getTime()) / 60000)) : 0;
+      const activeMinutes = Math.max(0, Math.round((record.horas || 0) * 60));
+
+      const estimatedPausedMinutes =
+        typeof record.pausedMinutes === 'number'
+          ? record.pausedMinutes
+          : spanMinutes > activeMinutes
+          ? spanMinutes - activeMinutes
+          : 0;
+      const estimatedPauseCount =
+        typeof record.pauseCount === 'number'
+          ? record.pauseCount
+          : estimatedPausedMinutes > 0
+          ? 1
+          : 0;
+
+      const current = map.get(record.usuarioId)!;
+      current.pausedMinutes += estimatedPausedMinutes;
+      current.pauseCount += estimatedPauseCount;
+    });
+
+    return Array.from(map.values()).filter((r) => r.pausedMinutes > 0 || r.pauseCount > 0).sort((a, b) => b.pausedMinutes - a.pausedMinutes);
+  }, [timeRecords, users]);
+
   const getUserName = (registro: RegistroHoras) => {
     const usuarioId = registro.usuarioId;
     const usuario = (users || []).find(u => u.id === usuarioId);
-    return usuario?.nombre || 'Usuario no encontrado';
+    return registro.usuario?.nombre || usuario?.nombre || `Usuario #${registro.usuarioId}`;
   };
 
   const formatDate = (dateString: string) => {
@@ -684,25 +789,27 @@ export default function RegistroHorasPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.usuarioId || !formData.horas) {
-      toast.error('Debe ingresar Usuario y Horas');
+    if (!formData.usuarioId || !formData.timerInicio || !formData.timerFin) {
+      toast.error('Debe ingresar usuario, hora de inicio y hora de fin');
       return;
     }
 
     try {
       const createData: CreateRegistroHorasDto = {
         usuarioId: formData.usuarioId,
-        fecha: formData.fecha,
-        horas: formData.horas,
+        fecha: toLocalDateInput(formData.timerInicio),
+        timerInicio: parseLocalDateTime(formData.timerInicio),
+        timerFin: parseLocalDateTime(formData.timerFin),
+        origen: 'MANUAL',
         descripcion: formData.descripcion
       };
 
       await createMutation.mutateAsync(createData);
 
       setFormData({
-        fecha: new Date().toISOString().split('T')[0],
         usuarioId: 0,
-        horas: 0,
+        timerInicio: '',
+        timerFin: '',
         descripcion: ''
       });
       setShowManualForm(false);
@@ -714,9 +821,6 @@ export default function RegistroHorasPage() {
   const handleEdit = (registroHoras: RegistroHoras) => {
     setEditingId(registroHoras.id);
     setEditingData({
-      usuarioId: registroHoras.usuarioId,
-      fecha: registroHoras.fecha,
-      horas: registroHoras.horas,
       descripcion: registroHoras.descripcion
     });
   };
@@ -725,7 +829,9 @@ export default function RegistroHorasPage() {
     try {
       await updateMutation.mutateAsync({
         id: registroHoras.id,
-        data: editingData
+        data: {
+          descripcion: editingData.descripcion
+        }
       });
       setEditingId(null);
       setEditingData({});
@@ -740,7 +846,12 @@ export default function RegistroHorasPage() {
   };
 
   const handleDelete = async (registroHoras: RegistroHoras) => {
-    const confirmed = confirm(`Eliminar registro de ${registroHoras.horas} horas?`);
+    const confirmed = await showConfirm({
+      title: 'Eliminar registro',
+      message: `Eliminar registro de ${registroHoras.horas} horas?`,
+      danger: true,
+      confirmText: 'Eliminar',
+    });
     if (!confirmed) return;
 
     try {
@@ -752,7 +863,11 @@ export default function RegistroHorasPage() {
 
   // Re-enviar registro rechazado
   const handleResubmit = async (id: number) => {
-    const confirmed = confirm('Re-enviar este registro para revisión?');
+    const confirmed = await showConfirm({
+      title: 'Re-enviar registro',
+      message: 'Re-enviar este registro para revisión?',
+      confirmText: 'Re-enviar',
+    });
     if (!confirmed) return;
 
     try {
@@ -1094,6 +1209,60 @@ export default function RegistroHorasPage() {
                 </div>
               )}
             </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+              <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Entradas por Hora</h3>
+                <div className="space-y-2 max-h-72 overflow-y-auto">
+                  {startHourDistribution.filter((b) => b.count > 0).map((bucket) => {
+                    const max = Math.max(1, ...startHourDistribution.map((x) => x.count));
+                    const width = (bucket.count / max) * 100;
+                    return (
+                      <div key={bucket.hour} className="flex items-center gap-3">
+                        <span className="w-14 text-xs text-gray-600">{bucket.hour.toString().padStart(2, '0')}:00</span>
+                        <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
+                          <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${width}%` }} />
+                        </div>
+                        <span className="w-8 text-xs font-semibold text-gray-700">{bucket.count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Cruce de Día</h3>
+                <p className="text-3xl font-bold text-indigo-600">{overnightRecords.length}</p>
+                <p className="text-sm text-gray-600 mt-1">Registros que iniciaron un día y terminaron al siguiente</p>
+                <div className="mt-4 space-y-2 max-h-48 overflow-y-auto">
+                  {overnightRecords.slice(0, 5).map((record) => (
+                    <div key={record.id} className="text-xs text-gray-700 bg-gray-50 rounded-lg p-2">
+                      #{record.id} {getUserName(record)}: {formatDateTime(record.timerInicio)} → {formatDateTime(record.timerFin)}
+                    </div>
+                  ))}
+                  {overnightRecords.length === 0 && (
+                    <p className="text-xs text-gray-500">No hay cruces de día en los registros actuales.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1">Pausas por Usuario</h3>
+              <p className="text-xs text-gray-500 mb-4">Calculado en frontend con datos del rango y horas activas (sin columnas nuevas).</p>
+              {pauseStatsByUser.length === 0 ? (
+                <p className="text-sm text-gray-500">Sin pausas detectables con los datos actuales.</p>
+              ) : (
+                <div className="space-y-2">
+                  {pauseStatsByUser.slice(0, 8).map((stat) => (
+                    <div key={stat.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-2.5 text-sm">
+                      <span className="font-medium text-gray-800">{stat.nombre}</span>
+                      <span className="text-gray-600">{stat.pauseCount} pausas · {stat.pausedMinutes} min</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </>
         )}
 
@@ -1107,7 +1276,7 @@ export default function RegistroHorasPage() {
               <div className="p-2 bg-amber-100 rounded-lg">
                 <Plus className="text-amber-600 h-5 w-5" />
               </div>
-              <span className="text-base sm:text-lg font-semibold text-gray-800">Agregar Horas Manualmente</span>
+              <span className="text-base sm:text-lg font-semibold text-gray-800">Agregar Registro Manual</span>
             </div>
             {showManualForm ? <ChevronUp className="h-5 w-5 text-gray-500" /> : <ChevronDown className="h-5 w-5 text-gray-500" />}
           </button>
@@ -1124,19 +1293,6 @@ export default function RegistroHorasPage() {
                 <div className="px-4 sm:px-6 pb-4 sm:pb-6 border-t border-gray-100">
                   <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                      <div>
-                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                          <Calendar className="h-4 w-4" />
-                          Fecha *
-                        </label>
-                        <input
-                          type="date"
-                          value={formData.fecha}
-                          onChange={(e) => setFormData(prev => ({ ...prev, fecha: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
-                          required
-                        />
-                      </div>
 
                       <div>
                         <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
@@ -1170,24 +1326,45 @@ export default function RegistroHorasPage() {
                       <div>
                         <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                           <Clock className="h-4 w-4" />
-                          Horas *
+                          Inicio *
                         </label>
                         <input
-                          type="number"
-                          value={formData.horas}
-                          onChange={(e) => setFormData(prev => ({ ...prev, horas: parseFloat(e.target.value) || 0 }))}
+                          type="datetime-local"
+                          value={formData.timerInicio}
+                          onChange={(e) => setFormData(prev => ({ ...prev, timerInicio: e.target.value }))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
-                          placeholder="0"
-                          min="0"
-                          step="0.25"
                           required
                         />
                       </div>
 
                       <div>
                         <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                          <Clock className="h-4 w-4" />
+                          Fin *
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={formData.timerFin}
+                          onChange={(e) => setFormData(prev => ({ ...prev, timerFin: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                          <Clock className="h-4 w-4" />
+                          Horas (calculado)
+                        </label>
+                        <div className="w-full px-3 py-2 border border-indigo-200 bg-indigo-50 text-indigo-800 rounded-lg font-semibold">
+                          {manualCalculatedHours.toFixed(2)}h
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                           <FileText className="h-4 w-4" />
-                          Notas
+                          Nota
                         </label>
                         <input
                           type="text"
@@ -1202,7 +1379,7 @@ export default function RegistroHorasPage() {
                     <div className="flex justify-end">
                       <button
                         type="submit"
-                        disabled={createMutation.isPending}
+                        disabled={createMutation.isPending || manualCalculatedHours <= 0 || manualCalculatedHours > 16}
                         className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Plus className="h-4 w-4" />
@@ -1230,6 +1407,12 @@ export default function RegistroHorasPage() {
               </div>
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                <input
+                  type="date"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm min-h-[44px]"
+                />
                 {/* Status Filter */}
                 <select
                   value={statusFilter}
@@ -1280,10 +1463,10 @@ export default function RegistroHorasPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Creado</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Desde-Hasta</th>
                   <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
                   <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Horas</th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Horario</th>
                   <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                   <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notas</th>
                   <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
@@ -1315,77 +1498,37 @@ export default function RegistroHorasPage() {
                       <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         <span className="text-sm text-gray-900">#{registroHoras.id}</span>
                       </td>
-                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">
-                        {editingId === registroHoras.id ? (
-                          <input
-                            type="date"
-                            value={editingData.fecha || registroHoras.fecha}
-                            onChange={(e) => setEditingData(prev => ({ ...prev, fecha: e.target.value }))}
-                            className="px-2 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
-                          />
-                        ) : (
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-3.5 w-3.5 text-gray-400" />
-                            {formatDate(registroHoras.fecha)}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                        {editingId === registroHoras.id ? (
-                          <select
-                            value={editingData.usuarioId || registroHoras.usuarioId}
-                            onChange={(e) => setEditingData(prev => ({ ...prev, usuarioId: parseInt(e.target.value) || 0 }))}
-                            className="px-2 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
-                          >
-                            {(users || []).map(usuario => (
-                              <option key={usuario.id} value={usuario.id}>
-                                {usuario.nombre}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <div className="p-1 sm:p-1.5 bg-indigo-100 rounded">
-                              <User className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-indigo-600" />
-                            </div>
-                            <span className="font-medium text-gray-900 text-sm">{getUserName(registroHoras)}</span>
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                        {editingId === registroHoras.id ? (
-                          <input
-                            type="number"
-                            value={editingData.horas || registroHoras.horas}
-                            onChange={(e) => setEditingData(prev => ({ ...prev, horas: parseFloat(e.target.value) || 0 }))}
-                            className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
-                            min="0"
-                            step="0.25"
-                          />
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                            <Clock className="h-3 w-3" />
-                            {registroHoras.horas}h
-                          </span>
-                        )}
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs text-gray-500">
+                        {formatDateTime(registroHoras.createdAt)}
                       </td>
                       <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm">
-                        {registroHoras.origen === 'TIMER' && registroHoras.timerInicio ? (
+                        {registroHoras.timerInicio ? (
                           <div className="flex flex-col">
+                            <span className="text-gray-900 text-xs sm:text-sm">{formatDateTime(registroHoras.timerInicio)}</span>
                             <span className="text-gray-900 text-xs sm:text-sm">
-                              {new Date(registroHoras.timerInicio).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
-                              {' - '}
-                              {registroHoras.timerFin
-                                ? new Date(registroHoras.timerFin).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
-                                : 'En curso'}
+                              {registroHoras.timerFin ? formatDateTime(registroHoras.timerFin) : 'En curso'}
                             </span>
                             {registroHoras.timerInicioOriginal && (
                               <span className="text-xs text-purple-600">(Editado)</span>
                             )}
                           </div>
                         ) : (
-                          <span className="text-gray-400">-</span>
+                          <span className="text-gray-500">{formatDateTime(registroHoras.fecha)}</span>
                         )}
+                      </td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1 sm:p-1.5 bg-indigo-100 rounded">
+                            <User className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-indigo-600" />
+                          </div>
+                          <span className="font-medium text-gray-900 text-sm">{getUserName(registroHoras)}</span>
+                        </div>
+                      </td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                          <Clock className="h-3 w-3" />
+                          {registroHoras.horas}h
+                        </span>
                       </td>
                       <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         {registroHoras.aprobado ? (
@@ -1482,8 +1625,8 @@ export default function RegistroHorasPage() {
                                 <Edit3 className="h-4 w-4" />
                               </button>
                             )}
-                            {/* Eliminar solo si no está aprobado */}
-                            {!registroHoras.aprobado && (
+                            {/* Eliminar: admin puede eliminar aprobados, usuario normal solo no aprobados */}
+                            {(!registroHoras.aprobado || isAdmin) && (
                               <button
                                 onClick={() => handleDelete(registroHoras)}
                                 className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded"
@@ -1609,19 +1752,11 @@ function TimeEditModal({
   isLoading: boolean;
 }) {
   const [startTime, setStartTime] = useState(() => {
-    if (record.timerInicio) {
-      const date = new Date(record.timerInicio);
-      return date.toISOString().slice(0, 16);
-    }
-    return '';
+    return toLocalDateTimeInput(record.timerInicio);
   });
 
   const [endTime, setEndTime] = useState(() => {
-    if (record.timerFin) {
-      const date = new Date(record.timerFin);
-      return date.toISOString().slice(0, 16);
-    }
-    return '';
+    return toLocalDateTimeInput(record.timerFin);
   });
 
   // Calculate hours in real-time
@@ -1640,7 +1775,7 @@ function TimeEditModal({
 
   const handleSubmit = () => {
     if (startTime && endTime && isValidTime) {
-      onSave(new Date(startTime).toISOString(), new Date(endTime).toISOString());
+      onSave(parseLocalDateTime(startTime), parseLocalDateTime(endTime));
     }
   };
 

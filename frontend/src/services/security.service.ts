@@ -3,11 +3,18 @@ import { api } from '@/lib/api';
 // Types
 export interface Permission {
   id: number;
+  code: string;
+  resource: string;
+  context: string;
   subject: string;
   action: string;
   description: string;
   category: string;
+  route?: string | null;
+  dependencies?: string[];
   displayOrder: number;
+  isSystem: boolean;
+  active: boolean;
 }
 
 export interface RolePermission {
@@ -60,6 +67,23 @@ export interface AssignPermissionsDto {
   permissionIds: number[];
   conditions?: Record<number, Record<string, unknown>>;
 }
+
+export interface CreatePermissionDto {
+  code: string;
+  resource: string;
+  context: string;
+  subject: string;
+  action: string;
+  description: string;
+  category: string;
+  route?: string;
+  dependencies?: string[];
+  displayOrder?: number;
+  isSystem?: boolean;
+  active?: boolean;
+}
+
+export interface UpdatePermissionDto extends Partial<CreatePermissionDto> {}
 
 export interface SecuritySettings {
   id: number;
@@ -181,6 +205,25 @@ export const SecurityService = {
     return data?.data || data || {};
   },
 
+  getMyPermissions: async (): Promise<Permission[]> => {
+    const { data } = await api.get('/security/permissions/my-permissions');
+    return data?.data || data || [];
+  },
+
+  createPermission: async (dto: CreatePermissionDto): Promise<Permission> => {
+    const { data } = await api.post('/security/permissions', dto);
+    return data?.data || data;
+  },
+
+  updatePermission: async (id: number, dto: UpdatePermissionDto): Promise<Permission> => {
+    const { data } = await api.patch(`/security/permissions/${id}`, dto);
+    return data?.data || data;
+  },
+
+  deletePermission: async (id: number): Promise<void> => {
+    await api.delete(`/security/permissions/${id}`);
+  },
+
   // Audit Logs
   getAuditLogs: async (query?: AuditLogQuery): Promise<{ data: AuditLog[]; total: number; page: number; limit: number }> => {
     const params = new URLSearchParams();
@@ -192,7 +235,24 @@ export const SecurityService = {
     if (query?.endDate) params.append('endDate', query.endDate);
 
     const { data } = await api.get(`/security/audit?${params.toString()}`);
-    return data?.data || data || { data: [], total: 0, page: 1, limit: 50 };
+    const payload = data?.data || data || { data: [], meta: { total: 0, page: 1, limit: query?.limit || 50 } };
+
+    if (Array.isArray(payload)) {
+      return {
+        data: payload,
+        total: payload.length,
+        page: query?.page || 1,
+        limit: query?.limit || 50,
+      };
+    }
+
+    const meta = payload.meta || {};
+    return {
+      data: payload.data || [],
+      total: meta.total || payload.total || (payload.data ? payload.data.length : 0),
+      page: meta.page || payload.page || query?.page || 1,
+      limit: meta.limit || payload.limit || query?.limit || 50,
+    };
   },
 
   getEventTypes: async (): Promise<string[]> => {

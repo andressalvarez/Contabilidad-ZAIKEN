@@ -4,9 +4,19 @@ export interface UserProfile {
   id: number;
   email: string;
   nombre: string;
-  rol: string;
   activo: boolean;
   negocioId: number;
+  securityRoleId: number;
+  securityRoleName?: string;
+  negocioRoleName?: string;
+  securityRole?: {
+    id: number;
+    name: string;
+  };
+  rolNegocio?: {
+    id: number;
+    nombreRol: string;
+  };
   createdAt: string;
   updatedAt: string;
   negocio?: {
@@ -42,7 +52,7 @@ export const AuthService = {
     email: string;
     password: string;
     nombre: string;
-    rol?: string;
+    securityRoleId?: number;
     negocioId?: number;
     nombreNegocio?: string;
   }) => {

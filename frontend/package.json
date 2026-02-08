@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "text:check": "node scripts/check-mojibake.js",
+    "prebuild": "npm run text:check",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

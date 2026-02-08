@@ -8,7 +8,7 @@ export class RolesService {
 
   async findAll(negocioId: number) {
     return this.prisma.securityRole.findMany({
-      where: { negocioId },
+      where: { negocioId, active: true },
       include: {
         permissions: {
           include: {
@@ -172,7 +172,7 @@ export class RolesService {
         nombre: true,
         email: true,
         activo: true,
-        rol: true,
+        securityRoleId: true,
         createdAt: true,
       },
     });

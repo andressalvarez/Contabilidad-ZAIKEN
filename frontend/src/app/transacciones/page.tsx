@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useTransacciones, useCreateTransaccion, useUpdateTransaccion, useDeleteTransaccion, useTendenciasMensuales, useResumenPorCategorias, useResumenPorTiposGasto, useTransaccionesStats } from '@/hooks/useTransacciones';
