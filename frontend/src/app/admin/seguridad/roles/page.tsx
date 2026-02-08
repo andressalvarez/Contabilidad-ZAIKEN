@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { SecurityService, SecurityRole, Permission, CreateRoleDto, UpdateRoleDto } from '@/services/security.service';
+import MainLayout from '@/components/layout/MainLayout';
 
 // Permission category labels in Spanish
 const CATEGORY_LABELS: Record<string, string> = {
@@ -275,7 +276,8 @@ export default function SecurityRolesPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <MainLayout>
+      <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
@@ -605,6 +607,6 @@ export default function SecurityRolesPage() {
           )}
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 }
