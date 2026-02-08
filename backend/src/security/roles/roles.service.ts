@@ -6,6 +6,15 @@ import { CreateSecurityRoleDto, UpdateSecurityRoleDto, AssignPermissionsDto } fr
 export class RolesService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private validateRoleName(name?: string) {
+    if (!name) return;
+
+    const normalized = name.trim().toLowerCase();
+    if (normalized === 'empleado') {
+      throw new BadRequestException('El rol "Empleado" esta deprecado. Usa "Colaborador".');
+    }
+  }
+
   async findAll(negocioId: number) {
     return this.prisma.securityRole.findMany({
       where: { negocioId, active: true },
@@ -51,6 +60,8 @@ export class RolesService {
   }
 
   async create(negocioId: number, dto: CreateSecurityRoleDto) {
+    this.validateRoleName(dto.name);
+
     // Check if name already exists for this business
     const existing = await this.prisma.securityRole.findFirst({
       where: { negocioId, name: dto.name },
@@ -81,6 +92,7 @@ export class RolesService {
 
   async update(id: number, negocioId: number, dto: UpdateSecurityRoleDto) {
     const role = await this.findOne(id, negocioId);
+    this.validateRoleName(dto.name);
 
     // System roles cannot have their name changed
     if (role.isSystem && dto.name && dto.name !== role.name) {
