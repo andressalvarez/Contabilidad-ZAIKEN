@@ -234,6 +234,8 @@ async function upsertBaseRolesAndPermissions() {
 
   const negocios = await prisma.negocio.findMany({ select: { id: true } });
   const allPermissions = await prisma.permission.findMany();
+  const migrateLegacyEmployee =
+    (process.env.SEED_SECURITY_MIGRATE_LEGACY_EMPLOYEE || 'true').toLowerCase() === 'true';
 
   for (const negocio of negocios) {
     const adminRole = await prisma.securityRole.upsert({
@@ -263,6 +265,57 @@ async function upsertBaseRolesAndPermissions() {
         active: true,
       },
     });
+
+    if (migrateLegacyEmployee) {
+      const legacyEmployeeRoles = await prisma.securityRole.findMany({
+        where: {
+          negocioId: negocio.id,
+          OR: [
+            { name: 'Empleado' },
+            { name: { startsWith: 'Empleado Legacy' } },
+          ],
+        },
+        select: { id: true, name: true },
+      });
+
+      for (const legacyRole of legacyEmployeeRoles) {
+        if (legacyRole.id === collaboratorRole.id) continue;
+
+        await prisma.usuario.updateMany({
+          where: { negocioId: negocio.id, securityRoleId: legacyRole.id },
+          data: { securityRoleId: collaboratorRole.id },
+        });
+
+        const legacyRolePermissions = await prisma.rolePermission.findMany({
+          where: { roleId: legacyRole.id },
+          select: { permissionId: true },
+        });
+
+        for (const rp of legacyRolePermissions) {
+          await prisma.rolePermission.upsert({
+            where: {
+              roleId_permissionId: {
+                roleId: collaboratorRole.id,
+                permissionId: rp.permissionId,
+              },
+            },
+            update: {},
+            create: {
+              roleId: collaboratorRole.id,
+              permissionId: rp.permissionId,
+            },
+          });
+        }
+
+        await prisma.securityRole.delete({
+          where: { id: legacyRole.id },
+        });
+
+        console.log(
+          `[seed-security] migrated legacy role ${legacyRole.name} -> Colaborador in negocio ${negocio.id}`,
+        );
+      }
+    }
 
     const userRole = await prisma.securityRole.upsert({
       where: { negocioId_name: { negocioId: negocio.id, name: 'Usuario' } },
