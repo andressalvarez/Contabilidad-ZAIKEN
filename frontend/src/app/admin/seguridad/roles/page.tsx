@@ -607,6 +607,7 @@ export default function SecurityRolesPage() {
           )}
         </div>
       </div>
+      </div>
     </MainLayout>
   );
 }
