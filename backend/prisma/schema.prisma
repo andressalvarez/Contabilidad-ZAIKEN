@@ -16,7 +16,7 @@ model Negocio {
   nombre                   String
   descripcion              String?
   activo                   Boolean                  @default(true)
-  configuracion            Json?                    // Configuración específica del negocio
+  configuracion            Json?                    // ConfiguraciÃ³n especÃ­fica del negocio
   createdAt                DateTime                 @default(now())
   updatedAt                DateTime                 @updatedAt
 
@@ -84,8 +84,8 @@ model RegistroHoras {
   horas          Float
   descripcion    String?
   aprobado       Boolean   @default(false)
-  aprobadoPor    Int?      // ID del usuario que aprobó
-  fechaAprobacion DateTime? // Cuándo fue aprobado
+  aprobadoPor    Int?      // ID del usuario que aprobÃ³
+  fechaAprobacion DateTime? // CuÃ¡ndo fue aprobado
   rechazado      Boolean   @default(false)
   motivoRechazo  String?
   origen         String    @default("MANUAL") // MANUAL o TIMER
@@ -93,15 +93,15 @@ model RegistroHoras {
   timerFin       DateTime? // Para registros desde timer
   estado         String?   // RUNNING, PAUSADO, COMPLETADO (solo para TIMER)
 
-  // Campos para auditoría y edición de tiempos
-  timerInicioOriginal DateTime? // Guarda inicio real antes de edición
-  horasOriginales     Float?    // Horas calculadas antes de edición manual
-  editadoPor          Int?      // ID del usuario que editó
-  fechaEdicion        DateTime? // Cuándo se editó por última vez
+  // Campos para auditorÃ­a y ediciÃ³n de tiempos
+  timerInicioOriginal DateTime? // Guarda inicio real antes de ediciÃ³n
+  horasOriginales     Float?    // Horas calculadas antes de ediciÃ³n manual
+  editadoPor          Int?      // ID del usuario que editÃ³
+  fechaEdicion        DateTime? // CuÃ¡ndo se editÃ³ por Ãºltima vez
 
   // Soft delete
-  deletedAt           DateTime? // Cuándo fue eliminado
-  deletedBy           Int?      // ID del usuario que eliminó
+  deletedAt           DateTime? // CuÃ¡ndo fue eliminado
+  deletedBy           Int?      // ID del usuario que eliminÃ³
 
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -239,40 +239,39 @@ model Usuario {
   email     String   @unique
   password  String
   nombre    String
-  rol       String   @default("USER") // ADMIN_NEGOCIO, USER, EMPLEADO (legacy)
   activo    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Campos migrados de Persona (para consolidación)
+  // Campos migrados de Persona (para consolidaciÃ³n)
   rolId              Int?    // FK opcional a Rol (rol de negocio)
-  participacionPorc  Float   @default(0) // % de participación en utilidades
+  participacionPorc  Float   @default(0) // % de participaciÃ³n en utilidades
   horasTotales       Int     @default(0) // Total horas trabajadas
-  aportesTotales     Float   @default(0) // Total aportes económicos
+  aportesTotales     Float   @default(0) // Total aportes econÃ³micos
   valorHora          Float   @default(0) // Valor por hora actual
-  inversionHoras     Float   @default(0) // Inversión por horas
-  inversionTotal     Float   @default(0) // Inversión total
+  inversionHoras     Float   @default(0) // InversiÃ³n por horas
+  inversionTotal     Float   @default(0) // InversiÃ³n total
   notas              String? // Notas adicionales
 
-  // Campos para sistema SMTP (activación y recuperación)
+  // Campos para sistema SMTP (activaciÃ³n y recuperaciÃ³n)
   emailVerified        Boolean   @default(false)  // Si el email fue verificado
-  activationToken      String?                    // Token de activación de cuenta
-  resetPasswordToken   String?                    // Token de recuperación de contraseña
-  resetPasswordExpires DateTime?                  // Expiración del token de reset
+  activationToken      String?                    // Token de activaciÃ³n de cuenta
+  resetPasswordToken   String?                    // Token de recuperaciÃ³n de contraseÃ±a
+  resetPasswordExpires DateTime?                  // ExpiraciÃ³n del token de reset
 
-  // Sistema de seguridad dinámico
-  securityRoleId       Int?                       // FK al rol de seguridad dinámico
+  // Sistema de seguridad dinÃ¡mico
+  securityRoleId       Int                        // FK al rol de seguridad dinÃ¡mico
   failedLoginAttempts  Int       @default(0)      // Intentos fallidos de login
   lockedUntil          DateTime?                  // Bloqueado hasta esta fecha
-  lastPasswordChange   DateTime?                  // Último cambio de contraseña
-  mustChangePassword   Boolean   @default(false)  // Debe cambiar contraseña
+  lastPasswordChange   DateTime?                  // Ãšltimo cambio de contraseÃ±a
+  mustChangePassword   Boolean   @default(false)  // Debe cambiar contraseÃ±a
 
-  // Relación con negocio
+  // RelaciÃ³n con negocio
   negocio       Negocio   @relation(fields: [negocioId], references: [id])
   rolNegocio    Rol?      @relation("UsuarioRolNegocio", fields: [rolId], references: [id])
 
   // Sistema de seguridad
-  securityRole         SecurityRole?     @relation(fields: [securityRoleId], references: [id])
+  securityRole         SecurityRole      @relation(fields: [securityRoleId], references: [id])
   securityAuditLogs    SecurityAuditLog[]
   securitySessions     SecuritySession[]
 
@@ -297,7 +296,6 @@ model Usuario {
   rolesSistema  UsuarioRol[]
 
   @@index([negocioId])
-  @@index([negocioId, rol])
   @@index([rolId])
   @@index([activationToken])
   @@index([resetPasswordToken])
@@ -306,7 +304,7 @@ model Usuario {
   @@map("usuarios")
 }
 
-// Modelos para VS Categorías - Sistema Avanzado
+// Modelos para VS CategorÃ­as - Sistema Avanzado
 model VSCarpeta {
   id          Int       @id @default(autoincrement())
   negocioId   Int
@@ -357,7 +355,7 @@ model VSConfiguracion {
   id                    Int      @id @default(autoincrement())
   negocioId             Int
   nombre                String
-  configuracion         Json     // Almacena toda la configuración como JSON
+  configuracion         Json     // Almacena toda la configuraciÃ³n como JSON
   activo                Boolean  @default(true)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
@@ -513,7 +511,7 @@ model HourDebtAuditLog {
 }
 
 // ==========================
-// SISTEMA DE SEGURIDAD DINÁMICO
+// SISTEMA DE SEGURIDAD DINÃMICO
 // ==========================
 
 // Roles de seguridad configurables por negocio
@@ -524,7 +522,7 @@ model SecurityRole {
   description String?
   color       String?   // Color para UI (hex)
   isSystem    Boolean   @default(false) @map("is_system") // true = no editable (ADMIN, etc.)
-  priority    Int       @default(0) // Mayor = más importante
+  priority    Int       @default(0) // Mayor = mÃ¡s importante
   active      Boolean   @default(true)
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
@@ -539,13 +537,20 @@ model SecurityRole {
   @@map("security_roles")
 }
 
-// Catálogo de permisos disponibles (global, no por negocio)
+// CatÃ¡logo de permisos disponibles (global, no por negocio)
 model Permission {
   id           Int       @id @default(autoincrement())
+  code         String    @unique // RESOURCE.CONTEXT.ACTION
+  resource     String    // RESOURCE
+  context      String    // CONTEXT
   subject      String    // "Usuario", "RegistroHoras", "Transaccion", etc.
   action       String    // "create", "read", "update", "delete", "approve", "manage"
-  description  String    // Descripción legible
+  description  String    // DescripciÃ³n legible
   category     String    // "users", "hours", "finance", "security", "settings"
+  route        String?   // Ruta principal asociada al permiso
+  dependencies Json?     // Codigos de permisos requeridos/recomendados
+  isSystem     Boolean   @default(true) @map("is_system")
+  active       Boolean   @default(true)
   displayOrder Int       @default(0) @map("display_order") // Orden en UI
 
   rolePermissions RolePermission[]
@@ -572,7 +577,7 @@ model RolePermission {
   @@map("role_permissions")
 }
 
-// Log de auditoría de seguridad
+// Log de auditorÃ­a de seguridad
 model SecurityAuditLog {
   id          Int       @id @default(autoincrement())
   negocioId   Int       @map("negocio_id")
@@ -580,7 +585,7 @@ model SecurityAuditLog {
   eventType   String    @map("event_type")    // LOGIN, LOGOUT, LOGIN_FAILED, PASSWORD_CHANGE, ROLE_ASSIGNED, etc.
   targetType  String?   @map("target_type")   // "Usuario", "SecurityRole", etc.
   targetId    Int?      @map("target_id")     // ID del recurso afectado
-  description String                           // Descripción legible del evento
+  description String                           // DescripciÃ³n legible del evento
   metadata    Json?                            // Datos adicionales (cambios, valores anteriores, etc.)
   ipAddress   String?   @map("ip_address")
   userAgent   String?   @map("user_agent")
@@ -601,8 +606,8 @@ model SecuritySession {
   id           String    @id @default(uuid())
   userId       Int       @map("user_id")
   negocioId    Int       @map("negocio_id")
-  tokenHash    String    @unique @map("token_hash") // Hash del JWT para invalidación
-  deviceInfo   String?   @map("device_info")        // Información del dispositivo
+  tokenHash    String    @unique @map("token_hash") // Hash del JWT para invalidaciÃ³n
+  deviceInfo   String?   @map("device_info")        // InformaciÃ³n del dispositivo
   ipAddress    String?   @map("ip_address")
   lastActivity DateTime  @default(now()) @map("last_activity")
   expiresAt    DateTime  @map("expires_at")
@@ -618,27 +623,27 @@ model SecuritySession {
   @@map("security_sessions")
 }
 
-// Configuración de seguridad por negocio
+// ConfiguraciÃ³n de seguridad por negocio
 model SecuritySettings {
   id                      Int      @id @default(autoincrement())
   negocioId               Int      @unique @map("negocio_id")
 
-  // Políticas de contraseña
+  // PolÃ­ticas de contraseÃ±a
   minPasswordLength       Int      @default(8)  @map("min_password_length")
   requireUppercase        Boolean  @default(true) @map("require_uppercase")
   requireNumbers          Boolean  @default(true) @map("require_numbers")
   requireSpecialChars     Boolean  @default(false) @map("require_special_chars")
   passwordExpirationDays  Int      @default(0) @map("password_expiration_days") // 0 = no expira
 
-  // Políticas de sesión
+  // PolÃ­ticas de sesiÃ³n
   sessionTimeoutMinutes   Int      @default(480) @map("session_timeout_minutes") // 8 horas
   maxConcurrentSessions   Int      @default(5) @map("max_concurrent_sessions")
 
-  // Políticas de bloqueo
+  // PolÃ­ticas de bloqueo
   maxLoginAttempts        Int      @default(5) @map("max_login_attempts")
   lockoutDurationMinutes  Int      @default(15) @map("lockout_duration_minutes")
 
-  // Auditoría
+  // AuditorÃ­a
   auditRetentionDays      Int      @default(365) @map("audit_retention_days")
   logAllActions           Boolean  @default(true) @map("log_all_actions")
 
@@ -649,3 +654,5 @@ model SecuritySettings {
 
   @@map("security_settings")
 }
+
+

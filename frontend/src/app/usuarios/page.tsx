@@ -25,16 +25,19 @@ import {
 import { useUsuarios } from '@/hooks/useUsuarios';
 import { UsuariosService } from '@/services/usuarios.service';
 import { RolesService } from '@/services/roles.service';
+import SecurityService, { SecurityRole } from '@/services/security.service';
 import { Usuario, Rol, CreateUsuarioDto } from '@/types';
 import MainLayout from '@/components/layout/MainLayout';
 import { toast } from 'sonner';
+import { showConfirm } from '@/lib/app-dialog';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { ScrollableTable } from '@/components/ui/ScrollableTable';
+import { formatSystemRoleName } from '@/lib/role-labels';
 
 interface FormData {
   nombre: string;
   email: string;
-  rol: 'ADMIN_NEGOCIO' | 'USER' | 'EMPLEADO';
+  securityRoleId?: number;
   password: string;
   activo: boolean;
   rolId?: number;
@@ -49,7 +52,7 @@ export default function UsuariosPage() {
   const [formData, setFormData] = useState<FormData>({
     nombre: '',
     email: '',
-    rol: 'USER',
+    securityRoleId: undefined,
     password: '',
     activo: true,
     rolId: undefined,
@@ -61,10 +64,15 @@ export default function UsuariosPage() {
   const queryClient = useQueryClient();
   const { data: usuarios = [], isLoading, error } = useUsuarios();
 
-  // ✅ Cargar roles para el selector
+  // âœ… Cargar roles para el selector
   const { data: roles = [] } = useQuery<Rol[]>({
     queryKey: ['roles'],
     queryFn: () => RolesService.getActive(),
+  });
+
+  const { data: securityRoles = [] } = useQuery<SecurityRole[]>({
+    queryKey: ['security-roles'],
+    queryFn: SecurityService.getRoles,
   });
 
   // Mutations
@@ -117,7 +125,12 @@ export default function UsuariosPage() {
   });
 
   const handleSendPasswordReset = async (usuario: Usuario) => {
-    if (confirm(`¿Enviar correo de recuperación de contraseña a ${usuario.email}?`)) {
+    const sendReset = await showConfirm({
+      title: 'Enviar recuperación',
+      message: `¿Enviar correo de recuperación de contraseña a ${usuario.email}?`,
+      confirmText: 'Enviar',
+    });
+    if (sendReset) {
       await sendPasswordResetMutation.mutateAsync(usuario.id);
     }
   };
@@ -131,11 +144,16 @@ export default function UsuariosPage() {
       return;
     }
 
+    if (!formData.securityRoleId) {
+      toast.error('Debes seleccionar un rol del sistema');
+      return;
+    }
+
     if (editingUsuario) {
       const updateData: Partial<CreateUsuarioDto> = {
         nombre: formData.nombre,
         email: formData.email,
-        rol: formData.rol,
+        securityRoleId: formData.securityRoleId!,
         activo: formData.activo,
         rolId: formData.rolId,
         participacionPorc: formData.participacionPorc,
@@ -162,7 +180,7 @@ export default function UsuariosPage() {
     setFormData({
       nombre: usuario.nombre,
       email: usuario.email,
-      rol: usuario.rol,
+      securityRoleId: usuario.securityRoleId,
       password: '', // No pre-llenar password por seguridad
       activo: usuario.activo,
       rolId: usuario.rolId,
@@ -175,7 +193,13 @@ export default function UsuariosPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (confirm('¿Estás seguro de que quieres eliminar este usuario?')) {
+    const confirmedDelete = await showConfirm({
+      title: 'Eliminar usuario',
+      message: '¿Estás seguro de que quieres eliminar este usuario?',
+      danger: true,
+      confirmText: 'Eliminar',
+    });
+    if (confirmedDelete) {
       await deleteMutation.mutateAsync(id);
     }
   };
@@ -184,7 +208,7 @@ export default function UsuariosPage() {
     setFormData({
       nombre: '',
       email: '',
-      rol: 'USER',
+      securityRoleId: undefined,
       password: '',
       activo: true,
       rolId: undefined,
@@ -313,15 +337,9 @@ export default function UsuariosPage() {
                           </div>
                         </td>
                         <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            usuario.rol === 'ADMIN_NEGOCIO'
-                              ? 'bg-purple-100 text-purple-800'
-                              : usuario.rol === 'EMPLEADO'
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-blue-100 text-blue-800'
-                          }`}>
+                          <span className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
                             <Shield className="h-3 w-3" />
-                            {usuario.rol === 'ADMIN_NEGOCIO' ? 'ADMIN' : usuario.rol}
+                            {formatSystemRoleName(usuario.securityRole?.name)}
                           </span>
                         </td>
                         <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
@@ -463,14 +481,19 @@ export default function UsuariosPage() {
                     Rol del Sistema *
                   </label>
                   <select
-                    value={formData.rol}
-                    onChange={(e) => setFormData({ ...formData, rol: e.target.value as 'ADMIN_NEGOCIO' | 'USER' | 'EMPLEADO' })}
+                    value={formData.securityRoleId || ''}
+                    onChange={(e) => setFormData({ ...formData, securityRoleId: e.target.value ? parseInt(e.target.value, 10) : undefined })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
                     required
                   >
-                    <option value="USER">Usuario</option>
-                    <option value="EMPLEADO">Empleado</option>
-                    <option value="ADMIN_NEGOCIO">Administrador</option>
+                    <option value="">-- Selecciona rol del sistema --</option>
+                    {securityRoles
+                      .filter((role) => role.active)
+                      .map((role) => (
+                        <option key={role.id} value={role.id}>
+                          {formatSystemRoleName(role.name)}
+                        </option>
+                      ))}
                   </select>
                 </div>
 
@@ -555,7 +578,7 @@ export default function UsuariosPage() {
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
-                    placeholder="••••••••"
+                    placeholder="????????"
                     required={!editingUsuario}
                   />
                   {!editingUsuario && (
@@ -599,3 +622,4 @@ export default function UsuariosPage() {
     </MainLayout>
   );
 }
+

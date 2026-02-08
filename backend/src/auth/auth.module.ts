@@ -6,12 +6,14 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { PrismaModule } from '../prisma/prisma.module';
 import { UsuariosModule } from '../usuarios/usuarios.module';
+import { SecurityModule } from '../security/security.module';
 
 @Module({
   imports: [
     PrismaModule,
     PassportModule,
     forwardRef(() => UsuariosModule),
+    SecurityModule,
     JwtModule.registerAsync({
       useFactory: () => ({
         secret: process.env.JWT_SECRET || 'change_this_secret_in_env',
@@ -24,6 +26,5 @@ import { UsuariosModule } from '../usuarios/usuarios.module';
   exports: [AuthService],
 })
 export class AuthModule {}
-
 
 

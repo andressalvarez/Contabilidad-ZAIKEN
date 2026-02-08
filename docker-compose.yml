@@ -11,6 +11,7 @@ services:
       POSTGRES_DB: zaiken_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - E:/pc trabajo/andres carpeta/documentos personales/Finanzas/BACKUPPROD 0802:/backup-data:ro
     ports:
       - "5432:5432"
     healthcheck:
@@ -42,6 +43,7 @@ services:
       - ./backend/backups:/app/backups
       - ./backend/docker-entrypoint.sh:/app/docker-entrypoint.sh
       - ./backend/prisma:/app/prisma
+      - E:/pc trabajo/andres carpeta/documentos personales/Finanzas/BACKUPPROD 0802:/backup-data:ro
       - /app/node_modules
     restart: unless-stopped
 

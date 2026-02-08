@@ -472,10 +472,7 @@ img {
     }
 }
 
-/* Asegurar que los elementos ocultos no ocupen espacio */
-.hidden {
-    display: none !important;
-}
+/* No sobrescribir `.hidden` globalmente para no romper breakpoints de Tailwind */
 
 /* Mejoras para el z-index en móviles */
 @media (max-width: 768px) {

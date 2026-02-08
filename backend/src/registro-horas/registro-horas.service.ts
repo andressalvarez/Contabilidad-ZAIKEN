@@ -14,9 +14,25 @@ export class RegistroHorasService {
   ) {}
 
   async create(negocioId: number, createRegistroHorasDto: CreateRegistroHorasDto) {
-    // VALIDACIÓN: Límite de 16 horas por registro
-    if (createRegistroHorasDto.horas > 16) {
-      throw new BadRequestException('El máximo permitido es 16 horas por registro.');
+    let horasCalculadas = createRegistroHorasDto.horas ?? 0;
+    let fechaRegistro = new Date(createRegistroHorasDto.fecha);
+    let timerInicio: Date | undefined;
+    let timerFin: Date | undefined;
+
+    if (createRegistroHorasDto.timerInicio && createRegistroHorasDto.timerFin) {
+      timerInicio = new Date(createRegistroHorasDto.timerInicio);
+      timerFin = new Date(createRegistroHorasDto.timerFin);
+
+      if (timerFin <= timerInicio) {
+        throw new BadRequestException('La hora de fin debe ser posterior a la hora de inicio.');
+      }
+
+      horasCalculadas = (timerFin.getTime() - timerInicio.getTime()) / (1000 * 60 * 60);
+      fechaRegistro = timerInicio;
+    }
+
+    if (horasCalculadas > 16) {
+      throw new BadRequestException('El maximo permitido es 16 horas por registro.');
     }
 
     const usuarioId = createRegistroHorasDto.usuarioId;
@@ -39,7 +55,7 @@ export class RegistroHorasService {
       });
 
       if (!campana) {
-        throw new NotFoundException('Campaña no encontrada');
+        throw new NotFoundException('CampaÃ±a no encontrada');
       }
     }
 
@@ -48,9 +64,13 @@ export class RegistroHorasService {
         negocioId,
         usuarioId,
         campanaId: createRegistroHorasDto.campanaId,
-        fecha: new Date(createRegistroHorasDto.fecha),
-        horas: createRegistroHorasDto.horas,
+        fecha: fechaRegistro,
+        horas: Math.round(horasCalculadas * 100) / 100,
         descripcion: createRegistroHorasDto.descripcion,
+        origen: createRegistroHorasDto.origen || (timerInicio && timerFin ? 'TIMER' : 'MANUAL'),
+        timerInicio,
+        timerFin,
+        estado: timerInicio && timerFin ? 'COMPLETADO' : undefined,
       },
       include: {
         usuario: {
@@ -162,14 +182,14 @@ export class RegistroHorasService {
       throw new BadRequestException('No se puede editar un registro ya aprobado. Contacte al administrador.');
     }
 
-    // VALIDACIÓN: Límite de 16 horas por registro
+    // VALIDACIÃ“N: LÃ­mite de 16 horas por registro
     if (updateRegistroHorasDto.horas !== undefined && updateRegistroHorasDto.horas > 16) {
-      throw new BadRequestException('El máximo permitido es 16 horas por registro.');
+      throw new BadRequestException('El mÃ¡ximo permitido es 16 horas por registro.');
     }
 
     const updateData: any = {};
 
-    // Guardar auditoría si se están cambiando las horas
+    // Guardar auditorÃ­a si se estÃ¡n cambiando las horas
     if (updateRegistroHorasDto.horas !== undefined && updateRegistroHorasDto.horas !== registro.horas) {
       // Solo guardar horasOriginales la primera vez que se edita
       if (registro.horasOriginales === null) {
@@ -247,6 +267,37 @@ export class RegistroHorasService {
     return this.prisma.registroHoras.delete({
       where: { id },
     });
+  }
+  async removeWithPermissions(id: number, negocioId: number, userId: number) {
+    const registro = await this.findOne(id, negocioId);
+
+    if (registro.aprobado) {
+      const user = await this.prisma.usuario.findFirst({
+        where: { id: userId, negocioId },
+        select: { securityRoleId: true },
+      });
+
+      if (!user?.securityRoleId) {
+        throw new ForbiddenException('No tienes permisos para eliminar registros aprobados');
+      }
+
+      const approvePermission = await this.prisma.rolePermission.findFirst({
+        where: {
+          roleId: user.securityRoleId,
+          permission: {
+            active: true,
+            subject: 'RegistroHoras',
+            action: { in: ['approve', 'manage'] },
+          },
+        },
+      });
+
+      if (!approvePermission) {
+        throw new ForbiddenException('Solo un administrador aprobador puede eliminar registros aprobados');
+      }
+    }
+
+    return this.remove(id, negocioId);
   }
 
   async getStats(negocioId: number) {
@@ -338,7 +389,7 @@ export class RegistroHorasService {
     const registro = await this.findOne(id, negocioId);
 
     if (registro.estado !== 'RUNNING') {
-      throw new BadRequestException('El timer no está en ejecución');
+      throw new BadRequestException('El timer no estÃ¡ en ejecuciÃ³n');
     }
 
     if (!registro.timerInicio) {
@@ -381,7 +432,7 @@ export class RegistroHorasService {
     const registro = await this.findOne(id, negocioId);
 
     if (registro.estado !== 'PAUSADO') {
-      throw new BadRequestException('El timer no está pausado');
+      throw new BadRequestException('El timer no estÃ¡ pausado');
     }
 
     return this.prisma.registroHoras.update({
@@ -422,7 +473,7 @@ export class RegistroHorasService {
     const registro = await this.findOne(id, negocioId);
 
     if (registro.estado !== 'RUNNING' && registro.estado !== 'PAUSADO') {
-      throw new BadRequestException('El timer no está activo');
+      throw new BadRequestException('El timer no estÃ¡ activo');
     }
 
     let horasFinales = registro.horas;
@@ -439,23 +490,24 @@ export class RegistroHorasService {
         throw new BadRequestException('La hora de fin debe ser posterior a la hora de inicio');
       }
 
-      // Recalcular horas basándose en los nuevos tiempos
+      // Recalcular horas basÃ¡ndose en los nuevos tiempos
       horasFinales = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
     } else if (registro.estado === 'RUNNING' && startDate) {
-      // Comportamiento original: Si está corriendo, calcular tiempo adicional
+      // Comportamiento original: Si estÃ¡ corriendo, calcular tiempo adicional
       const horasTranscurridas = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
       horasFinales += horasTranscurridas;
     }
 
-    // Validación: Límite de 16 horas
+    // ValidaciÃ³n: LÃ­mite de 16 horas
     if (horasFinales > 16) {
-      throw new BadRequestException('El máximo permitido es 16 horas por registro');
+      throw new BadRequestException('El mÃ¡ximo permitido es 16 horas por registro');
     }
 
     return this.prisma.registroHoras.update({
       where: { id },
       data: {
         estado: 'COMPLETADO',
+        fecha: startDate || registro.fecha,
         timerInicio: startDate,
         timerFin: endDate,
         horas: horasFinales,
@@ -538,79 +590,69 @@ export class RegistroHorasService {
    * Aprueba un registro de horas
    */
   async approve(negocioId: number, id: number, userId: number) {
-    // Single transaction for approve + debt deduction
-    return await this.prisma.$transaction(async (tx) => {
-      const registro = await tx.registroHoras.findFirst({
-        where: { id, negocioId },
-        include: {
-          usuario: true,
-        },
-      });
+    const registro = await this.prisma.registroHoras.findFirst({
+      where: { id, negocioId },
+      include: {
+        usuario: true,
+      },
+    });
 
-      if (!registro) {
-        throw new NotFoundException(`Registro #${id} no encontrado`);
-      }
+    if (!registro) {
+      throw new NotFoundException(`Registro #${id} no encontrado`);
+    }
 
-      if (registro.aprobado) {
-        throw new BadRequestException('El registro ya está aprobado');
-      }
+    if (registro.aprobado) {
+      throw new BadRequestException('El registro ya estÃ¡ aprobado');
+    }
 
-      if (registro.rechazado) {
-        throw new BadRequestException('El registro está rechazado. Elimínelo o edítelo primero.');
-      }
+    if (registro.rechazado) {
+      throw new BadRequestException('El registro estÃ¡ rechazado. ElimÃ­nelo o edÃ­telo primero.');
+    }
 
-      // 1. Approve record
-      const approved = await tx.registroHoras.update({
-        where: { id },
-        data: {
-          aprobado: true,
-          aprobadoPor: userId,
-          fechaAprobacion: new Date(),
-          rechazado: false,
-          motivoRechazo: null,
-        },
-        include: {
-          usuario: {
-            select: {
-              id: true,
-              nombre: true,
-              email: true,
-              rolNegocio: {
-                select: {
-                  id: true,
-                  nombreRol: true,
-                },
+    // Persist approval first so the operation never returns a false-positive success.
+    const approved = await this.prisma.registroHoras.update({
+      where: { id },
+      data: {
+        aprobado: true,
+        aprobadoPor: userId,
+        fechaAprobacion: new Date(),
+        rechazado: false,
+        motivoRechazo: null,
+      },
+      include: {
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rolNegocio: {
+              select: {
+                id: true,
+                nombreRol: true,
               },
             },
           },
-          campana: true,
         },
-      });
-
-      // 2. Apply debt deduction (within same transaction)
-      const targetUserId = approved.usuarioId;
-      if (targetUserId) {
-        try {
-          await this.hourDebtService.applyDebtDeduction(
-            negocioId,
-            targetUserId,
-            approved.id,
-            approved.horas,
-            approved.fecha,
-            tx, // Pass transaction
-          );
-        } catch (error) {
-          this.logger.error('Error applying debt deduction:', error);
-          // Don't fail approval if deduction fails
-        }
-      }
-
-      return approved;
-    }, {
-      isolationLevel: 'ReadCommitted',
-      maxWait: 5000,
-      timeout: 10000,
+        campana: true,
+      },
     });
+
+    const targetUserId = approved.usuarioId;
+    if (targetUserId) {
+      try {
+        await this.hourDebtService.applyDebtDeduction(
+          negocioId,
+          targetUserId,
+          approved.id,
+          approved.horas,
+          approved.fecha,
+        );
+      } catch (error) {
+        this.logger.error('Error applying debt deduction:', error);
+      }
+    }
+
+    return approved;
   }
 
   /**
@@ -662,7 +704,7 @@ export class RegistroHorasService {
   }
 
   /**
-   * Obtiene todos los registros pendientes de aprobación
+   * Obtiene todos los registros pendientes de aprobaciÃ³n
    */
   async getPending(negocioId: number) {
     return this.prisma.registroHoras.findMany({
@@ -729,7 +771,7 @@ export class RegistroHorasService {
 
   /**
    * Actualiza los tiempos de inicio/fin de un registro y recalcula las horas
-   * Solo para registros de tipo TIMER que NO están aprobados
+   * Solo para registros de tipo TIMER que NO estÃ¡n aprobados
    */
   async updateTimerTimes(
     negocioId: number,
@@ -785,10 +827,11 @@ export class RegistroHorasService {
         throw new BadRequestException('La hora de fin debe ser posterior a la hora de inicio');
       }
       if (horasCalculadas > 16) {
-        throw new BadRequestException('El máximo permitido es 16 horas por registro');
+        throw new BadRequestException('El mÃ¡ximo permitido es 16 horas por registro');
       }
 
       updateData.horas = Math.round(horasCalculadas * 100) / 100; // Redondear a 2 decimales
+      updateData.fecha = inicio;
     }
 
     return this.prisma.registroHoras.update({
@@ -814,7 +857,7 @@ export class RegistroHorasService {
   }
 
   /**
-   * Re-envía un registro rechazado para nueva revisión
+   * Re-envÃ­a un registro rechazado para nueva revisiÃ³n
    * Limpia el estado de rechazo y lo pone como pendiente
    */
   async resubmit(negocioId: number, id: number) {
@@ -825,7 +868,7 @@ export class RegistroHorasService {
     }
 
     if (registro.aprobado) {
-      throw new BadRequestException('Este registro ya está aprobado');
+      throw new BadRequestException('Este registro ya estÃ¡ aprobado');
     }
 
     return this.prisma.registroHoras.update({
@@ -856,8 +899,8 @@ export class RegistroHorasService {
   }
 
   /**
-   * Obtiene timers "huérfanos" - RUNNING por más de X horas sin actividad
-   * Útil para que el admin detecte timers olvidados
+   * Obtiene timers "huÃ©rfanos" - RUNNING por mÃ¡s de X horas sin actividad
+   * Ãštil para que el admin detecte timers olvidados
    */
   async getOrphanedTimers(negocioId: number, hoursThreshold: number = 12) {
     const thresholdDate = new Date(Date.now() - hoursThreshold * 60 * 60 * 1000);
@@ -893,14 +936,14 @@ export class RegistroHorasService {
   }
 
   /**
-   * Cierra forzadamente un timer (para timers huérfanos)
-   * Solo admin debería poder usar esto
+   * Cierra forzadamente un timer (para timers huÃ©rfanos)
+   * Solo admin deberÃ­a poder usar esto
    */
   async forceCloseTimer(negocioId: number, id: number, adminUserId: number) {
     const registro = await this.findOne(id, negocioId);
 
     if (registro.estado !== 'RUNNING' && registro.estado !== 'PAUSADO') {
-      throw new BadRequestException('El timer no está activo');
+      throw new BadRequestException('El timer no estÃ¡ activo');
     }
 
     // Calcular horas hasta ahora
@@ -911,7 +954,7 @@ export class RegistroHorasService {
       horasFinales += horasTranscurridas;
     }
 
-    // Limitar a 16 horas máximo
+    // Limitar a 16 horas mÃ¡ximo
     horasFinales = Math.min(horasFinales, 16);
 
     return this.prisma.registroHoras.update({
@@ -945,3 +988,7 @@ export class RegistroHorasService {
     });
   }
 }
+
+
+
+

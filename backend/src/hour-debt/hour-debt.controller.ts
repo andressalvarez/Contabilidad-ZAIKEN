@@ -16,11 +16,18 @@ import { CreateDebtDto, UpdateDebtDto } from './dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { NegocioId } from '../auth/negocio-id.decorator';
 import { DebtStatus } from '@prisma/client';
+import { PermissionsGuard } from '../common/guards/permissions.guard';
+import { Permissions } from '../common/decorators/permissions.decorator';
+import { Action } from '../casl/action.enum';
 
 @Controller('hour-debt')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class HourDebtController {
   constructor(private readonly hourDebtService: HourDebtService) {}
+
+  private hasPermissionCode(req: any, code: string): boolean {
+    return Array.isArray(req.permissionCodes) && req.permissionCodes.includes(code);
+  }
 
   // ========================================
   // USER ENDPOINTS
@@ -31,6 +38,7 @@ export class HourDebtController {
    * POST /hour-debt
    */
   @Post()
+  @Permissions({ action: Action.Create, subject: 'HourDebt' })
   async create(
     @Request() req,
     @Body() createDto: CreateDebtDto,
@@ -39,9 +47,12 @@ export class HourDebtController {
     // Users can only create debt for themselves
     const targetUserId = createDto.usuarioId || req.user.userId;
 
-    if (req.user.rol === 'USER' && targetUserId !== req.user.userId) {
+    if (
+      targetUserId !== req.user.userId &&
+      !this.hasPermissionCode(req, 'HOUR_DEBT.GLOBAL.MANAGE')
+    ) {
       throw new ForbiddenException(
-        'No puedes crear deuda para otro usuario. Solo admins pueden hacerlo.',
+        'No puedes crear deuda para otro usuario sin permiso de gestión total.',
       );
     }
 
@@ -57,6 +68,7 @@ export class HourDebtController {
    * GET /hour-debt/my-balance
    */
   @Get('my-balance')
+  @Permissions({ action: Action.Read, subject: 'HourDebt' })
   async getMyBalance(@Request() req, @NegocioId() negocioId: number) {
     const userId = req.user.userId;
     return this.hourDebtService.getBalance(negocioId, userId);
@@ -67,6 +79,7 @@ export class HourDebtController {
    * GET /hour-debt/my-history
    */
   @Get('my-history')
+  @Permissions({ action: Action.Read, subject: 'HourDebt' })
   async getMyHistory(@Request() req, @NegocioId() negocioId: number) {
     const userId = req.user.userId;
     return this.hourDebtService.findByUsuario(negocioId, userId);
@@ -81,6 +94,7 @@ export class HourDebtController {
    * GET /hour-debt
    */
   @Get()
+  @Permissions({ action: Action.Read, subject: 'HourDebt' })
   async findAll(
     @Request() req,
     @NegocioId() negocioId: number,
@@ -89,11 +103,6 @@ export class HourDebtController {
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
   ) {
-    // Only admins can see all debts
-    if (req.user.rol !== 'ADMIN' && req.user.rol !== 'ADMIN_NEGOCIO') {
-      throw new ForbiddenException('Solo admins pueden ver todas las deudas');
-    }
-
     return this.hourDebtService.findAll(negocioId, {
       usuarioId: usuarioId ? parseInt(usuarioId, 10) : undefined,
       status,
@@ -107,14 +116,15 @@ export class HourDebtController {
    * GET /hour-debt/usuario/:id
    */
   @Get('usuario/:id')
+  @Permissions({ action: Action.Read, subject: 'HourDebt' })
   async getUserDebts(
     @Request() req,
     @Param('id') id: string,
     @NegocioId() negocioId: number,
   ) {
-    if (req.user.rol !== 'ADMIN' && req.user.rol !== 'ADMIN_NEGOCIO') {
+    if (!this.hasPermissionCode(req, 'HOUR_DEBT.GLOBAL.MANAGE')) {
       throw new ForbiddenException(
-        'Solo admins pueden ver deudas de otros usuarios',
+        'No tienes permiso para ver deudas de otros usuarios',
       );
     }
 
@@ -126,6 +136,7 @@ export class HourDebtController {
    * GET /hour-debt/:id
    */
   @Get(':id')
+  @Permissions({ action: Action.Read, subject: 'HourDebt' })
   async findOne(
     @Request() req,
     @Param('id') id: string,
@@ -138,8 +149,7 @@ export class HourDebtController {
 
     // Check permissions
     const isOwner = debt.usuarioId === req.user.userId;
-    const isAdmin =
-      req.user.rol === 'ADMIN' || req.user.rol === 'ADMIN_NEGOCIO';
+    const isAdmin = this.hasPermissionCode(req, 'HOUR_DEBT.GLOBAL.MANAGE');
 
     if (!isOwner && !isAdmin) {
       throw new ForbiddenException('No tienes permiso para ver esta deuda');
@@ -153,13 +163,14 @@ export class HourDebtController {
    * PATCH /hour-debt/:id
    */
   @Patch(':id')
+  @Permissions({ action: Action.Update, subject: 'HourDebt' })
   async update(
     @Request() req,
     @Param('id') id: string,
     @Body() updateDto: UpdateDebtDto,
     @NegocioId() negocioId: number,
   ) {
-    if (req.user.rol !== 'ADMIN' && req.user.rol !== 'ADMIN_NEGOCIO') {
+    if (!this.hasPermissionCode(req, 'HOUR_DEBT.GLOBAL.MANAGE')) {
       throw new ForbiddenException('Solo admins pueden editar deudas');
     }
 
@@ -177,12 +188,13 @@ export class HourDebtController {
    * DELETE /hour-debt/:id
    */
   @Delete(':id')
+  @Permissions({ action: Action.Delete, subject: 'HourDebt' })
   async remove(
     @Request() req,
     @Param('id') id: string,
     @NegocioId() negocioId: number,
   ) {
-    if (req.user.rol !== 'ADMIN' && req.user.rol !== 'ADMIN_NEGOCIO') {
+    if (!this.hasPermissionCode(req, 'HOUR_DEBT.GLOBAL.MANAGE')) {
       throw new ForbiddenException('Solo admins pueden eliminar deudas');
     }
 
@@ -199,13 +211,14 @@ export class HourDebtController {
    * PATCH /hour-debt/:id/cancel
    */
   @Patch(':id/cancel')
+  @Permissions({ action: Action.Update, subject: 'HourDebt' })
   async cancel(
     @Request() req,
     @Param('id') id: string,
     @Body('reason') reason: string,
     @NegocioId() negocioId: number,
   ) {
-    if (req.user.rol !== 'ADMIN' && req.user.rol !== 'ADMIN_NEGOCIO') {
+    if (!this.hasPermissionCode(req, 'HOUR_DEBT.GLOBAL.MANAGE')) {
       throw new ForbiddenException('Solo admins pueden cancelar deudas');
     }
 
@@ -223,6 +236,7 @@ export class HourDebtController {
    * GET /hour-debt/:id/deductions
    */
   @Get(':id/deductions')
+  @Permissions({ action: Action.Read, subject: 'DebtDeduction' })
   async getDeductions(
     @Request() req,
     @Param('id') id: string,
@@ -235,8 +249,7 @@ export class HourDebtController {
 
     // Check permissions
     const isOwner = debt.usuarioId === req.user.userId;
-    const isAdmin =
-      req.user.rol === 'ADMIN' || req.user.rol === 'ADMIN_NEGOCIO';
+    const isAdmin = this.hasPermissionCode(req, 'HOUR_DEBT.GLOBAL.MANAGE');
 
     if (!isOwner && !isAdmin) {
       throw new ForbiddenException(
@@ -252,12 +265,13 @@ export class HourDebtController {
    * GET /hour-debt/:id/audit-log
    */
   @Get(':id/audit-log')
+  @Permissions({ action: Action.Read, subject: 'HourDebtAuditLog' })
   async getAuditLog(
     @Request() req,
     @Param('id') id: string,
     @NegocioId() negocioId: number,
   ) {
-    if (req.user.rol !== 'ADMIN' && req.user.rol !== 'ADMIN_NEGOCIO') {
+    if (!this.hasPermissionCode(req, 'HOUR_DEBT.GLOBAL.MANAGE')) {
       throw new ForbiddenException(
         'Solo admins pueden ver el log de auditoría',
       );
@@ -271,8 +285,9 @@ export class HourDebtController {
    * GET /hour-debt/stats/business
    */
   @Get('stats/business')
+  @Permissions({ action: Action.Read, subject: 'HourDebt' })
   async getBusinessStats(@Request() req, @NegocioId() negocioId: number) {
-    if (req.user.rol !== 'ADMIN' && req.user.rol !== 'ADMIN_NEGOCIO') {
+    if (!this.hasPermissionCode(req, 'HOUR_DEBT.GLOBAL.MANAGE')) {
       throw new ForbiddenException('Solo admins pueden ver estadísticas');
     }
 

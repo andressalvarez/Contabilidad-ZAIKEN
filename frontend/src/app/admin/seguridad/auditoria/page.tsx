@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { SecurityService, AuditLog, AuditLogQuery } from '@/services/security.service';
 
+import MainLayout from '@/components/layout/MainLayout';
+
 // Event type labels and colors
 const EVENT_LABELS: Record<string, { label: string; color: string; bg: string }> = {
   LOGIN: { label: 'Inicio de sesión', color: 'text-green-700', bg: 'bg-green-100' },
@@ -98,10 +100,11 @@ export default function AuditPage() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+    <MainLayout>
+      <div className="container mx-auto p-6 space-y-6">
+        {/* Header */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 bg-blue-100 rounded-lg">
@@ -458,6 +461,7 @@ export default function AuditPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </MainLayout>
   );
 }

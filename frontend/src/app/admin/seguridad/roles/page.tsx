@@ -28,6 +28,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   operations: 'Operaciones',
   reports: 'Reportes',
   settings: 'Configuración',
+  system: 'Sistema',
 };
 
 // Color options for roles
@@ -41,6 +42,50 @@ const ROLE_COLORS = [
   { value: '#ec4899', label: 'Rosa', class: 'bg-pink-500' },
   { value: '#6b7280', label: 'Gris', class: 'bg-gray-500' },
 ];
+
+const ACTION_LABELS: Record<string, string> = {
+  read: 'Consultar',
+  create: 'Crear',
+  update: 'Actualizar',
+  delete: 'Eliminar',
+  manage: 'Gestionar',
+  approve: 'Aprobar',
+  reject: 'Rechazar',
+  export: 'Exportar',
+};
+
+function sanitizeMojibake(value?: string | null): string {
+  if (!value) return '';
+  let text = value;
+  for (let i = 0; i < 2; i += 1) {
+    if (!/[\u00C3\u00C2]/.test(text)) break;
+    try {
+      text = decodeURIComponent(escape(text));
+    } catch {
+      break;
+    }
+  }
+  return text;
+}
+
+function buildPermissionDescription(permission: Permission): string {
+  const normalized = sanitizeMojibake(permission.description);
+  if (normalized && normalized.trim().length > 0) {
+    return normalized;
+  }
+
+  const verb = ACTION_LABELS[permission.action] || permission.action;
+  const route = permission.route || `/${permission.resource.toLowerCase()}`;
+  const deps = Array.isArray(permission.dependencies) && permission.dependencies.length > 0
+    ? permission.dependencies.join(', ')
+    : 'sin dependencias';
+  return `Permite ${verb.toLowerCase()} en ${route}. Requiere ${deps}.`;
+}
+
+function getPermissionDependencies(permission: Permission): string[] {
+  if (!Array.isArray(permission.dependencies)) return [];
+  return permission.dependencies.map((dep) => sanitizeMojibake(dep)).filter(Boolean);
+}
 
 export default function SecurityRolesPage() {
   const queryClient = useQueryClient();
@@ -288,7 +333,7 @@ export default function SecurityRolesPage() {
                       )}
                     </div>
                     {role.description && (
-                      <p className="text-sm text-gray-500 truncate">{role.description}</p>
+                      <p className="text-sm text-gray-500 truncate">{sanitizeMojibake(role.description)}</p>
                     )}
                   </div>
                   <div className="flex items-center gap-1 text-sm text-gray-500">
@@ -464,11 +509,7 @@ export default function SecurityRolesPage() {
                                 ({categoryPerms.filter(p => selectedPermissions.has(p.id)).length}/{categoryPerms.length})
                               </span>
                             </div>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleAllInCategory(category);
-                              }}
+                            <span
                               className={`px-2 py-1 text-xs rounded ${
                                 allSelected
                                   ? 'bg-indigo-100 text-indigo-700'
@@ -477,35 +518,60 @@ export default function SecurityRolesPage() {
                                   : 'bg-gray-100 text-gray-600'
                               }`}
                             >
-                              {allSelected ? 'Desmarcar todo' : 'Seleccionar todo'}
-                            </button>
+                              {allSelected ? 'Todo seleccionado' : someSelected ? 'Parcial' : 'Sin seleccionar'}
+                            </span>
                           </button>
 
                           {isExpanded && (
                             <div className="px-6 py-2 space-y-2">
+                              <div className="flex justify-end">
+                                <button
+                                  onClick={() => toggleAllInCategory(category)}
+                                  className={`px-2 py-1 text-xs rounded ${
+                                    allSelected
+                                      ? 'bg-indigo-100 text-indigo-700'
+                                      : someSelected
+                                      ? 'bg-gray-200 text-gray-700'
+                                      : 'bg-gray-100 text-gray-600'
+                                  }`}
+                                >
+                                  {allSelected ? 'Desmarcar todo' : 'Seleccionar todo'}
+                                </button>
+                              </div>
                               {categoryPerms.map((permission) => (
                                 <label
                                   key={permission.id}
-                                  className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-gray-50 cursor-pointer"
+                                  className="flex items-start gap-3 py-2 px-3 rounded-lg hover:bg-gray-50 cursor-pointer border border-transparent hover:border-gray-200"
                                 >
                                   <input
                                     type="checkbox"
                                     checked={selectedPermissions.has(permission.id)}
                                     onChange={() => togglePermission(permission.id)}
-                                    className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                    className="mt-1 w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                                   />
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-sm font-medium text-gray-900">
-                                        {permission.description}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <span className="text-sm font-medium text-gray-900 truncate">
+                                        {buildPermissionDescription(permission)}
                                       </span>
                                       <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
-                                        {permission.action}
+                                        {ACTION_LABELS[permission.action] || permission.action}
+                                      </span>
+                                      <span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded">
+                                        {permission.code}
                                       </span>
                                     </div>
-                                    <span className="text-xs text-gray-500">
-                                      {permission.subject}
-                                    </span>
+                                    <div className="mt-1 text-xs text-gray-500 flex flex-wrap gap-2">
+                                      <span>{permission.subject}</span>
+                                      <span>•</span>
+                                      <span>{permission.route || 'Sin ruta principal'}</span>
+                                      <span>•</span>
+                                      <span>
+                                        Dependencias: {getPermissionDependencies(permission).length > 0
+                                          ? getPermissionDependencies(permission).join(', ')
+                                          : 'Sin dependencias'}
+                                      </span>
+                                    </div>
                                   </div>
                                 </label>
                               ))}

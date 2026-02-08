@@ -19,8 +19,13 @@ export interface Usuario {
   negocioId: number;
   email: string;
   nombre: string;
-  rol: 'ADMIN_NEGOCIO' | 'USER' | 'EMPLEADO';
   activo: boolean;
+  securityRoleId: number;
+  securityRole?: {
+    id: number;
+    name: string;
+    color?: string;
+  };
 
   rolId?: number;
   rolNegocio?: Rol;
@@ -129,6 +134,8 @@ export interface RegistroHoras {
   origen?: string; // 'MANUAL' | 'TIMER'
   timerInicio?: string;
   timerFin?: string;
+  pauseCount?: number;
+  pausedMinutes?: number;
   estado?: string; // 'RUNNING' | 'PAUSADO' | 'COMPLETADO'
 
   // Audit fields for time editing
@@ -178,7 +185,7 @@ export interface CreateUsuarioDto {
   email: string;
   password: string;
   nombre: string;
-  rol: 'ADMIN_NEGOCIO' | 'USER' | 'EMPLEADO';
+  securityRoleId: number;
   activo?: boolean;
   rolId?: number;
   participacionPorc?: number;
@@ -217,7 +224,10 @@ export interface CreateRegistroHorasDto {
   usuarioId: number;
   campanaId?: number;
   fecha: string;
-  horas: number;
+  horas?: number;
+  timerInicio?: string;
+  timerFin?: string;
+  origen?: string;
   descripcion?: string;
 }
 
@@ -276,4 +286,3 @@ export interface CampanaConMetricas extends Campana {
   rentabilidadReal?: number;
   objetivoIngresos?: number;
 }
-

@@ -120,7 +120,14 @@ api.interceptors.response.use(
     }
 
     // Return formatted error message
-    const errorMessage = error.response?.data?.message || error.message || 'Error desconocido';
+    const responseData = error.response?.data;
+    let errorMessage = responseData?.message || error.message || 'Error desconocido';
+    const missingPermissionCodes: string[] | undefined = responseData?.missingPermissionCodes;
+
+    if (Array.isArray(missingPermissionCodes) && missingPermissionCodes.length > 0) {
+      errorMessage = `No tienes permisos suficientes. Falta: ${missingPermissionCodes.join(', ')}`;
+    }
+
     return Promise.reject(new Error(errorMessage));
   }
 );

@@ -64,6 +64,7 @@ export type Subjects =
   | SecuritySession
   | 'SecuritySettings'
   | SecuritySettings
+  | 'BusinessRole'
   | 'Dashboard'
   | 'Estadisticas'
   | 'Negocio'

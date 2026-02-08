@@ -7,6 +7,7 @@ import { StopTimerModal } from './StopTimerModal';
 import { Play, Pause, Square, X, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { showConfirm } from '@/lib/app-dialog';
 
 interface TimerWidgetProps {
   usuarioId?: number;
@@ -83,7 +84,13 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ usuarioId, onStop }) =
   };
 
   const handleCancel = async () => {
-    if (!confirm('¿Está seguro de cancelar este timer? Se perderá el registro.')) {
+    const confirmed = await showConfirm({
+      title: 'Cancelar timer',
+      message: '¿Está seguro de cancelar este timer? Se perderá el registro.',
+      danger: true,
+      confirmText: 'Cancelar timer',
+    });
+    if (!confirmed) {
       return;
     }
 

@@ -1,5 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CreatePermissionDto } from './dto/create-permission.dto';
+import { UpdatePermissionDto } from './dto/update-permission.dto';
 
 // Permission category metadata for UI display
 export const PERMISSION_CATEGORIES = {
@@ -17,6 +19,8 @@ export const PERMISSION_CATEGORIES = {
 export class PermissionsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private readonly codeRegex = /^[A-Z][A-Z0-9_]*\.[A-Z][A-Z0-9_]*\.[A-Z][A-Z0-9_]*$/;
+
   async findAll() {
     const permissions = await this.prisma.permission.findMany({
       orderBy: [{ category: 'asc' }, { displayOrder: 'asc' }],
@@ -26,8 +30,13 @@ export class PermissionsService {
     const grouped = permissions.reduce(
       (acc, permission) => {
         if (!acc[permission.category]) {
+          const categoryMeta = PERMISSION_CATEGORIES[permission.category] ?? {
+            name: permission.category,
+            icon: 'Key',
+            order: 999,
+          };
           acc[permission.category] = {
-            ...PERMISSION_CATEGORIES[permission.category],
+            ...categoryMeta,
             category: permission.category,
             permissions: [],
           };
@@ -47,6 +56,24 @@ export class PermissionsService {
       where: { category },
       orderBy: { displayOrder: 'asc' },
     });
+  }
+
+  async findByCategoryGrouped() {
+    const permissions = await this.prisma.permission.findMany({
+      where: { active: true },
+      orderBy: [{ category: 'asc' }, { displayOrder: 'asc' }],
+    });
+
+    return permissions.reduce(
+      (acc, permission) => {
+        if (!acc[permission.category]) {
+          acc[permission.category] = [];
+        }
+        acc[permission.category].push(permission);
+        return acc;
+      },
+      {} as Record<string, typeof permissions>,
+    );
   }
 
   async findBySubject(subject: string) {
@@ -99,5 +126,97 @@ export class PermissionsService {
       ...rp.permission,
       conditions: rp.conditions,
     }));
+  }
+
+  async create(dto: CreatePermissionDto) {
+    if (!this.codeRegex.test(dto.code)) {
+      throw new BadRequestException(
+        'Permission code must match RESOURCE.CONTEXT.ACTION (uppercase snake case)',
+      );
+    }
+
+    const existing = await this.prisma.permission.findFirst({
+      where: {
+        OR: [{ code: dto.code }, { subject: dto.subject, action: dto.action }],
+      },
+    });
+    if (existing) {
+      throw new BadRequestException('Permission code or subject/action already exists');
+    }
+
+    return this.prisma.permission.create({
+      data: {
+        code: dto.code,
+        resource: dto.resource,
+        context: dto.context,
+        subject: dto.subject,
+        action: dto.action,
+        description: dto.description,
+        category: dto.category,
+        route: dto.route?.trim() || null,
+        dependencies: dto.dependencies ?? [],
+        displayOrder: dto.displayOrder ?? 0,
+        isSystem: dto.isSystem ?? false,
+        active: dto.active ?? true,
+      },
+    });
+  }
+
+  async update(id: number, dto: UpdatePermissionDto) {
+    const permission = await this.prisma.permission.findUnique({ where: { id } });
+    if (!permission) {
+      throw new NotFoundException(`Permission with ID ${id} not found`);
+    }
+
+    if (dto.code && !this.codeRegex.test(dto.code)) {
+      throw new BadRequestException(
+        'Permission code must match RESOURCE.CONTEXT.ACTION (uppercase snake case)',
+      );
+    }
+
+    if (dto.code && dto.code !== permission.code) {
+      const existing = await this.prisma.permission.findUnique({ where: { code: dto.code } });
+      if (existing) {
+        throw new BadRequestException('Permission code already exists');
+      }
+    }
+
+    return this.prisma.permission.update({
+      where: { id },
+      data: {
+        code: dto.code,
+        resource: dto.resource,
+        context: dto.context,
+        subject: dto.subject,
+        action: dto.action,
+        description: dto.description,
+        category: dto.category,
+        route: dto.route?.trim() || null,
+        dependencies: dto.dependencies ?? [],
+        displayOrder: dto.displayOrder,
+        isSystem: dto.isSystem,
+        active: dto.active,
+      },
+    });
+  }
+
+  async remove(id: number) {
+    const permission = await this.prisma.permission.findUnique({ where: { id } });
+    if (!permission) {
+      throw new NotFoundException(`Permission with ID ${id} not found`);
+    }
+
+    if (permission.isSystem) {
+      // For system permissions, soft-disable only.
+      return this.prisma.permission.update({
+        where: { id },
+        data: { active: false },
+      });
+    }
+
+    await this.prisma.rolePermission.deleteMany({
+      where: { permissionId: id },
+    });
+    return this.prisma.permission.delete({ where: { id } });
   }
 }

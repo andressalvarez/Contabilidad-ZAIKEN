@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useTiposTransaccion, useCreateTipoTransaccion, useUpdateTipoTransaccion, useDeleteTipoTransaccion } from '@/hooks/useTiposTransaccion';
 import { toast } from 'sonner';
+import { showConfirm } from '@/lib/app-dialog';
 import { Plus, Edit, Trash2, Save, X, Building2 } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 
@@ -59,7 +60,13 @@ export default function TiposTransaccionPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este tipo de transacción?')) {
+    const confirmed = await showConfirm({
+      title: 'Eliminar tipo de transacción',
+      message: '¿Estás seguro de que quieres eliminar este tipo de transacción?',
+      danger: true,
+      confirmText: 'Eliminar',
+    });
+    if (!confirmed) {
       return;
     }
 
@@ -267,3 +274,4 @@ export default function TiposTransaccionPage() {
     </MainLayout>
   );
 }
+

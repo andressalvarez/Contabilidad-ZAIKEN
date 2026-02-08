@@ -2,12 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import { getTokenFromCookies } from '@/lib/auth';
+import { AuthService } from '@/services/auth.service';
 
 interface User {
   id: number;
   email: string;
-  rol: string;
   negocioId: number;
+  securityRoleId: number;
+  securityRoleName?: string;
+  negocioRoleName?: string;
+  rolNegocio?: {
+    id: number;
+    nombreRol: string;
+  };
 }
 
 /**
@@ -47,23 +54,55 @@ export function useUser() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token =
-      getTokenFromCookies() ||
-      (typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null);
+    let cancelled = false;
 
-    if (token) {
+    const hydrateUser = async () => {
+      const token =
+        getTokenFromCookies() ||
+        (typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null);
+
+      if (!token) {
+        if (!cancelled) setLoading(false);
+        return;
+      }
+
       const decoded = decodeJWT(token);
-      if (decoded) {
+      if (decoded && !cancelled) {
         setUser({
           id: decoded.sub,
           email: decoded.email,
-          rol: decoded.rol,
           negocioId: decoded.negocioId,
+          securityRoleId: decoded.securityRoleId,
+          securityRoleName: decoded.securityRoleName,
+          negocioRoleName: decoded.negocioRoleName,
         });
       }
-    }
 
-    setLoading(false);
+      try {
+        const me = await AuthService.getMe();
+        if (!cancelled) {
+          setUser({
+            id: me.id,
+            email: me.email,
+            negocioId: me.negocioId,
+            securityRoleId: me.securityRoleId,
+            securityRoleName: me.securityRole?.name || me.securityRoleName,
+            negocioRoleName: me.rolNegocio?.nombreRol || me.negocioRoleName,
+            rolNegocio: me.rolNegocio,
+          });
+        }
+      } catch {
+        // Keep JWT fallback if /auth/me is temporarily unavailable.
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    hydrateUser();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return { user, loading };

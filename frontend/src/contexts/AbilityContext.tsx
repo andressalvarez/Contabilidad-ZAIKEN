@@ -3,7 +3,6 @@
 import React, { createContext, useContext } from 'react';
 import { createMongoAbility, MongoAbility } from '@casl/ability';
 
-// Define available actions
 export enum Action {
   Manage = 'manage',
   Create = 'create',
@@ -14,7 +13,6 @@ export enum Action {
   Reject = 'reject',
 }
 
-// Define subjects (entities)
 export type Subjects =
   | 'Usuario'
   | 'Campana'
@@ -23,6 +21,7 @@ export type Subjects =
   | 'RegistroHoras'
   | 'ValorHora'
   | 'DistribucionUtilidades'
+  | 'DistribucionDetalle'
   | 'HourDebt'
   | 'DebtDeduction'
   | 'HourDebtAuditLog'
@@ -32,13 +31,20 @@ export type Subjects =
   | 'SecurityAuditLog'
   | 'SecuritySession'
   | 'SecuritySettings'
+  | 'BusinessRole'
+  | 'Dashboard'
+  | 'Estadisticas'
+  | 'Negocio'
   | 'all';
+
+export interface PermissionLike {
+  subject: string;
+  action: string;
+}
 
 export type AppAbility = MongoAbility<[Action, Subjects]>;
 
-// Create default ability (no permissions)
 const defaultAbility = createMongoAbility<AppAbility>([]);
-
 const AbilityContext = createContext<AppAbility>(defaultAbility);
 
 interface AbilityProviderProps {
@@ -50,11 +56,7 @@ export const AbilityProvider: React.FC<AbilityProviderProps> = ({
   children,
   ability = defaultAbility,
 }) => {
-  return (
-    <AbilityContext.Provider value={ability}>
-      {children}
-    </AbilityContext.Provider>
-  );
+  return <AbilityContext.Provider value={ability}>{children}</AbilityContext.Provider>;
 };
 
 export const useAbility = () => {
@@ -65,79 +67,19 @@ export const useAbility = () => {
   return context;
 };
 
-// Helper function to create abilities based on user role
-export const createAbilityForUser = (rol: string): AppAbility => {
-  const rules: any[] = [];
+export const createAbilityFromPermissions = (permissions: PermissionLike[]): AppAbility => {
+  const rules: Array<{ action: Action; subject: Subjects }> = [];
 
-  if (rol === 'SUPER_ADMIN') {
-    rules.push({ action: Action.Manage, subject: 'all' });
-  } else if (rol === 'ADMIN_NEGOCIO') {
-    rules.push({ action: Action.Manage, subject: 'all' });
-  } else if (rol === 'ADMIN') {
-    // Full management of most entities
-    rules.push(
-      { action: Action.Read, subject: 'Usuario' },
-      { action: Action.Update, subject: 'Usuario' },
-      { action: Action.Create, subject: 'Usuario' },
-      { action: Action.Manage, subject: 'Campana' },
-      { action: Action.Manage, subject: 'Categoria' },
-      { action: Action.Manage, subject: 'Transaccion' },
-      { action: Action.Manage, subject: 'RegistroHoras' },
-      { action: Action.Approve, subject: 'RegistroHoras' },
-      { action: Action.Reject, subject: 'RegistroHoras' },
-      { action: Action.Manage, subject: 'ValorHora' },
-      { action: Action.Manage, subject: 'DistribucionUtilidades' },
-      // Deuda de horas
-      { action: Action.Manage, subject: 'HourDebt' },
-      { action: Action.Manage, subject: 'DebtDeduction' },
-      { action: Action.Read, subject: 'HourDebtAuditLog' },
-      // Configuración del sistema (SMTP, etc.)
-      { action: Action.Manage, subject: 'Settings' },
-      // Security Management
-      { action: Action.Manage, subject: 'SecurityRole' },
-      { action: Action.Read, subject: 'Permission' },
-      { action: Action.Read, subject: 'SecurityAuditLog' },
-      { action: Action.Manage, subject: 'SecuritySession' },
-      { action: Action.Manage, subject: 'SecuritySettings' }
-    );
-  } else if (rol === 'MANAGER') {
-    rules.push(
-      { action: Action.Read, subject: 'Usuario' },
-      { action: Action.Read, subject: 'Campana' },
-      { action: Action.Create, subject: 'Campana' },
-      { action: Action.Update, subject: 'Campana' },
-      { action: Action.Read, subject: 'Categoria' },
-      { action: Action.Manage, subject: 'Transaccion' },
-      { action: Action.Read, subject: 'RegistroHoras' },
-      { action: Action.Approve, subject: 'RegistroHoras' },
-      { action: Action.Reject, subject: 'RegistroHoras' },
-      { action: Action.Read, subject: 'ValorHora' },
-      { action: Action.Read, subject: 'DistribucionUtilidades' },
-      // Deuda de horas
-      { action: Action.Manage, subject: 'HourDebt' },
-      { action: Action.Read, subject: 'DebtDeduction' }
-    );
-  } else if (rol === 'EMPLEADO') {
-    rules.push(
-      { action: Action.Read, subject: 'Campana' },
-      { action: Action.Read, subject: 'Categoria' },
-      { action: Action.Read, subject: 'Transaccion' },
-      { action: Action.Create, subject: 'RegistroHoras' },
-      { action: Action.Read, subject: 'RegistroHoras' },
-      { action: Action.Update, subject: 'RegistroHoras' },
-      { action: Action.Delete, subject: 'RegistroHoras' },
-      { action: Action.Read, subject: 'Usuario' },
-      { action: Action.Update, subject: 'Usuario' },
-      { action: Action.Create, subject: 'HourDebt' },
-      { action: Action.Read, subject: 'HourDebt' },
-      { action: Action.Read, subject: 'DebtDeduction' }
-    );
-  } else if (rol === 'USER') {
-    rules.push(
-      { action: Action.Read, subject: 'Campana' },
-      { action: Action.Read, subject: 'Categoria' },
-      { action: Action.Read, subject: 'Transaccion' }
-    );
+  for (const permission of permissions) {
+    const action = String(permission.action).toLowerCase() as Action;
+    const subject = permission.subject as Subjects;
+
+    if (action === Action.Manage && subject === 'all') {
+      rules.push({ action: Action.Manage, subject: 'all' });
+      continue;
+    }
+
+    rules.push({ action, subject });
   }
 
   return createMongoAbility<AppAbility>(rules);

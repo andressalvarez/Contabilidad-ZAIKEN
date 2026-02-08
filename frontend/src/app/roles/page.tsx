@@ -31,6 +31,8 @@ import { useUsuarios } from '@/hooks/useUsuarios';
 import { Rol, CreateRolDto } from '@/types';
 import MainLayout from '@/components/layout/MainLayout';
 import { ScrollableTable } from '@/components/ui/ScrollableTable';
+import { toast } from 'sonner';
+import { showConfirm } from '@/lib/app-dialog';
 
 interface FormData {
   nombreRol: string;
@@ -104,19 +106,19 @@ export default function RolesPage() {
     e.preventDefault();
 
     if (!formData.nombreRol.trim()) {
-      alert('Debe ingresar un nombre de rol');
+      toast.error('Debe ingresar un nombre de rol');
       return;
     }
 
     if (formData.importancia < 0 || formData.importancia > 100) {
-      alert('La importancia debe estar entre 0 y 100');
+      toast.error('La importancia debe estar entre 0 y 100');
       return;
     }
 
     // Check for duplicates
     const existe = roles.some(r => r.nombreRol.toLowerCase() === formData.nombreRol.toLowerCase());
     if (existe) {
-      alert('Ya existe un rol con ese nombre');
+      toast.error('Ya existe un rol con ese nombre');
       return;
     }
 
@@ -180,11 +182,16 @@ export default function RolesPage() {
     const usuariosConRol = (usuarios || []).filter(u => u.rolId === rol.id);
 
     if (usuariosConRol.length > 0) {
-      alert(`No se puede eliminar: ${usuariosConRol.length} usuario(s) tienen este rol asignado`);
+      toast.error(`No se puede eliminar: ${usuariosConRol.length} usuario(s) tienen este rol asignado`);
       return;
     }
 
-    const confirmed = confirm(`¿Estás seguro de eliminar el rol "${rol.nombreRol}"?`);
+    const confirmed = await showConfirm({
+      title: 'Eliminar rol',
+      message: '¿Estás seguro de eliminar este rol?',
+      danger: true,
+      confirmText: 'Eliminar',
+    });
     if (!confirmed) return;
 
     try {
@@ -230,7 +237,7 @@ export default function RolesPage() {
     setIsRecalculating(true);
     try {
       await refetch();
-      alert('Sistema recalculado');
+      toast.success('Sistema recalculado');
     } catch (error) {
       console.error('Error al recalcular:', error);
     } finally {
@@ -544,10 +551,10 @@ export default function RolesPage() {
               <h3 className="text-base sm:text-lg font-semibold text-gray-900">Información sobre Roles</h3>
             </div>
             <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-gray-600">
-              <p>• Los roles definen la importancia de cada usuario en el negocio.</p>
-              <p>• El porcentaje de importancia afecta la distribución de utilidades.</p>
-              <p>• La suma de importancias no necesariamente debe ser 100%.</p>
-              <p>• Cada usuario debe tener un rol asignado para distribuciones.</p>
+              <p>? Los roles definen la importancia de cada usuario en el negocio.</p>
+              <p>? El porcentaje de importancia afecta la distribuci?n de utilidades.</p>
+              <p>? La suma de importancias no necesariamente debe ser 100%.</p>
+              <p>? Cada usuario debe tener un rol asignado para distribuciones.</p>
             </div>
           </div>
 
@@ -679,3 +686,4 @@ export default function RolesPage() {
     </MainLayout>
   );
 }
+

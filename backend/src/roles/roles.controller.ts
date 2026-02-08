@@ -13,12 +13,17 @@ import {
 } from '@nestjs/common';
 import { RolesService } from './roles.service';
 import { CreateRolDto, UpdateRolDto } from './dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PermissionsGuard } from '../common/guards/permissions.guard';
+import { RequirePermission } from '../common/decorators/require-permission.decorator';
 
 @Controller('roles')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
   @Post()
+  @RequirePermission('BUSINESS_ROLE.GLOBAL.CREATE')
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createRolDto: CreateRolDto) {
     return {
@@ -29,6 +34,7 @@ export class RolesController {
   }
 
   @Get()
+  @RequirePermission('BUSINESS_ROLE.GLOBAL.READ')
   async findAll() {
     return {
       success: true,
@@ -38,6 +44,7 @@ export class RolesController {
   }
 
   @Get('active')
+  @RequirePermission('BUSINESS_ROLE.GLOBAL.READ')
   async findActive() {
     return {
       success: true,
@@ -47,6 +54,7 @@ export class RolesController {
   }
 
   @Get(':id')
+  @RequirePermission('BUSINESS_ROLE.GLOBAL.READ')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return {
       success: true,
@@ -56,6 +64,7 @@ export class RolesController {
   }
 
   @Get(':id/stats')
+  @RequirePermission('BUSINESS_ROLE.GLOBAL.READ')
   async getStats(@Param('id', ParseIntPipe) id: number) {
     return {
       success: true,
@@ -65,6 +74,7 @@ export class RolesController {
   }
 
   @Patch(':id')
+  @RequirePermission('BUSINESS_ROLE.GLOBAL.UPDATE')
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateRolDto: UpdateRolDto,
@@ -77,6 +87,7 @@ export class RolesController {
   }
 
   @Delete(':id')
+  @RequirePermission('BUSINESS_ROLE.GLOBAL.DELETE')
   @HttpCode(HttpStatus.OK)
   async remove(@Param('id', ParseIntPipe) id: number) {
     const result = await this.rolesService.remove(id);

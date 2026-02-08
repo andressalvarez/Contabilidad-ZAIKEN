@@ -2,6 +2,7 @@
 
 import Header from './Header'
 import Sidebar from './Sidebar'
+import PermissionRouteGuard from './PermissionRouteGuard'
 import { SidebarProvider } from '@/contexts/SidebarContext'
 
 interface MainLayoutProps {
@@ -18,7 +19,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           {/* Main content - margin left on desktop for fixed sidebar */}
           <main className="flex-1 lg:ml-64 min-h-[calc(100vh-64px)]">
             <div className="p-4 sm:p-6">
-              {children}
+              <PermissionRouteGuard>{children}</PermissionRouteGuard>
             </div>
           </main>
         </div>

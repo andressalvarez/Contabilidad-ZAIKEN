@@ -293,14 +293,14 @@ export default function EstadisticasPage() {
     const top10 = resumenCategorias.slice(0, 10);
     const colors = generateColors(top10.length);
     // Use totalGastos as main field
-    const total = top10.reduce((sum, item) => sum + (item.totalGastos ?? 0), 0);
+    const total = top10.reduce((sum, item) => sum + (item.totalGastos || 0), 0);
 
     const chart = createResponsiveChart('gastosCategoriaChart', {
       type: 'doughnut',
       data: {
         labels: top10.map(item => item.categoria),
         datasets: [{
-          data: top10.map(item => item.totalGastos ?? 0),
+          data: top10.map(item => item.totalGastos || 0),
           backgroundColor: colors,
           borderColor: colors.map(color => color + '80'),
           borderWidth: 3,
@@ -353,7 +353,7 @@ export default function EstadisticasPage() {
         </div>
         <div class="legend-items space-y-2 max-h-64 overflow-y-auto">
           ${top10.map((item, index) => {
-            const value = item.totalGastos ?? 0;
+            const value = item.totalGastos || 0;
             const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
             return `
               <div class="legend-item flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
@@ -591,7 +591,7 @@ export default function EstadisticasPage() {
         datasets: [
           {
             label: 'Aportes Totales',
-            data: usuariosConActividad.map((u: any) => u.aportesTotales ?? 0),
+            data: usuariosConActividad.map((u: any) => u.aportesTotales || 0),
             backgroundColor: colors,
             borderColor: colors,
             borderWidth: 2,
@@ -667,9 +667,9 @@ export default function EstadisticasPage() {
       const legendContainer = document.createElement('div');
       legendContainer.className = 'chart-legend mt-6';
 
-      const totalAportes = usuariosConActividad.reduce((sum, u) => sum + (u.aportesTotales ?? 0), 0);
-      const totalInversion = usuariosConActividad.reduce((sum, u) => sum + (u.inversionTotal ?? 0), 0);
-      const totalHoras = usuariosConActividad.reduce((sum, u) => sum + (u.horasTotales ?? 0), 0);
+      const totalAportes = usuariosConActividad.reduce((sum, u) => sum + (u.aportesTotales || 0), 0);
+      const totalInversion = usuariosConActividad.reduce((sum, u) => sum + (u.inversionTotal || 0), 0);
+      const totalHoras = usuariosConActividad.reduce((sum, u) => sum + (u.horasTotales || 0), 0);
 
       legendContainer.innerHTML = `
         <div class="legend-header mb-4">
@@ -681,8 +681,8 @@ export default function EstadisticasPage() {
         </div>
         <div class="legend-items space-y-2 max-h-64 overflow-y-auto">
           ${usuariosConActividad.map((usuario, index) => {
-            const aportes = usuario.aportesTotales ?? 0;
-            const participacion = usuario.participacionPorc ?? 0;
+            const aportes = usuario.aportesTotales || 0;
+            const participacion = usuario.participacionPorc || 0;
             return `
               <div class="legend-item flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <div class="flex items-center gap-3">

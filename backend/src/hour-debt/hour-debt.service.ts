@@ -507,7 +507,7 @@ export class HourDebtService {
         SELECT * FROM hour_debts
         WHERE negocio_id = ${negocioId}
           AND usuario_id = ${usuarioId}
-          AND status = ${DebtStatus.ACTIVE}
+          AND status = ${DebtStatus.ACTIVE}::"DebtStatus"
           AND remaining_minutes > 0
           AND deleted_at IS NULL
         ORDER BY date ASC

@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from 'react';
 import { useValorHora, useCreateValorHora, useUpdateValorHora, useDeleteValorHora, useValorHoraStats } from '@/hooks/useValorHora';
-import { useUsuarios } from '@/hooks/useUsuarios';import MainLayout from '@/components/layout/MainLayout';
+import { useUsuarios } from '@/hooks/useUsuarios';
+import MainLayout from '@/components/layout/MainLayout';
 import {
   Plus,
   Download,
@@ -24,6 +25,7 @@ import {
 } from 'lucide-react';
 import { ValorHora, CreateValorHoraDto } from '@/types';
 import { toast } from 'sonner';
+import { showConfirm } from '@/lib/app-dialog';
 import { ScrollableTable } from '@/components/ui/ScrollableTable';
 
 interface FormData {
@@ -162,7 +164,7 @@ export default function ValorHoraPage() {
 
   // Delete hourly rate
   const handleDelete = async (valorHora: ValorHora) => {
-    const confirmed = confirm(`¿Estás seguro de eliminar el valor por hora de "${getUserName(valorHora)}"?`);
+    const confirmed = await showConfirm({ title: 'Eliminar valor por hora', message: '¿Estás seguro de eliminar este valor por hora?', danger: true, confirmText: 'Eliminar' });
     if (!confirmed) return;
 
     try {
@@ -635,19 +637,19 @@ export default function ValorHoraPage() {
           </div>
           <ul className="text-gray-600 text-xs sm:text-sm space-y-1.5 sm:space-y-2">
             <li className="flex items-start gap-2">
-              <span className="text-indigo-600 font-bold">•</span>
+              <span className="text-indigo-600 font-bold">?</span>
               <span>Los valores se usan para calcular costos de trabajo</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-indigo-600 font-bold">•</span>
+              <span className="text-indigo-600 font-bold">?</span>
               <span>Múltiples valores por persona en diferentes fechas</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-indigo-600 font-bold">•</span>
+              <span className="text-indigo-600 font-bold">?</span>
               <span>El sistema usa el valor más reciente automáticamente</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-indigo-600 font-bold">•</span>
+              <span className="text-indigo-600 font-bold">?</span>
               <span>Use la calculadora para estimar costos de proyectos</span>
             </li>
           </ul>
@@ -656,3 +658,4 @@ export default function ValorHoraPage() {
     </MainLayout>
   );
 }
+
