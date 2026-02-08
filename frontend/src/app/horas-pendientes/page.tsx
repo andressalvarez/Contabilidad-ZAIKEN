@@ -47,7 +47,7 @@ export default function HorasPendientesPage() {
   const handleApprove = async (id: number) => {
     const confirmed = await showConfirm({
       title: 'Aprobar registro',
-      message: '¿Está seguro de aprobar este registro de horas?',
+      message: 'Estas seguro de aprobar este registro de horas?',
       confirmText: 'Aprobar',
     });
     if (!confirmed) return;
@@ -141,8 +141,8 @@ export default function HorasPendientesPage() {
                 <Clock className="h-6 w-6 sm:h-7 sm:w-7 text-amber-600" />
               </div>
               <div>
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Aprobación de Horas</h1>
-                <p className="text-gray-600 text-xs sm:text-sm">Revisa rango real, creado y nota antes de aprobar</p>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Aprobacion de horas</h1>
+                <p className="text-gray-600 text-xs sm:text-sm">Revisa el rango real, la fecha de creacion y la nota antes de aprobar</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -225,12 +225,25 @@ export default function HorasPendientesPage() {
                             </span>
                           </div>
 
+                          <div className="rounded-xl border border-blue-100 bg-gradient-to-r from-blue-50 via-white to-green-50 p-2 sm:p-3 mb-2 sm:mb-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-2 sm:gap-3 sm:items-center">
+                              <div className="rounded-lg bg-white/90 border border-blue-100 px-3 py-2 shadow-sm">
+                                <p className="text-[11px] uppercase tracking-wide text-blue-700 font-semibold">Desde</p>
+                                <p className="text-sm font-semibold text-gray-900">{formatDateTime(record.timerInicio)}</p>
+                              </div>
+                              <div className="hidden sm:flex items-center justify-center text-blue-400">
+                                <Clock className="h-4 w-4" />
+                              </div>
+                              <div className="rounded-lg bg-white/90 border border-green-100 px-3 py-2 shadow-sm">
+                                <p className="text-[11px] uppercase tracking-wide text-green-700 font-semibold">Hasta</p>
+                                <p className="text-sm font-semibold text-gray-900">{formatDateTime(record.timerFin)}</p>
+                              </div>
+                            </div>
+                          </div>
+
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm text-gray-600">
-                            <div><span className="font-medium">Creado:</span> {formatDateTime(record.createdAt)}</div>
-                            <div><span className="font-medium">Desde:</span> {formatDateTime(record.timerInicio)}</div>
-                            <div><span className="font-medium">Hasta:</span> {formatDateTime(record.timerFin)}</div>
                             {record.campana && (
-                              <div><span className="font-medium">Campaña:</span> {record.campana.nombre}</div>
+                              <div><span className="font-medium">Campana:</span> {record.campana.nombre}</div>
                             )}
                             <div>
                               <span className="font-medium">Origen:</span> {record.origen === 'TIMER' ? 'Timer' : 'Manual'}
@@ -293,6 +306,10 @@ export default function HorasPendientesPage() {
                           )}
                         </div>
                       </div>
+                      <p className="mt-2 sm:mt-3 text-[11px] text-gray-500 text-right">
+                        <span className="uppercase tracking-wide font-semibold">Creado:</span>{' '}
+                        <span className="font-medium">{formatDateTime(record.createdAt)}</span>
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -326,11 +343,23 @@ export default function HorasPendientesPage() {
                           </span>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm text-gray-600">
-                          <div><span className="font-medium">Creado:</span> {formatDateTime(record.createdAt)}</div>
-                          <div><span className="font-medium">Desde:</span> {formatDateTime(record.timerInicio)}</div>
-                          <div><span className="font-medium">Hasta:</span> {formatDateTime(record.timerFin)}</div>
-                          <div><span className="font-medium">Fecha:</span> {formatDate(record.fecha)}</div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-3 mb-3">
+                          <div className="rounded-lg border border-red-200 bg-white px-3 py-2">
+                            <p className="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">Creado</p>
+                            <p className="text-sm font-semibold text-gray-900">{formatDateTime(record.createdAt)}</p>
+                          </div>
+                          <div className="rounded-lg border border-red-200 bg-white px-3 py-2">
+                            <p className="text-[11px] uppercase tracking-wide text-red-700 font-semibold">Desde</p>
+                            <p className="text-sm font-semibold text-gray-900">{formatDateTime(record.timerInicio)}</p>
+                          </div>
+                          <div className="rounded-lg border border-red-200 bg-white px-3 py-2">
+                            <p className="text-[11px] uppercase tracking-wide text-red-700 font-semibold">Hasta</p>
+                            <p className="text-sm font-semibold text-gray-900">{formatDateTime(record.timerFin)}</p>
+                          </div>
+                        </div>
+
+                        <div className="text-xs sm:text-sm text-gray-600 mb-1">
+                          <span className="font-medium">Fecha:</span> {formatDate(record.fecha)}
                         </div>
                       </div>
 
@@ -355,3 +384,4 @@ export default function HorasPendientesPage() {
     </MainLayout>
   );
 }
+

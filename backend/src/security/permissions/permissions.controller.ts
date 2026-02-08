@@ -17,6 +17,7 @@ import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { Action } from '../../casl/action.enum';
 import { CreatePermissionDto } from './dto/create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
+import { extractRequestContext } from '../../common/utils/request-context.util';
 
 @Controller('security/permissions')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -60,19 +61,35 @@ export class PermissionsController {
 
   @Post()
   @Permissions({ action: Action.Create, subject: 'SecurityRole' })
-  create(@Body() dto: CreatePermissionDto) {
-    return this.permissionsService.create(dto);
+  create(@Body() dto: CreatePermissionDto, @Request() req) {
+    return this.permissionsService.create(dto, {
+      actorUserId: req.user.userId,
+      actorEmail: req.user.email,
+      context: extractRequestContext(req),
+    });
   }
 
   @Patch(':id')
   @Permissions({ action: Action.Update, subject: 'SecurityRole' })
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdatePermissionDto) {
-    return this.permissionsService.update(id, dto);
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdatePermissionDto,
+    @Request() req,
+  ) {
+    return this.permissionsService.update(id, dto, {
+      actorUserId: req.user.userId,
+      actorEmail: req.user.email,
+      context: extractRequestContext(req),
+    });
   }
 
   @Delete(':id')
   @Permissions({ action: Action.Delete, subject: 'SecurityRole' })
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.permissionsService.remove(id);
+  remove(@Param('id', ParseIntPipe) id: number, @Request() req) {
+    return this.permissionsService.remove(id, {
+      actorUserId: req.user.userId,
+      actorEmail: req.user.email,
+      context: extractRequestContext(req),
+    });
   }
 }

@@ -12,6 +12,7 @@ import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { Action } from '../../casl/action.enum';
+import { extractRequestContext } from '../../common/utils/request-context.util';
 
 @Controller('security/sessions')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -23,7 +24,10 @@ export class SessionsController {
    */
   @Get('my')
   getMySessions(@Request() req) {
-    return this.sessionsService.getActiveSessions(req.user.id, req.user.negocioId);
+    return this.sessionsService.getActiveSessions(
+      req.user.id,
+      req.user.negocioId,
+    );
   }
 
   /**
@@ -40,7 +44,16 @@ export class SessionsController {
    */
   @Delete(':id')
   revokeSession(@Param('id') sessionId: string, @Request() req) {
-    return this.sessionsService.revokeSession(sessionId, req.user.id, req.user.negocioId);
+    return this.sessionsService.revokeSession(
+      sessionId,
+      req.user.userId,
+      req.user.negocioId,
+      {
+        actorUserId: req.user.userId,
+        actorEmail: req.user.email,
+        context: extractRequestContext(req),
+      },
+    );
   }
 
   /**
@@ -49,17 +62,37 @@ export class SessionsController {
   @Delete('admin/:id')
   @Permissions({ action: Action.Delete, subject: 'SecuritySession' })
   revokeSessionAdmin(@Param('id') sessionId: string, @Request() req) {
-    return this.sessionsService.revokeSessionAdmin(sessionId, req.user.negocioId);
+    return this.sessionsService.revokeSessionAdmin(
+      sessionId,
+      req.user.negocioId,
+      {
+        actorUserId: req.user.userId,
+        actorEmail: req.user.email,
+        context: extractRequestContext(req),
+      },
+    );
   }
 
   /**
    * Revoke all other sessions (logout from all other devices)
    */
   @Delete('my/others')
-  revokeOtherSessions(@Request() req, @Headers('authorization') authHeader: string) {
+  revokeOtherSessions(
+    @Request() req,
+    @Headers('authorization') authHeader: string,
+  ) {
     // Extract token from Authorization header
     const token = authHeader?.replace('Bearer ', '') || '';
-    return this.sessionsService.revokeOtherSessions(req.user.id, token);
+    return this.sessionsService.revokeOtherSessions(
+      req.user.userId,
+      token,
+      req.user.negocioId,
+      {
+        actorUserId: req.user.userId,
+        actorEmail: req.user.email,
+        context: extractRequestContext(req),
+      },
+    );
   }
 
   /**
@@ -67,7 +100,15 @@ export class SessionsController {
    */
   @Delete('user/:userId/all')
   @Permissions({ action: Action.Delete, subject: 'SecuritySession' })
-  revokeAllUserSessions(@Param('userId') userId: string) {
-    return this.sessionsService.revokeAllUserSessions(parseInt(userId, 10));
+  revokeAllUserSessions(@Param('userId') userId: string, @Request() req) {
+    return this.sessionsService.revokeAllUserSessions(
+      parseInt(userId, 10),
+      req.user.negocioId,
+      {
+        actorUserId: req.user.userId,
+        actorEmail: req.user.email,
+        context: extractRequestContext(req),
+      },
+    );
   }
 }

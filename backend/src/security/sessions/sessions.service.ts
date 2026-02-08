@@ -1,10 +1,25 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import * as crypto from 'crypto';
+import { AuditService, SecurityEventType } from '../audit/audit.service';
+import { RequestContext } from '../../common/utils/request-context.util';
+
+interface SessionAudit {
+  actorUserId?: number;
+  actorEmail?: string;
+  context?: RequestContext;
+}
 
 @Injectable()
 export class SessionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditService: AuditService,
+  ) {}
 
   /**
    * Create a new session for a user
@@ -92,7 +107,12 @@ export class SessionsService {
   /**
    * Revoke a specific session
    */
-  async revokeSession(sessionId: string, userId: number, negocioId: number) {
+  async revokeSession(
+    sessionId: string,
+    userId: number,
+    negocioId: number,
+    audit?: SessionAudit,
+  ) {
     const session = await this.prisma.securitySession.findFirst({
       where: { id: sessionId, negocioId },
     });
@@ -103,19 +123,42 @@ export class SessionsService {
 
     // Users can only revoke their own sessions unless they have admin permission
     if (session.userId !== userId) {
-      throw new ForbiddenException('Cannot revoke another user\'s session');
+      throw new ForbiddenException("Cannot revoke another user's session");
     }
 
-    return this.prisma.securitySession.update({
+    const revoked = await this.prisma.securitySession.update({
       where: { id: sessionId },
       data: { isActive: false },
     });
+
+    await this.auditService.logSafe({
+      negocioId,
+      userId: audit?.actorUserId ?? userId,
+      eventType: SecurityEventType.SESSION_REVOKE,
+      targetType: 'SecuritySession',
+      description: `Sesión revocada por el usuario`,
+      metadata: {
+        module: 'security.sessions',
+        action: 'revokeSession',
+        result: 'SUCCESS',
+        actorEmail: audit?.actorEmail,
+        sessionId,
+      },
+      ipAddress: audit?.context?.ipAddress,
+      userAgent: audit?.context?.userAgent,
+    });
+
+    return revoked;
   }
 
   /**
    * Revoke a session by admin (can revoke any session in the business)
    */
-  async revokeSessionAdmin(sessionId: string, negocioId: number) {
+  async revokeSessionAdmin(
+    sessionId: string,
+    negocioId: number,
+    audit?: SessionAudit,
+  ) {
     const session = await this.prisma.securitySession.findFirst({
       where: { id: sessionId, negocioId },
     });
@@ -124,29 +167,78 @@ export class SessionsService {
       throw new NotFoundException('Session not found');
     }
 
-    return this.prisma.securitySession.update({
+    const revoked = await this.prisma.securitySession.update({
       where: { id: sessionId },
       data: { isActive: false },
     });
+
+    await this.auditService.logSafe({
+      negocioId,
+      userId: audit?.actorUserId,
+      eventType: SecurityEventType.SESSION_REVOKE,
+      targetType: 'SecuritySession',
+      description: `Sesión revocada por administrador`,
+      metadata: {
+        module: 'security.sessions',
+        action: 'revokeSessionAdmin',
+        result: 'SUCCESS',
+        actorEmail: audit?.actorEmail,
+        sessionId,
+        affectedUserId: session.userId,
+      },
+      ipAddress: audit?.context?.ipAddress,
+      userAgent: audit?.context?.userAgent,
+    });
+
+    return revoked;
   }
 
   /**
    * Revoke all sessions for a user (logout from all devices)
    */
-  async revokeAllUserSessions(userId: number) {
-    return this.prisma.securitySession.updateMany({
+  async revokeAllUserSessions(
+    userId: number,
+    negocioId: number,
+    audit?: SessionAudit,
+  ) {
+    const result = await this.prisma.securitySession.updateMany({
       where: { userId, isActive: true },
       data: { isActive: false },
     });
+
+    await this.auditService.logSafe({
+      negocioId,
+      userId: audit?.actorUserId,
+      eventType: SecurityEventType.SESSION_REVOKE,
+      targetType: 'Usuario',
+      targetId: userId,
+      description: `Revocadas todas las sesiones del usuario`,
+      metadata: {
+        module: 'security.sessions',
+        action: 'revokeAllUserSessions',
+        result: 'SUCCESS',
+        actorEmail: audit?.actorEmail,
+        revokedCount: result.count,
+      },
+      ipAddress: audit?.context?.ipAddress,
+      userAgent: audit?.context?.userAgent,
+    });
+
+    return result;
   }
 
   /**
    * Revoke all sessions for a user except the current one
    */
-  async revokeOtherSessions(userId: number, currentToken: string) {
+  async revokeOtherSessions(
+    userId: number,
+    currentToken: string,
+    negocioId: number,
+    audit?: SessionAudit,
+  ) {
     const currentTokenHash = this.hashToken(currentToken);
 
-    return this.prisma.securitySession.updateMany({
+    const result = await this.prisma.securitySession.updateMany({
       where: {
         userId,
         isActive: true,
@@ -154,6 +246,26 @@ export class SessionsService {
       },
       data: { isActive: false },
     });
+
+    await this.auditService.logSafe({
+      negocioId,
+      userId: audit?.actorUserId ?? userId,
+      eventType: SecurityEventType.SESSION_REVOKE,
+      targetType: 'Usuario',
+      targetId: userId,
+      description: `Revocadas sesiones de otros dispositivos`,
+      metadata: {
+        module: 'security.sessions',
+        action: 'revokeOtherSessions',
+        result: 'SUCCESS',
+        actorEmail: audit?.actorEmail,
+        revokedCount: result.count,
+      },
+      ipAddress: audit?.context?.ipAddress,
+      userAgent: audit?.context?.userAgent,
+    });
+
+    return result;
   }
 
   /**
@@ -185,10 +297,7 @@ export class SessionsService {
   async cleanupExpiredSessions() {
     const result = await this.prisma.securitySession.deleteMany({
       where: {
-        OR: [
-          { expiresAt: { lt: new Date() } },
-          { isActive: false },
-        ],
+        OR: [{ expiresAt: { lt: new Date() } }, { isActive: false }],
       },
     });
 

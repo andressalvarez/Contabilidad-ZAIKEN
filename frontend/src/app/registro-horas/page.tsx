@@ -160,11 +160,13 @@ function TimerWidget({
   users,
   onTimerStop,
   currentUserId,
+  currentUserName,
   isAdmin
 }: {
   users: any[];
   onTimerStop?: (record: RegistroHoras) => void;
   currentUserId: number;
+  currentUserName?: string;
   isAdmin: boolean;
 }) {
   const [selectedUserId, setSelectedUserId] = useState<number>(currentUserId || 0);
@@ -291,7 +293,7 @@ function TimerWidget({
                   <User className="h-4 w-4 text-white" />
                 </div>
                 <span className="text-lg font-medium text-indigo-900">
-                  {users.find(u => u.id === currentUserId)?.nombre || 'Tu usuario'}
+                  {users.find(u => u.id === currentUserId)?.nombre || currentUserName || 'Usuario actual'}
                 </span>
               </div>
             )}
@@ -562,7 +564,7 @@ export default function RegistroHorasPage() {
 
   // React Query hooks
   const { data: timeRecords = [], isLoading, error, refetch } = useRegistroHoras();
-  const { data: users = [] } = useUsuarios();
+  const { data: users = [] } = useUsuarios(isAdmin);
   const createMutation = useCreateRegistroHoras();
   const updateMutation = useUpdateRegistroHoras();
   const deleteMutation = useDeleteRegistroHoras();
@@ -573,6 +575,10 @@ export default function RegistroHorasPage() {
   const currentUserData = useMemo(() => {
     return users.find(u => u.id === currentUser?.id);
   }, [users, currentUser]);
+
+  const currentUserDisplayName = useMemo(() => {
+    return currentUserData?.nombre || currentUser?.nombre || currentUser?.email || 'Usuario actual';
+  }, [currentUserData, currentUser]);
 
   // Inicializar formData con el usuario actual cuando se carga
   useEffect(() => {
@@ -950,11 +956,9 @@ export default function RegistroHorasPage() {
               </div>
               <div>
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Control de Tiempo</h1>
-                {currentUserData && (
-                  <p className="text-sm sm:text-base text-gray-600">
-                    Hola, <span className="font-semibold text-indigo-600">{currentUserData.nombre}</span>!
-                  </p>
-                )}
+                <p className="text-sm sm:text-base text-gray-600">
+                  Hola, <span className="font-semibold text-indigo-600">{currentUserDisplayName}</span>!
+                </p>
               </div>
             </div>
 
@@ -1030,6 +1034,7 @@ export default function RegistroHorasPage() {
           users={users}
           onTimerStop={handleTimerStop}
           currentUserId={currentUser?.id || 0}
+          currentUserName={currentUserDisplayName}
           isAdmin={isAdmin}
         />
 
@@ -1317,7 +1322,7 @@ export default function RegistroHorasPage() {
                           <div className="flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg">
                             <User className="h-4 w-4 text-indigo-600" />
                             <span className="font-medium text-indigo-900">
-                              {currentUserData?.nombre || 'Tu usuario'}
+                              {currentUserDisplayName}
                             </span>
                           </div>
                         )}

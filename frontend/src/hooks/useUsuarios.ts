@@ -9,20 +9,22 @@ export const usuariosKeys = {
 };
 
 // Hook to get all users
-export function useUsuarios() {
+export function useUsuarios(enabled = true) {
   return useQuery({
     queryKey: usuariosKeys.lists(),
     queryFn: UsuariosService.list,
+    enabled,
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: true,
   });
 }
 
 // Hook to get users summary
-export function useUsuariosSummary() {
+export function useUsuariosSummary(enabled = true) {
   return useQuery({
     queryKey: usuariosKeys.summary(),
     queryFn: UsuariosService.getSummary,
+    enabled,
     staleTime: 1000 * 60 * 2, // 2 minutes
   });
 }

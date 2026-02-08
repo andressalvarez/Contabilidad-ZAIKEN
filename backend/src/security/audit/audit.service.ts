@@ -46,6 +46,11 @@ export interface CreateAuditLogDto {
   userAgent?: string;
 }
 
+export interface AuditActor {
+  userId?: number;
+  email?: string;
+}
+
 export interface AuditLogQuery {
   negocioId: number;
   userId?: number;
@@ -80,11 +85,28 @@ export class AuditService {
     });
   }
 
+  async logSafe(dto: CreateAuditLogDto) {
+    try {
+      return await this.log(dto);
+    } catch {
+      return null;
+    }
+  }
+
   /**
    * Query audit logs with filters and pagination
    */
   async findAll(query: AuditLogQuery) {
-    const { negocioId, userId, eventType, targetType, startDate, endDate, page = 1, limit = 50 } = query;
+    const {
+      negocioId,
+      userId,
+      eventType,
+      targetType,
+      startDate,
+      endDate,
+      page = 1,
+      limit = 50,
+    } = query;
 
     const where: any = { negocioId };
 
@@ -174,37 +196,52 @@ export class AuditService {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    const [
-      totalEvents,
-      loginEvents,
-      failedLogins,
-      userChanges,
-      roleChanges,
-    ] = await Promise.all([
-      this.prisma.securityAuditLog.count({
-        where: { negocioId, createdAt: { gte: startDate } },
-      }),
-      this.prisma.securityAuditLog.count({
-        where: { negocioId, eventType: SecurityEventType.LOGIN, createdAt: { gte: startDate } },
-      }),
-      this.prisma.securityAuditLog.count({
-        where: { negocioId, eventType: SecurityEventType.LOGIN_FAILED, createdAt: { gte: startDate } },
-      }),
-      this.prisma.securityAuditLog.count({
-        where: {
-          negocioId,
-          eventType: { in: [SecurityEventType.USER_CREATE, SecurityEventType.USER_UPDATE, SecurityEventType.USER_DELETE] },
-          createdAt: { gte: startDate },
-        },
-      }),
-      this.prisma.securityAuditLog.count({
-        where: {
-          negocioId,
-          eventType: { in: [SecurityEventType.ROLE_CREATE, SecurityEventType.ROLE_UPDATE, SecurityEventType.ROLE_ASSIGN] },
-          createdAt: { gte: startDate },
-        },
-      }),
-    ]);
+    const [totalEvents, loginEvents, failedLogins, userChanges, roleChanges] =
+      await Promise.all([
+        this.prisma.securityAuditLog.count({
+          where: { negocioId, createdAt: { gte: startDate } },
+        }),
+        this.prisma.securityAuditLog.count({
+          where: {
+            negocioId,
+            eventType: SecurityEventType.LOGIN,
+            createdAt: { gte: startDate },
+          },
+        }),
+        this.prisma.securityAuditLog.count({
+          where: {
+            negocioId,
+            eventType: SecurityEventType.LOGIN_FAILED,
+            createdAt: { gte: startDate },
+          },
+        }),
+        this.prisma.securityAuditLog.count({
+          where: {
+            negocioId,
+            eventType: {
+              in: [
+                SecurityEventType.USER_CREATE,
+                SecurityEventType.USER_UPDATE,
+                SecurityEventType.USER_DELETE,
+              ],
+            },
+            createdAt: { gte: startDate },
+          },
+        }),
+        this.prisma.securityAuditLog.count({
+          where: {
+            negocioId,
+            eventType: {
+              in: [
+                SecurityEventType.ROLE_CREATE,
+                SecurityEventType.ROLE_UPDATE,
+                SecurityEventType.ROLE_ASSIGN,
+              ],
+            },
+            createdAt: { gte: startDate },
+          },
+        }),
+      ]);
 
     return {
       totalEvents,

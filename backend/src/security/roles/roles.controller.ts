@@ -12,11 +12,16 @@ import {
   Request,
 } from '@nestjs/common';
 import { RolesService } from './roles.service';
-import { CreateSecurityRoleDto, UpdateSecurityRoleDto, AssignPermissionsDto } from './dto';
+import {
+  CreateSecurityRoleDto,
+  UpdateSecurityRoleDto,
+  AssignPermissionsDto,
+} from './dto';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { Action } from '../../casl/action.enum';
+import { extractRequestContext } from '../../common/utils/request-context.util';
 
 @Controller('security/roles')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -38,7 +43,11 @@ export class RolesController {
   @Post()
   @Permissions({ action: Action.Create, subject: 'SecurityRole' })
   create(@Body() dto: CreateSecurityRoleDto, @Request() req) {
-    return this.rolesService.create(req.user.negocioId, dto);
+    return this.rolesService.create(req.user.negocioId, dto, {
+      actorUserId: req.user.userId,
+      actorEmail: req.user.email,
+      ...extractRequestContext(req),
+    });
   }
 
   @Patch(':id')
@@ -48,13 +57,21 @@ export class RolesController {
     @Body() dto: UpdateSecurityRoleDto,
     @Request() req,
   ) {
-    return this.rolesService.update(id, req.user.negocioId, dto);
+    return this.rolesService.update(id, req.user.negocioId, dto, {
+      actorUserId: req.user.userId,
+      actorEmail: req.user.email,
+      ...extractRequestContext(req),
+    });
   }
 
   @Delete(':id')
   @Permissions({ action: Action.Delete, subject: 'SecurityRole' })
   delete(@Param('id', ParseIntPipe) id: number, @Request() req) {
-    return this.rolesService.delete(id, req.user.negocioId);
+    return this.rolesService.delete(id, req.user.negocioId, {
+      actorUserId: req.user.userId,
+      actorEmail: req.user.email,
+      ...extractRequestContext(req),
+    });
   }
 
   @Put(':id/permissions')
@@ -64,7 +81,11 @@ export class RolesController {
     @Body() dto: AssignPermissionsDto,
     @Request() req,
   ) {
-    return this.rolesService.assignPermissions(id, req.user.negocioId, dto);
+    return this.rolesService.assignPermissions(id, req.user.negocioId, dto, {
+      actorUserId: req.user.userId,
+      actorEmail: req.user.email,
+      ...extractRequestContext(req),
+    });
   }
 
   @Get(':id/users')
@@ -80,6 +101,15 @@ export class RolesController {
     @Param('userId', ParseIntPipe) userId: number,
     @Request() req,
   ) {
-    return this.rolesService.assignRoleToUser(userId, roleId, req.user.negocioId);
+    return this.rolesService.assignRoleToUser(
+      userId,
+      roleId,
+      req.user.negocioId,
+      {
+        actorUserId: req.user.userId,
+        actorEmail: req.user.email,
+        ...extractRequestContext(req),
+      },
+    );
   }
 }

@@ -7,6 +7,7 @@ import { AuthService } from '@/services/auth.service';
 interface User {
   id: number;
   email: string;
+  nombre?: string;
   negocioId: number;
   securityRoleId: number;
   securityRoleName?: string;
@@ -71,6 +72,7 @@ export function useUser() {
         setUser({
           id: decoded.sub,
           email: decoded.email,
+          nombre: decoded.nombre || decoded.name,
           negocioId: decoded.negocioId,
           securityRoleId: decoded.securityRoleId,
           securityRoleName: decoded.securityRoleName,
@@ -84,6 +86,7 @@ export function useUser() {
           setUser({
             id: me.id,
             email: me.email,
+            nombre: me.nombre,
             negocioId: me.negocioId,
             securityRoleId: me.securityRoleId,
             securityRoleName: me.securityRole?.name || me.securityRoleName,

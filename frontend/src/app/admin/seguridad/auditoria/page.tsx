@@ -24,10 +24,10 @@ import MainLayout from '@/components/layout/MainLayout';
 
 // Event type labels and colors
 const EVENT_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  LOGIN: { label: 'Inicio de sesión', color: 'text-green-700', bg: 'bg-green-100' },
+  LOGIN: { label: 'Inicio de sesion', color: 'text-green-700', bg: 'bg-green-100' },
   LOGIN_FAILED: { label: 'Login fallido', color: 'text-red-700', bg: 'bg-red-100' },
-  LOGOUT: { label: 'Cierre de sesión', color: 'text-blue-700', bg: 'bg-blue-100' },
-  PASSWORD_CHANGE: { label: 'Cambio de contraseña', color: 'text-amber-700', bg: 'bg-amber-100' },
+  LOGOUT: { label: 'Cierre de sesion', color: 'text-blue-700', bg: 'bg-blue-100' },
+  PASSWORD_CHANGE: { label: 'Cambio de contrasena', color: 'text-amber-700', bg: 'bg-amber-100' },
   USER_CREATE: { label: 'Usuario creado', color: 'text-green-700', bg: 'bg-green-100' },
   USER_UPDATE: { label: 'Usuario actualizado', color: 'text-blue-700', bg: 'bg-blue-100' },
   USER_DELETE: { label: 'Usuario eliminado', color: 'text-red-700', bg: 'bg-red-100' },
@@ -36,8 +36,8 @@ const EVENT_LABELS: Record<string, { label: string; color: string; bg: string }>
   ROLE_DELETE: { label: 'Rol eliminado', color: 'text-red-700', bg: 'bg-red-100' },
   ROLE_ASSIGN: { label: 'Rol asignado', color: 'text-indigo-700', bg: 'bg-indigo-100' },
   PERMISSION_CHANGE: { label: 'Permisos modificados', color: 'text-amber-700', bg: 'bg-amber-100' },
-  SESSION_REVOKE: { label: 'Sesión revocada', color: 'text-red-700', bg: 'bg-red-100' },
-  SETTINGS_UPDATE: { label: 'Configuración actualizada', color: 'text-gray-700', bg: 'bg-gray-100' },
+  SESSION_REVOKE: { label: 'Sesion revocada', color: 'text-red-700', bg: 'bg-red-100' },
+  SETTINGS_UPDATE: { label: 'Configuracion actualizada', color: 'text-gray-700', bg: 'bg-gray-100' },
 };
 
 export default function AuditPage() {
@@ -81,7 +81,7 @@ export default function AuditPage() {
   const handleExport = () => {
     // Export functionality can be implemented with backend endpoint
     const csvContent = [
-      ['ID', 'Fecha', 'Usuario', 'Evento', 'Descripción', 'IP'].join(','),
+      ['ID', 'Fecha', 'Usuario', 'Evento', 'Descripcion', 'IP'].join(','),
       ...logs.map(log => [
         log.id,
         formatDate(log.createdAt),
@@ -110,7 +110,7 @@ export default function AuditPage() {
               <div className="p-2 bg-blue-100 rounded-lg">
                 <FileText className="text-blue-600" size={28} />
               </div>
-              <h1 className="text-3xl font-bold text-gray-900">Registro de Auditoría</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Registro de Auditoria</h1>
             </div>
             <p className="text-gray-600 ml-12">
               Historial de eventos de seguridad y actividades del sistema
@@ -212,7 +212,7 @@ export default function AuditPage() {
             </h2>
           </div>
           <div className="text-sm text-gray-500">
-            Página {filters.page} de {totalPages || 1}
+            Pagina {filters.page} de {totalPages || 1}
           </div>
         </div>
 
@@ -246,7 +246,7 @@ export default function AuditPage() {
                       Evento
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Descripción
+                      Descripcion
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       IP
@@ -398,7 +398,7 @@ export default function AuditPage() {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-gray-500 uppercase">Descripción</label>
+                <label className="text-xs font-medium text-gray-500 uppercase">Descripcion</label>
                 <p className="text-gray-900">{selectedLog.description}</p>
               </div>
 
@@ -422,7 +422,7 @@ export default function AuditPage() {
                   <div>
                     <label className="text-xs font-medium text-gray-500 uppercase flex items-center gap-1">
                       <Globe className="h-3 w-3" />
-                      Dirección IP
+                      Direccion IP
                     </label>
                     <p className="text-gray-900">{selectedLog.ipAddress}</p>
                   </div>

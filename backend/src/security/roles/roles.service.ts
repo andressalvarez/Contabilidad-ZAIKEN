@@ -1,17 +1,37 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateSecurityRoleDto, UpdateSecurityRoleDto, AssignPermissionsDto } from './dto';
+import {
+  CreateSecurityRoleDto,
+  UpdateSecurityRoleDto,
+  AssignPermissionsDto,
+} from './dto';
+import { AuditService, SecurityEventType } from '../audit/audit.service';
+import { RequestContext } from '../../common/utils/request-context.util';
+
+interface AuditOptions extends RequestContext {
+  actorUserId?: number;
+  actorEmail?: string;
+}
 
 @Injectable()
 export class RolesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditService: AuditService,
+  ) {}
 
   private validateRoleName(name?: string) {
     if (!name) return;
 
     const normalized = name.trim().toLowerCase();
     if (normalized === 'empleado') {
-      throw new BadRequestException('El rol "Empleado" esta deprecado. Usa "Colaborador".');
+      throw new BadRequestException(
+        'El rol "Empleado" esta deprecado. Usa "Colaborador".',
+      );
     }
   }
 
@@ -59,7 +79,11 @@ export class RolesService {
     return role;
   }
 
-  async create(negocioId: number, dto: CreateSecurityRoleDto) {
+  async create(
+    negocioId: number,
+    dto: CreateSecurityRoleDto,
+    audit?: AuditOptions,
+  ) {
     this.validateRoleName(dto.name);
 
     // Check if name already exists for this business
@@ -68,10 +92,12 @@ export class RolesService {
     });
 
     if (existing) {
-      throw new BadRequestException(`A role with name "${dto.name}" already exists`);
+      throw new BadRequestException(
+        `A role with name "${dto.name}" already exists`,
+      );
     }
 
-    return this.prisma.securityRole.create({
+    const role = await this.prisma.securityRole.create({
       data: {
         negocioId,
         name: dto.name,
@@ -88,9 +114,39 @@ export class RolesService {
         },
       },
     });
+
+    await this.auditService.logSafe({
+      negocioId,
+      userId: audit?.actorUserId,
+      eventType: SecurityEventType.ROLE_CREATE,
+      targetType: 'SecurityRole',
+      targetId: role.id,
+      description: `Rol creado: ${role.name}`,
+      metadata: {
+        module: 'security.roles',
+        action: 'create',
+        result: 'SUCCESS',
+        actorEmail: audit?.actorEmail,
+        role: {
+          name: role.name,
+          description: role.description,
+          priority: role.priority,
+          active: role.active,
+        },
+      },
+      ipAddress: audit?.ipAddress,
+      userAgent: audit?.userAgent,
+    });
+
+    return role;
   }
 
-  async update(id: number, negocioId: number, dto: UpdateSecurityRoleDto) {
+  async update(
+    id: number,
+    negocioId: number,
+    dto: UpdateSecurityRoleDto,
+    audit?: AuditOptions,
+  ) {
     const role = await this.findOne(id, negocioId);
     this.validateRoleName(dto.name);
 
@@ -106,11 +162,13 @@ export class RolesService {
       });
 
       if (existing) {
-        throw new BadRequestException(`A role with name "${dto.name}" already exists`);
+        throw new BadRequestException(
+          `A role with name "${dto.name}" already exists`,
+        );
       }
     }
 
-    return this.prisma.securityRole.update({
+    const updated = await this.prisma.securityRole.update({
       where: { id },
       data: {
         name: dto.name,
@@ -127,9 +185,42 @@ export class RolesService {
         },
       },
     });
+
+    await this.auditService.logSafe({
+      negocioId,
+      userId: audit?.actorUserId,
+      eventType: SecurityEventType.ROLE_UPDATE,
+      targetType: 'SecurityRole',
+      targetId: id,
+      description: `Rol actualizado: ${updated.name}`,
+      metadata: {
+        module: 'security.roles',
+        action: 'update',
+        result: 'SUCCESS',
+        actorEmail: audit?.actorEmail,
+        before: {
+          name: role.name,
+          description: role.description,
+          color: role.color,
+          priority: role.priority,
+          active: role.active,
+        },
+        after: {
+          name: updated.name,
+          description: updated.description,
+          color: updated.color,
+          priority: updated.priority,
+          active: updated.active,
+        },
+      },
+      ipAddress: audit?.ipAddress,
+      userAgent: audit?.userAgent,
+    });
+
+    return updated;
   }
 
-  async delete(id: number, negocioId: number) {
+  async delete(id: number, negocioId: number, audit?: AuditOptions) {
     const role = await this.findOne(id, negocioId);
 
     if (role.isSystem) {
@@ -147,13 +238,45 @@ export class RolesService {
       );
     }
 
-    return this.prisma.securityRole.delete({
+    const deleted = await this.prisma.securityRole.delete({
       where: { id },
     });
+
+    await this.auditService.logSafe({
+      negocioId,
+      userId: audit?.actorUserId,
+      eventType: SecurityEventType.ROLE_DELETE,
+      targetType: 'SecurityRole',
+      targetId: id,
+      description: `Rol eliminado: ${deleted.name}`,
+      metadata: {
+        module: 'security.roles',
+        action: 'delete',
+        result: 'SUCCESS',
+        actorEmail: audit?.actorEmail,
+        role: {
+          name: deleted.name,
+          description: deleted.description,
+        },
+      },
+      ipAddress: audit?.ipAddress,
+      userAgent: audit?.userAgent,
+    });
+
+    return deleted;
   }
 
-  async assignPermissions(id: number, negocioId: number, dto: AssignPermissionsDto) {
+  async assignPermissions(
+    id: number,
+    negocioId: number,
+    dto: AssignPermissionsDto,
+    audit?: AuditOptions,
+  ) {
     const role = await this.findOne(id, negocioId);
+    const previous = await this.prisma.rolePermission.findMany({
+      where: { roleId: id },
+      select: { permissionId: true },
+    });
 
     // Delete existing permissions for this role
     await this.prisma.rolePermission.deleteMany({
@@ -171,7 +294,26 @@ export class RolesService {
       });
     }
 
-    return this.findOne(id, negocioId);
+    const result = await this.findOne(id, negocioId);
+    await this.auditService.logSafe({
+      negocioId,
+      userId: audit?.actorUserId,
+      eventType: SecurityEventType.PERMISSION_CHANGE,
+      targetType: 'SecurityRole',
+      targetId: id,
+      description: `Permisos actualizados para rol: ${role.name}`,
+      metadata: {
+        module: 'security.roles',
+        action: 'assignPermissions',
+        result: 'SUCCESS',
+        actorEmail: audit?.actorEmail,
+        previousPermissionIds: previous.map((p) => p.permissionId),
+        newPermissionIds: dto.permissionIds || [],
+      },
+      ipAddress: audit?.ipAddress,
+      userAgent: audit?.userAgent,
+    });
+    return result;
   }
 
   async getUsersForRole(id: number, negocioId: number) {
@@ -190,7 +332,12 @@ export class RolesService {
     });
   }
 
-  async assignRoleToUser(userId: number, roleId: number, negocioId: number) {
+  async assignRoleToUser(
+    userId: number,
+    roleId: number,
+    negocioId: number,
+    audit?: AuditOptions,
+  ) {
     // Verify role exists and belongs to this business
     await this.findOne(roleId, negocioId);
 
@@ -203,7 +350,7 @@ export class RolesService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    return this.prisma.usuario.update({
+    const updatedUser = await this.prisma.usuario.update({
       where: { id: userId },
       data: { securityRoleId: roleId },
       select: {
@@ -220,5 +367,25 @@ export class RolesService {
         },
       },
     });
+
+    await this.auditService.logSafe({
+      negocioId,
+      userId: audit?.actorUserId,
+      eventType: SecurityEventType.ROLE_ASSIGN,
+      targetType: 'Usuario',
+      targetId: userId,
+      description: `Rol asignado a usuario: ${updatedUser.email} -> ${updatedUser.securityRole?.name}`,
+      metadata: {
+        module: 'security.roles',
+        action: 'assignRoleToUser',
+        result: 'SUCCESS',
+        actorEmail: audit?.actorEmail,
+        assignedRoleId: roleId,
+      },
+      ipAddress: audit?.ipAddress,
+      userAgent: audit?.userAgent,
+    });
+
+    return updatedUser;
   }
 }

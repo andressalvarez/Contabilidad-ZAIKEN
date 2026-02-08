@@ -19,6 +19,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PermissionsGuard } from '../common/guards/permissions.guard';
 import { Permissions } from '../common/decorators/permissions.decorator';
 import { Action } from '../casl/action.enum';
+import { extractRequestContext } from '../common/utils/request-context.util';
 
 @Controller('usuarios')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -62,8 +63,10 @@ export class UsuariosController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(
+    @Request() req: any,
     @NegocioId() negocioId: number,
-    @Body() body: {
+    @Body()
+    body: {
       email: string;
       nombre: string;
       securityRoleId: number;
@@ -79,27 +82,36 @@ export class UsuariosController {
     return {
       success: true,
       message: 'Usuario creado exitosamente',
-      data: await this.service.create({
-        email: body.email,
-        nombre: body.nombre,
-        securityRoleId: body.securityRoleId,
-        activo: body.activo,
-        passwordHash,
-        negocioId,
-        rolId: body.rolId,
-        participacionPorc: body.participacionPorc,
-        valorHora: body.valorHora,
-        notas: body.notas,
-      }),
+      data: await this.service.create(
+        {
+          email: body.email,
+          nombre: body.nombre,
+          securityRoleId: body.securityRoleId,
+          activo: body.activo,
+          passwordHash,
+          negocioId,
+          rolId: body.rolId,
+          participacionPorc: body.participacionPorc,
+          valorHora: body.valorHora,
+          notas: body.notas,
+        },
+        {
+          actorUserId: req.user.userId,
+          actorEmail: req.user.email,
+          context: extractRequestContext(req),
+        },
+      ),
     };
   }
 
   @Permissions({ action: Action.Update, subject: 'Usuario' })
   @Patch(':id')
   async update(
+    @Request() req: any,
     @Param('id', ParseIntPipe) id: number,
     @NegocioId() negocioId: number,
-    @Body() body: Partial<{
+    @Body()
+    body: Partial<{
       email: string;
       nombre: string;
       securityRoleId: number;
@@ -111,21 +123,32 @@ export class UsuariosController {
       notas: string;
     }>,
   ) {
-    const passwordHash = body.password ? await bcrypt.hash(body.password, 10) : undefined;
+    const passwordHash = body.password
+      ? await bcrypt.hash(body.password, 10)
+      : undefined;
     return {
       success: true,
       message: 'Usuario actualizado exitosamente',
-      data: await this.service.update(id, negocioId, {
-        email: body.email,
-        nombre: body.nombre,
-        securityRoleId: body.securityRoleId,
-        activo: body.activo,
-        passwordHash,
-        rolId: body.rolId,
-        participacionPorc: body.participacionPorc,
-        valorHora: body.valorHora,
-        notas: body.notas,
-      }),
+      data: await this.service.update(
+        id,
+        negocioId,
+        {
+          email: body.email,
+          nombre: body.nombre,
+          securityRoleId: body.securityRoleId,
+          activo: body.activo,
+          passwordHash,
+          rolId: body.rolId,
+          participacionPorc: body.participacionPorc,
+          valorHora: body.valorHora,
+          notas: body.notas,
+        },
+        {
+          actorUserId: req.user.userId,
+          actorEmail: req.user.email,
+          context: extractRequestContext(req),
+        },
+      ),
     };
   }
 
@@ -133,10 +156,15 @@ export class UsuariosController {
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   async remove(
+    @Request() req: any,
     @Param('id', ParseIntPipe) id: number,
     @NegocioId() negocioId: number,
   ) {
-    const result = await this.service.delete(id, negocioId);
+    const result = await this.service.delete(id, negocioId, {
+      actorUserId: req.user.userId,
+      actorEmail: req.user.email,
+      context: extractRequestContext(req),
+    });
     return {
       success: true,
       message: result.message,
@@ -152,14 +180,25 @@ export class UsuariosController {
     @Body() body: Partial<{ nombre: string; email: string; password: string }>,
   ) {
     const userId = req.user.userId;
-    const passwordHash = body.password ? await bcrypt.hash(body.password, 10) : undefined;
+    const passwordHash = body.password
+      ? await bcrypt.hash(body.password, 10)
+      : undefined;
     return {
       success: true,
       message: 'Perfil actualizado exitosamente',
-      data: await this.service.update(userId, negocioId, {
-        ...body,
-        passwordHash,
-      }),
+      data: await this.service.update(
+        userId,
+        negocioId,
+        {
+          ...body,
+          passwordHash,
+        },
+        {
+          actorUserId: req.user.userId,
+          actorEmail: req.user.email,
+          context: extractRequestContext(req),
+        },
+      ),
     };
   }
 
@@ -170,14 +209,18 @@ export class UsuariosController {
   @Post(':id/send-password-reset')
   @HttpCode(HttpStatus.OK)
   async sendPasswordResetToUser(
+    @Request() req: any,
     @Param('id', ParseIntPipe) id: number,
     @NegocioId() negocioId: number,
   ) {
-    const result = await this.service.sendPasswordResetToUser(id, negocioId);
+    const result = await this.service.sendPasswordResetToUser(id, negocioId, {
+      actorUserId: req.user.userId,
+      actorEmail: req.user.email,
+      context: extractRequestContext(req),
+    });
     return {
       success: true,
       message: result.message,
     };
   }
 }
-

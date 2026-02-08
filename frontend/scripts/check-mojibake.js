@@ -6,7 +6,7 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const SRC_DIR = path.join(ROOT, 'src');
 const INCLUDED_EXT = new Set(['.ts', '.tsx', '.js', '.jsx', '.json', '.md']);
-const BAD_PATTERNS = [/Ã/g, /Â/g, /â€¢/g, /ðŸ/g, /\uFFFD/g];
+const BAD_PATTERNS = [/Ãƒ/g, /Ã‚/g, /Ã¢â‚¬Â¢/g, /Ã°Å¸/g, /\uFFFD/g];
 
 function walk(dir, out = []) {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -41,12 +41,12 @@ function main() {
   }
 
   if (offenders.length > 0) {
-    console.error('Mojibake detectado. Corrige estas líneas:');
+    console.error('Mojibake detectado. Corrige estas lineas:');
     for (const offender of offenders) console.error(`- ${offender}`);
     process.exit(1);
   }
 
-  console.log('OK: no se detectó mojibake en frontend/src.');
+  console.log('OK: no se detecto mojibake en frontend/src.');
 }
 
 main();

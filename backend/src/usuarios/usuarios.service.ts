@@ -1,8 +1,19 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
+import {
+  AuditService,
+  SecurityEventType,
+} from '../security/audit/audit.service';
+import { RequestContext } from '../common/utils/request-context.util';
 
 interface CreateUsuarioData {
   email: string;
@@ -37,6 +48,12 @@ interface UpdateUsuarioData {
   notas?: string;
 }
 
+interface AuditOptions {
+  actorUserId?: number;
+  actorEmail?: string;
+  context?: RequestContext;
+}
+
 @Injectable()
 export class UsuariosService {
   private readonly logger = new Logger(UsuariosService.name);
@@ -44,6 +61,7 @@ export class UsuariosService {
   constructor(
     private prisma: PrismaService,
     private emailService: EmailService,
+    private auditService: AuditService,
   ) {}
 
   async findAll(negocioId: number) {
@@ -58,7 +76,7 @@ export class UsuariosService {
         nombre: true,
         activo: true,
         createdAt: true,
-              rolId: true,
+        rolId: true,
         participacionPorc: true,
         horasTotales: true,
         aportesTotales: true,
@@ -98,7 +116,7 @@ export class UsuariosService {
         nombre: true,
         activo: true,
         createdAt: true,
-              rolId: true,
+        rolId: true,
         participacionPorc: true,
         horasTotales: true,
         aportesTotales: true,
@@ -131,7 +149,7 @@ export class UsuariosService {
     return user;
   }
 
-  async create(data: CreateUsuarioData) {
+  async create(data: CreateUsuarioData, audit?: AuditOptions) {
     const {
       email,
       nombre,
@@ -143,12 +161,12 @@ export class UsuariosService {
       ...rest
     } = data;
 
-    // Validar participación si se proporciona
+    // Validar participaciÃƒÂ³n si se proporciona
     if (participacionPorc > 0) {
       await this.validateParticipacion(negocioId, participacionPorc);
     }
 
-    return this.prisma.usuario.create({
+    const created = await this.prisma.usuario.create({
       data: {
         email,
         nombre,
@@ -181,17 +199,47 @@ export class UsuariosService {
         },
       },
     });
+
+    await this.auditService.logSafe({
+      negocioId,
+      userId: audit?.actorUserId,
+      eventType: SecurityEventType.USER_CREATE,
+      targetType: 'Usuario',
+      targetId: created.id,
+      description: `Usuario creado: ${created.email}`,
+      metadata: {
+        module: 'usuarios',
+        action: 'create',
+        result: 'SUCCESS',
+        actorEmail: audit?.actorEmail,
+        createdUser: {
+          email: created.email,
+          nombre: created.nombre,
+          securityRoleId: created.securityRoleId,
+          activo: created.activo,
+        },
+      },
+      ipAddress: audit?.context?.ipAddress,
+      userAgent: audit?.context?.userAgent,
+    });
+
+    return created;
   }
 
-  async update(id: number, negocioId: number, data: UpdateUsuarioData) {
-    await this.findOne(id, negocioId);
+  async update(
+    id: number,
+    negocioId: number,
+    data: UpdateUsuarioData,
+    audit?: AuditOptions,
+  ) {
+    const previous = await this.findOne(id, negocioId);
 
-    // Validar participación si se está actualizando
+    // Validar participaciÃƒÂ³n si se estÃƒ¡ actualizando
     if (data.participacionPorc !== undefined) {
       await this.validateParticipacion(negocioId, data.participacionPorc, id);
     }
 
-    return this.prisma.usuario.update({
+    const updated = await this.prisma.usuario.update({
       where: { id },
       data: {
         email: data.email,
@@ -199,7 +247,7 @@ export class UsuariosService {
         securityRoleId: data.securityRoleId,
         activo: data.activo,
         password: data.passwordHash,
-              rolId: data.rolId,
+        rolId: data.rolId,
         participacionPorc: data.participacionPorc,
         horasTotales: data.horasTotales,
         aportesTotales: data.aportesTotales,
@@ -232,14 +280,67 @@ export class UsuariosService {
         },
       },
     });
+
+    await this.auditService.logSafe({
+      negocioId,
+      userId: audit?.actorUserId,
+      eventType: SecurityEventType.USER_UPDATE,
+      targetType: 'Usuario',
+      targetId: id,
+      description: `Usuario actualizado: ${updated.email}`,
+      metadata: {
+        module: 'usuarios',
+        action: 'update',
+        result: 'SUCCESS',
+        actorEmail: audit?.actorEmail,
+        changedFields: Object.keys(data).filter((k) => k !== 'passwordHash'),
+        before: {
+          email: previous.email,
+          nombre: previous.nombre,
+          activo: previous.activo,
+          securityRoleId: previous.securityRole?.id,
+          rolId: previous.rolNegocio?.id,
+          participacionPorc: previous.participacionPorc,
+        },
+        after: {
+          email: updated.email,
+          nombre: updated.nombre,
+          activo: updated.activo,
+          securityRoleId: updated.securityRole?.id,
+          rolId: updated.rolNegocio?.id,
+          participacionPorc: updated.participacionPorc,
+        },
+      },
+      ipAddress: audit?.context?.ipAddress,
+      userAgent: audit?.context?.userAgent,
+    });
+
+    return updated;
   }
 
-  async delete(id: number, negocioId: number) {
-    await this.findOne(id, negocioId);
+  async delete(id: number, negocioId: number, audit?: AuditOptions) {
+    const previous = await this.findOne(id, negocioId);
 
     await this.prisma.usuario.update({
       where: { id },
       data: { activo: false },
+    });
+
+    await this.auditService.logSafe({
+      negocioId,
+      userId: audit?.actorUserId,
+      eventType: SecurityEventType.USER_DEACTIVATE,
+      targetType: 'Usuario',
+      targetId: id,
+      description: `Usuario desactivado: ${previous.email}`,
+      metadata: {
+        module: 'usuarios',
+        action: 'delete',
+        result: 'SUCCESS',
+        actorEmail: audit?.actorEmail,
+      },
+      ipAddress: audit?.context?.ipAddress,
+      userAgent: audit?.context?.userAgent,
     });
 
     return { message: 'Usuario eliminado exitosamente' };
@@ -248,7 +349,11 @@ export class UsuariosService {
   /**
    * Validar que la suma de participaciones no exceda 100%
    */
-  private async validateParticipacion(negocioId: number, nuevaParticipacion: number, usuarioIdExcluir?: number) {
+  private async validateParticipacion(
+    negocioId: number,
+    nuevaParticipacion: number,
+    usuarioIdExcluir?: number,
+  ) {
     const agregado = await this.prisma.usuario.aggregate({
       where: {
         negocioId,
@@ -265,11 +370,13 @@ export class UsuariosService {
 
     if (totalNuevo > 100) {
       throw new BadRequestException(
-        `Total de participación excedería 100% (actual: ${totalActual}%, nueva: ${nuevaParticipacion}%, total: ${totalNuevo}%)`,
+        `Total de participaciÃƒÂ³n excederÃƒÂ­a 100% (actual: ${totalActual}%, nueva: ${nuevaParticipacion}%, total: ${totalNuevo}%)`,
       );
     }
 
-    this.logger.log(`Validación participación OK: ${totalActual}% + ${nuevaParticipacion}% = ${totalNuevo}%`);
+    this.logger.log(
+      `ValidaciÃƒÂ³n participaciÃƒÂ³n OK: ${totalActual}% + ${nuevaParticipacion}% = ${totalNuevo}%`,
+    );
   }
 
   /**
@@ -298,19 +405,22 @@ export class UsuariosService {
   }
 
   /**
-   * Solicitar recuperación de contraseña
+   * Solicitar recuperaciÃƒÂ³n de contraseÃƒÂ±a
    */
-  async requestPasswordReset(email: string) {
+  async requestPasswordReset(email: string, context?: RequestContext) {
     const usuario = await this.prisma.usuario.findUnique({
       where: { email },
     });
 
     if (!usuario) {
       // No revelar si el email existe (seguridad)
-      return { message: 'Si el email existe, recibirás instrucciones de recuperación' };
+      return {
+        message:
+          'Si el email existe, recibirÃƒ¡s instrucciones de recuperaciÃƒÂ³n',
+      };
     }
 
-    // Generar token con expiración de 1 hora
+    // Generar token con expiraciÃƒÂ³n de 1 hora
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetExpires = new Date(Date.now() + 3600000); // 1 hora
 
@@ -323,6 +433,21 @@ export class UsuariosService {
     });
 
     this.logger.log(`Token de reset generado para: ${email}`);
+    await this.auditService.logSafe({
+      negocioId: usuario.negocioId,
+      userId: usuario.id,
+      eventType: SecurityEventType.PASSWORD_RESET_REQUEST,
+      targetType: 'Usuario',
+      targetId: usuario.id,
+      description: `Solicitud de recuperacion de contrasena (${usuario.email})`,
+      metadata: {
+        module: 'auth',
+        action: 'requestPasswordReset',
+        result: 'SUCCESS',
+      },
+      ipAddress: context?.ipAddress,
+      userAgent: context?.userAgent,
+    });
 
     // Send password reset email
     try {
@@ -338,13 +463,20 @@ export class UsuariosService {
       // Don't fail the request if email fails
     }
 
-    return { message: 'Si el email existe, recibirás instrucciones de recuperación' };
+    return {
+      message:
+        'Si el email existe, recibirÃƒ¡s instrucciones de recuperaciÃƒÂ³n',
+    };
   }
 
   /**
-   * Restablecer contraseña con token
+   * Restablecer contraseÃƒÂ±a con token
    */
-  async resetPassword(token: string, newPassword: string) {
+  async resetPassword(
+    token: string,
+    newPassword: string,
+    context?: RequestContext,
+  ) {
     const usuario = await this.prisma.usuario.findFirst({
       where: {
         resetPasswordToken: token,
@@ -353,7 +485,7 @@ export class UsuariosService {
     });
 
     if (!usuario) {
-      throw new BadRequestException('Token inválido o expirado');
+      throw new BadRequestException('Token invÃƒ¡lido o expirado');
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -367,15 +499,30 @@ export class UsuariosService {
       },
     });
 
-    this.logger.log(`Contraseña actualizada para usuario ID: ${usuario.id}`);
+    this.logger.log(`Contrasena actualizada para usuario ID: ${usuario.id}`);
+    await this.auditService.logSafe({
+      negocioId: usuario.negocioId,
+      userId: usuario.id,
+      eventType: SecurityEventType.PASSWORD_CHANGE,
+      targetType: 'Usuario',
+      targetId: usuario.id,
+      description: `Contrasena restablecida (${usuario.email})`,
+      metadata: { module: 'auth', action: 'resetPassword', result: 'SUCCESS' },
+      ipAddress: context?.ipAddress,
+      userAgent: context?.userAgent,
+    });
 
-    return { message: 'Contraseña actualizada exitosamente' };
+    return { message: 'ContraseÃƒÂ±a actualizada exitosamente' };
   }
 
   /**
    * Admin sends password reset email to a specific user
    */
-  async sendPasswordResetToUser(userId: number, negocioId: number) {
+  async sendPasswordResetToUser(
+    userId: number,
+    negocioId: number,
+    audit?: AuditOptions,
+  ) {
     const usuario = await this.prisma.usuario.findFirst({
       where: { id: userId, negocioId },
     });
@@ -397,6 +544,22 @@ export class UsuariosService {
     });
 
     this.logger.log(`Reset token generated for user: ${usuario.email}`);
+    await this.auditService.logSafe({
+      negocioId,
+      userId: audit?.actorUserId,
+      eventType: SecurityEventType.PASSWORD_RESET_REQUEST,
+      targetType: 'Usuario',
+      targetId: usuario.id,
+      description: `Admin envio recuperacion de contrasena a ${usuario.email}`,
+      metadata: {
+        module: 'usuarios',
+        action: 'sendPasswordResetToUser',
+        result: 'SUCCESS',
+        actorEmail: audit?.actorEmail,
+      },
+      ipAddress: audit?.context?.ipAddress,
+      userAgent: audit?.context?.userAgent,
+    });
 
     // Send password reset email
     try {
@@ -407,10 +570,14 @@ export class UsuariosService {
         resetToken,
       );
       this.logger.log(`Password reset email sent to: ${usuario.email}`);
-      return { message: `Correo de recuperación enviado a ${usuario.email}` };
+      return {
+        message: `Correo de recuperaciÃƒÂ³n enviado a ${usuario.email}`,
+      };
     } catch (error) {
       this.logger.error(`Failed to send password reset email:`, error);
-      throw new BadRequestException('Error al enviar el correo. Verifica la configuración SMTP.');
+      throw new BadRequestException(
+        'Error al enviar el correo. Verifica la configuraciÃƒÂ³n SMTP.',
+      );
     }
   }
 
@@ -423,7 +590,7 @@ export class UsuariosService {
     });
 
     if (!usuario) {
-      throw new NotFoundException('Token de activación inválido');
+      throw new NotFoundException('Token de activaciÃƒÂ³n invÃƒ¡lido');
     }
 
     await this.prisma.usuario.update({

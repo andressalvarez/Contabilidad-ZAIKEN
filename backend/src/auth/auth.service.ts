@@ -1,8 +1,17 @@
-import { Injectable, UnauthorizedException, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
-import { AuditService, SecurityEventType } from '../security/audit/audit.service';
+import {
+  AuditService,
+  SecurityEventType,
+} from '../security/audit/audit.service';
 
 @Injectable()
 export class AuthService {
@@ -20,7 +29,14 @@ export class AuthService {
     negocioId?: number; // Opcional: para agregar usuarios a un negocio existente
     nombreNegocio?: string; // Opcional: para crear un nuevo negocio
   }) {
-    const { email, password, nombre, negocioId, nombreNegocio, securityRoleId } = params;
+    const {
+      email,
+      password,
+      nombre,
+      negocioId,
+      nombreNegocio,
+      securityRoleId,
+    } = params;
 
     const existing = await this.prisma.usuario.findUnique({ where: { email } });
     if (existing) throw new ConflictException('Email ya registrado');
@@ -44,8 +60,15 @@ export class AuthService {
 
       // El que crea el negocio queda con rol Administrador del sistema
       const adminRole = await this.prisma.securityRole.upsert({
-        where: { negocioId_name: { negocioId: finalNegocioId, name: 'Administrador' } },
-        update: { isSystem: true, active: true, priority: 100, color: '#6366f1' },
+        where: {
+          negocioId_name: { negocioId: finalNegocioId, name: 'Administrador' },
+        },
+        update: {
+          isSystem: true,
+          active: true,
+          priority: 100,
+          color: '#6366f1',
+        },
         create: {
           negocioId: finalNegocioId,
           name: 'Administrador',
@@ -61,8 +84,15 @@ export class AuthService {
       // Agregar a negocio existente; por defecto usar rol "Usuario"
       if (!finalSecurityRoleId) {
         const userRole = await this.prisma.securityRole.upsert({
-          where: { negocioId_name: { negocioId: finalNegocioId, name: 'Usuario' } },
-          update: { isSystem: true, active: true, priority: 10, color: '#3b82f6' },
+          where: {
+            negocioId_name: { negocioId: finalNegocioId, name: 'Usuario' },
+          },
+          update: {
+            isSystem: true,
+            active: true,
+            priority: 10,
+            color: '#3b82f6',
+          },
           create: {
             negocioId: finalNegocioId,
             name: 'Usuario',
@@ -76,10 +106,16 @@ export class AuthService {
         finalSecurityRoleId = userRole.id;
       } else {
         const role = await this.prisma.securityRole.findFirst({
-          where: { id: finalSecurityRoleId, negocioId: finalNegocioId, active: true },
+          where: {
+            id: finalSecurityRoleId,
+            negocioId: finalNegocioId,
+            active: true,
+          },
         });
         if (!role) {
-          throw new BadRequestException('Security role does not belong to the selected business');
+          throw new BadRequestException(
+            'Security role does not belong to the selected business',
+          );
         }
       }
     }
@@ -91,7 +127,7 @@ export class AuthService {
         nombre,
         activo: true,
         negocioId: finalNegocioId,
-        securityRoleId: finalSecurityRoleId!,
+        securityRoleId: finalSecurityRoleId,
       },
       include: {
         negocio: true,
@@ -111,7 +147,7 @@ export class AuthService {
       where: { email: params.email },
       include: { negocio: true, securityRole: true, rolNegocio: true },
     });
-    if (!user) throw new UnauthorizedException('Credenciales invÃ¡lidas');
+    if (!user) throw new UnauthorizedException('Credenciales invalidas');
     if (!user.activo) {
       await this.safeAuditLog({
         negocioId: user.negocioId,
@@ -146,11 +182,11 @@ export class AuthService {
         eventType: SecurityEventType.LOGIN_FAILED,
         targetType: 'Usuario',
         targetId: user.id,
-        description: `Login fallido: credenciales invÃ¡lidas (${user.email})`,
+        description: `Login fallido: credenciales invalidas (${user.email})`,
         ipAddress: context?.ipAddress,
         userAgent: context?.userAgent,
       });
-      throw new UnauthorizedException('Credenciales invÃ¡lidas');
+      throw new UnauthorizedException('Credenciales invalidas');
     }
 
     await this.safeAuditLog({
@@ -159,7 +195,7 @@ export class AuthService {
       eventType: SecurityEventType.LOGIN,
       targetType: 'Usuario',
       targetId: user.id,
-      description: `Inicio de sesiÃ³n (${user.email})`,
+      description: `Inicio de sesion (${user.email})`,
       ipAddress: context?.ipAddress,
       userAgent: context?.userAgent,
     });
