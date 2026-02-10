@@ -114,11 +114,11 @@ export default function DeductionHistoryModal({
                 <TrendingDown className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <h4 className="text-sm font-medium text-blue-800">
-                    Timeline de Pagos
+                    Pagos Automáticos
                   </h4>
                   <p className="text-xs text-blue-700 mt-1">
-                    Las horas trabajadas por encima del umbral diario se deducen
-                    automáticamente de tu deuda más antigua (FIFO).
+                    Cuando trabajas más del umbral diario (8h), el tiempo extra
+                    se deduce automáticamente de tu deuda más antigua.
                   </p>
                 </div>
               </div>
@@ -169,56 +169,47 @@ export default function DeductionHistoryModal({
                               </div>
                             </div>
 
-                            {/* Record reference and work date */}
+                            {/* Work date */}
                             <div className="mb-3">
                               <p className="text-sm text-gray-700 mb-1">
                                 <span className="font-medium text-gray-900">
-                                  Registro de trabajo #{deduction.registroHorasId}
+                                  Registro #{deduction.registroHorasId}
                                 </span>
                                 {' '}pagó parte de esta deuda
                               </p>
                               <p className="text-xs text-gray-600">
-                                Tiempo extra trabajado el: <span className="font-medium text-indigo-600">{workDate}</span>
+                                Día trabajado: <span className="font-medium text-indigo-600">{workDate}</span>
                               </p>
                             </div>
 
-                            {/* Campaign if exists */}
-                            {registro?.campana && (
-                              <div className="bg-purple-50 border border-purple-200 rounded-md px-3 py-1.5 mb-2">
-                                <p className="text-xs text-purple-700">
-                                  Campaña: <span className="font-medium">{registro.campana.nombre}</span>
-                                </p>
-                              </div>
-                            )}
-
-                            {/* Description if exists */}
-                            {registro?.descripcion && (
-                              <div className="bg-gray-50 border border-gray-200 rounded-md px-3 py-2 mb-2">
-                                <p className="text-xs text-gray-700">
-                                  <FileText className="h-3 w-3 inline mr-1" />
-                                  {registro.descripcion}
-                                </p>
-                              </div>
-                            )}
-
                             {/* Work hours and schedule */}
-                            <div className="bg-blue-50 border border-blue-200 rounded-md px-3 py-2 mb-2">
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="text-blue-700">
-                                  Total trabajado: <span className="font-semibold">{registro?.horas || 0}h</span>
-                                </span>
-                                {registro?.timerInicio && registro?.timerFin && (
-                                  <span className="text-blue-600">
-                                    {new Date(registro.timerInicio).toLocaleTimeString('es-ES', {
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}
-                                    {' → '}
-                                    {new Date(registro.timerFin).toLocaleTimeString('es-ES', {
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}
+                            <div className="bg-blue-50 border border-blue-200 rounded-md px-3 py-2.5 mb-3">
+                              <div className="space-y-1.5">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="text-blue-700 font-medium">
+                                    Total trabajado:
                                   </span>
+                                  <span className="text-blue-900 font-bold">
+                                    {registro?.horas || 0}h
+                                  </span>
+                                </div>
+                                {registro?.timerInicio && registro?.timerFin && (
+                                  <div className="flex items-center justify-between text-xs">
+                                    <span className="text-blue-600">
+                                      Horario:
+                                    </span>
+                                    <span className="text-blue-800 font-medium font-mono">
+                                      {new Date(registro.timerInicio).toLocaleTimeString('es-ES', {
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })}
+                                      {' → '}
+                                      {new Date(registro.timerFin).toLocaleTimeString('es-ES', {
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })}
+                                    </span>
+                                  </div>
                                 )}
                               </div>
                             </div>

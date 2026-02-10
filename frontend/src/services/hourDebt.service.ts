@@ -53,16 +53,8 @@ export interface DebtDeduction {
     id: number;
     fecha: string;
     horas: number;
-    descripcion?: string;
     timerInicio?: string;
     timerFin?: string;
-    usuario?: {
-      nombre: string;
-    };
-    campana?: {
-      id: number;
-      nombre: string;
-    };
   };
 }
 

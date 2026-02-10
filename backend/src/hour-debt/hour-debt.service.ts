@@ -344,18 +344,8 @@ export class HourDebtService {
             id: true,
             fecha: true,
             horas: true,
-            descripcion: true,
             timerInicio: true,
             timerFin: true,
-            usuario: {
-              select: { nombre: true },
-            },
-            campana: {
-              select: {
-                id: true,
-                nombre: true,
-              },
-            },
           },
         },
       },
