@@ -17,6 +17,7 @@ import {
   Database,
   Palette,
   ChevronRight,
+  LayoutPanelLeft,
 } from 'lucide-react';
 import { useCan } from '@/hooks/usePermissions';
 import { Action } from '@/contexts/AbilityContext';
@@ -27,6 +28,7 @@ import {
 } from '@/hooks/useSettings';
 import { SmtpConfig } from '@/services/settings.service';
 import MainLayout from '@/components/layout/MainLayout';
+import NavigationConfigSection from '@/components/settings/NavigationConfigSection';
 
 // Define available configuration sections
 interface ConfigSection {
@@ -72,6 +74,13 @@ const CONFIG_SECTIONS: ConfigSection[] = [
     description: 'Tema y personalización visual',
     icon: Palette,
     available: false,
+  },
+  {
+    id: 'navigation',
+    name: 'Navegacion',
+    description: 'Dominios de negocio, secciones e items del menu',
+    icon: LayoutPanelLeft,
+    available: true,
   },
 ];
 
@@ -384,6 +393,8 @@ export default function ConfiguracionPage() {
     switch (activeSection) {
       case 'smtp':
         return <SmtpConfigSection />;
+      case 'navigation':
+        return <NavigationConfigSection />;
       // Add more cases here as you add more sections
       // case 'notifications':
       //   return <NotificationsSection />;
@@ -421,7 +432,7 @@ export default function ConfiguracionPage() {
                 <h3 className="text-xs sm:text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2 sm:mb-3 px-2">
                   Secciones
                 </h3>
-                <nav className="flex flex-row lg:flex-col gap-2 lg:gap-1 overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0">
+                <nav className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2 lg:gap-1">
                   {CONFIG_SECTIONS.map((section) => {
                     const Icon = section.icon;
                     const isActive = activeSection === section.id;
@@ -430,7 +441,7 @@ export default function ConfiguracionPage() {
                       <button
                         key={section.id}
                         onClick={() => setActiveSection(section.id)}
-                        className={`flex-shrink-0 lg:w-full flex items-center gap-2 sm:gap-3 px-3 py-2 sm:py-3 min-h-[44px] rounded-lg text-left transition-colors ${
+                        className={`w-full flex items-center gap-2 sm:gap-3 px-3 py-2 sm:py-3 min-h-[44px] rounded-lg text-left transition-colors ${
                           isActive
                             ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
                             : 'text-gray-700 hover:bg-gray-50 border border-transparent'
@@ -443,7 +454,7 @@ export default function ConfiguracionPage() {
                             isActive ? 'text-indigo-600' : 'text-gray-500'
                           }`} />
                         </div>
-                        <div className="flex-1 min-w-0 hidden lg:block">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className={`text-sm font-medium truncate ${
                               isActive ? 'text-indigo-700' : 'text-gray-900'
@@ -460,13 +471,8 @@ export default function ConfiguracionPage() {
                             {section.description}
                           </p>
                         </div>
-                        <span className={`lg:hidden text-xs sm:text-sm font-medium whitespace-nowrap ${
-                          isActive ? 'text-indigo-700' : 'text-gray-900'
-                        }`}>
-                          {section.name}
-                        </span>
                         {isActive && (
-                          <ChevronRight className="h-4 w-4 text-indigo-400 flex-shrink-0 hidden lg:block" />
+                          <ChevronRight className="h-4 w-4 text-indigo-400 flex-shrink-0" />
                         )}
                       </button>
                     );

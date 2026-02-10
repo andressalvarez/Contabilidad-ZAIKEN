@@ -5,6 +5,7 @@ import HourDebtService, {
   DebtFilters,
   HourDebt,
   BusinessStats,
+  MonthlyDebtReviewResponse,
 } from '@/services/hourDebt.service';
 import { toast } from 'sonner';
 
@@ -187,5 +188,28 @@ export function useBusinessStats() {
     queryKey: ['hour-debt', 'stats', 'business'],
     queryFn: () => HourDebtService.getBusinessStats(),
     staleTime: 1000 * 60 * 5,
+  });
+}
+
+/**
+ * Request monthly debt review (admin)
+ */
+export function useRequestMonthlyDebtReview() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (): Promise<MonthlyDebtReviewResponse> =>
+      HourDebtService.requestMonthlyReview(),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['hour-debt'] });
+      toast.success(
+        `Auditoría completada: ${data.usersWithGaps} usuarios con diferencias`,
+      );
+    },
+    onError: (error: any) => {
+      const message =
+        error.response?.data?.message || 'Error al solicitar revisión mensual';
+      toast.error(message);
+    },
   });
 }

@@ -454,6 +454,180 @@ export class HourDebtService {
   }
 
   /**
+   * Runs a monthly audit to validate debt deductions.
+   * It compares, per user, the month's excess minutes vs deducted minutes.
+   */
+  async requestMonthlyReview(negocioId: number, requestedBy: number) {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    const monthEnd = now;
+
+    // First, fix structural balance discrepancies.
+    const balanceAudit = await this.auditBalances(negocioId);
+
+    const negocio = await this.prisma.negocio.findUnique({
+      where: { id: negocioId },
+      select: { configuracion: true },
+    });
+    const threshold = (negocio?.configuracion as any)?.dailyHourThreshold || 8;
+    const thresholdMinutes = Math.round(threshold * 60);
+
+    const approvedRecords = await this.prisma.registroHoras.findMany({
+      where: {
+        negocioId,
+        aprobado: true,
+        deletedAt: null,
+        fecha: {
+          gte: monthStart,
+          lte: monthEnd,
+        },
+      },
+      select: {
+        id: true,
+        usuarioId: true,
+        fecha: true,
+        horas: true,
+      },
+    });
+
+    const deductions = await this.prisma.debtDeduction.findMany({
+      where: {
+        deletedAt: null,
+        debt: { negocioId },
+        registroHoras: {
+          fecha: {
+            gte: monthStart,
+            lte: monthEnd,
+          },
+        },
+      },
+      select: {
+        minutesDeducted: true,
+        registroHoras: {
+          select: {
+            usuarioId: true,
+            fecha: true,
+          },
+        },
+      },
+    });
+
+    // Business rule: only evaluate expected debt discounts from the debt creation date onward.
+    const debtCreationRows = await this.prisma.hourDebt.findMany({
+      where: {
+        negocioId,
+        createdAt: { lte: monthEnd },
+        deletedAt: null,
+      },
+      select: {
+        usuarioId: true,
+        createdAt: true,
+      },
+    });
+
+    const firstDebtDayByUser = new Map<number, string>();
+    for (const debt of debtCreationRows) {
+      const createdDay = DateUtils.formatDate(debt.createdAt);
+      const existing = firstDebtDayByUser.get(debt.usuarioId);
+      if (!existing || createdDay < existing) {
+        firstDebtDayByUser.set(debt.usuarioId, createdDay);
+      }
+    }
+
+    const dailyApprovedByUser = new Map<string, number>();
+    for (const record of approvedRecords) {
+      const firstDebtDay = firstDebtDayByUser.get(record.usuarioId);
+      if (!firstDebtDay) {
+        continue;
+      }
+
+      const day = DateUtils.formatDate(record.fecha);
+      if (day < firstDebtDay) {
+        continue;
+      }
+
+      const key = `${record.usuarioId}:${day}`;
+      const minutes = Math.round((record.horas || 0) * 60);
+      dailyApprovedByUser.set(key, (dailyApprovedByUser.get(key) || 0) + minutes);
+    }
+
+    const excessByUser = new Map<number, number>();
+    for (const [key, totalMinutes] of dailyApprovedByUser.entries()) {
+      const [userIdRaw] = key.split(':');
+      const userId = Number.parseInt(userIdRaw, 10);
+      const dailyExcess = Math.max(0, totalMinutes - thresholdMinutes);
+      if (dailyExcess > 0) {
+        excessByUser.set(userId, (excessByUser.get(userId) || 0) + dailyExcess);
+      }
+    }
+
+    const deductedByUser = new Map<number, number>();
+    for (const deduction of deductions) {
+      const userId = deduction.registroHoras?.usuarioId;
+      if (!userId) continue;
+      deductedByUser.set(
+        userId,
+        (deductedByUser.get(userId) || 0) + deduction.minutesDeducted,
+      );
+    }
+
+    const userIds = Array.from(
+      new Set([...excessByUser.keys(), ...deductedByUser.keys()]),
+    );
+
+    const usersData = await this.prisma.usuario.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, nombre: true, email: true },
+    });
+    const usersMap = new Map(usersData.map((u) => [u.id, u]));
+
+    const users = userIds
+      .map((userId) => {
+        const expectedExcessMinutes = excessByUser.get(userId) || 0;
+        const deductedMinutes = deductedByUser.get(userId) || 0;
+        const gapMinutes = expectedExcessMinutes - deductedMinutes;
+        const user = usersMap.get(userId);
+
+        return {
+          usuarioId: userId,
+          nombre: user?.nombre || `Usuario #${userId}`,
+          email: user?.email || '',
+          expectedExcessMinutes,
+          deductedMinutes,
+          gapMinutes,
+          requiresManualReview: gapMinutes !== 0,
+        };
+      })
+      .sort((a, b) => Math.abs(b.gapMinutes) - Math.abs(a.gapMinutes));
+
+    const usersWithGaps = users.filter((u) => u.requiresManualReview).length;
+    const totalExpectedExcessMinutes = users.reduce(
+      (sum, u) => sum + u.expectedExcessMinutes,
+      0,
+    );
+    const totalDeductedMinutes = users.reduce((sum, u) => sum + u.deductedMinutes, 0);
+
+    this.logger.log(
+      `Auditoria mensual de deuda ejecutada. negocio=${negocioId}, solicitadoPor=${requestedBy}, usuarios=${users.length}, usuariosConDiferencia=${usersWithGaps}`,
+    );
+
+    return {
+      requestedAt: new Date().toISOString(),
+      requestedBy,
+      monthStart: monthStart.toISOString(),
+      monthEnd: monthEnd.toISOString(),
+      thresholdHours: threshold,
+      usersAnalyzed: users.length,
+      usersWithGaps,
+      totalExpectedExcessMinutes,
+      totalDeductedMinutes,
+      balanceFixesApplied: balanceAudit.fixed,
+      users,
+      message: 'Auditoría mensual de deuda ejecutada',
+    };
+  }
+
+  /**
    * Apply debt deduction with incremental excess calculation (IDEMPOTENT)
    * This is the core auto-deduction logic triggered on approval
    */
@@ -483,6 +657,7 @@ export class HourDebtService {
 
     // 1. Total BEFORE approving this record
     const prevTotal = await this.getTotalApprovedMinutesForDate(
+      negocioId,
       usuarioId,
       normalizedDate,
       approvedRecordId,
@@ -507,6 +682,7 @@ export class HourDebtService {
         SELECT * FROM hour_debts
         WHERE negocio_id = ${negocioId}
           AND usuario_id = ${usuarioId}
+          AND created_at::date <= ${normalizedDate}::date
           AND status = ${DebtStatus.ACTIVE}::"DebtStatus"
           AND remaining_minutes > 0
           AND deleted_at IS NULL
@@ -563,6 +739,7 @@ export class HourDebtService {
    * Get total approved minutes for a specific date
    */
   private async getTotalApprovedMinutesForDate(
+    negocioId: number,
     usuarioId: number,
     workDate: Date,
     excludeRecordId?: number,
@@ -571,11 +748,16 @@ export class HourDebtService {
     const prisma = tx || this.prisma;
 
     const normalizedDate = DateUtils.normalizeToBusinessDate(workDate);
+    const { start, end } = DateUtils.getDateRange(normalizedDate);
 
     const result = await prisma.registroHoras.aggregate({
       where: {
+        negocioId,
         usuarioId,
-        fecha: normalizedDate,
+        fecha: {
+          gte: start,
+          lte: end,
+        },
         aprobado: true,
         deletedAt: null,
         id: excludeRecordId ? { not: excludeRecordId } : undefined,

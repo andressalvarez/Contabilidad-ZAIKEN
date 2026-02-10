@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import type { NavigationCatalogItem, NavigationLayout } from '@/types/navigation';
 
 export interface SmtpConfig {
   host: string;
@@ -28,6 +29,32 @@ export const SettingsService = {
   testSmtpConnection: async (config: SmtpConfig): Promise<boolean> => {
     const { data } = await api.post('/settings/smtp/test', config);
     return data?.success || false;
+  },
+
+  getNavigationCatalog: async (): Promise<NavigationCatalogItem[]> => {
+    const { data } = await api.get('/settings/navigation/catalog');
+    return data?.data || [];
+  },
+
+  getNavigationLayout: async (): Promise<NavigationLayout | null> => {
+    const { data } = await api.get('/settings/navigation/layout');
+    return data?.data || null;
+  },
+
+  updateNavigationLayout: async (
+    layout: NavigationLayout,
+  ): Promise<NavigationLayout> => {
+    const payload = {
+      version: layout.version,
+      worlds: layout.worlds,
+    };
+    const { data } = await api.patch('/settings/navigation/layout', payload);
+    return data?.data;
+  },
+
+  resetNavigationLayout: async (): Promise<NavigationLayout> => {
+    const { data } = await api.post('/settings/navigation/layout/reset');
+    return data?.data;
   },
 };
 

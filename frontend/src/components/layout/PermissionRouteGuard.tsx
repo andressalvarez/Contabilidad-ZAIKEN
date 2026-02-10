@@ -31,6 +31,7 @@ const ROUTE_PERMISSIONS: Array<{
 }> = [
   { match: /^\/admin\/seguridad\/roles/, action: Action.Read, subject: 'SecurityRole' },
   { match: /^\/admin\/seguridad\/auditoria/, action: Action.Read, subject: 'SecurityAuditLog' },
+  { match: /^\/admin\/seguridad\/feedback/, action: Action.Read, subject: 'SecurityRole' },
   { match: /^\/admin\/seguridad\/configuracion/, action: Action.Read, subject: 'SecuritySettings' },
   { match: /^\/usuarios/, action: Action.Read, subject: 'Usuario' },
   { match: /^\/roles/, action: Action.Read, subject: 'BusinessRole' },
@@ -97,6 +98,7 @@ export default function PermissionRouteGuard({ children }: PermissionRouteGuardP
       { path: '/usuarios', action: Action.Read, subject: 'Usuario' },
       { path: '/admin/seguridad/roles', action: Action.Read, subject: 'SecurityRole' },
       { path: '/admin/seguridad/auditoria', action: Action.Read, subject: 'SecurityAuditLog' },
+      { path: '/admin/seguridad/feedback', action: Action.Read, subject: 'SecurityRole' },
       { path: '/configuracion', action: Action.Read, subject: 'Settings' },
     ];
 

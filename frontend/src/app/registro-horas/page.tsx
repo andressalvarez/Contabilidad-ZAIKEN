@@ -55,6 +55,7 @@ import { ScrollableTable } from '@/components/ui/ScrollableTable';
 import CreateDebtModal from '@/components/CreateDebtModal';
 import DebtHistoryTable from '@/components/DebtHistoryTable';
 import { showConfirm } from '@/lib/app-dialog';
+import { getTodayLocal } from '@/utils/fechas';
 
 interface FormData {
   usuarioId: number;
@@ -137,6 +138,13 @@ function toLocalDateTimeInput(dateInput?: string | Date | null): string {
   const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
   const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
   return local.toISOString().slice(0, 16);
+}
+
+function toLocalDateKey(dateInput?: string | Date | null): string {
+  if (!dateInput) return '';
+  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return local.toISOString().split('T')[0];
 }
 
 function parseLocalDateTime(value: string): string {
@@ -553,7 +561,7 @@ export default function RegistroHorasPage() {
   const [showManualForm, setShowManualForm] = useState(false);
   const [viewMode, setViewMode] = useState<'personal' | 'team'>('personal');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
-  const [dateFilter, setDateFilter] = useState(new Date().toISOString().split('T')[0]);
+  const [dateFilter, setDateFilter] = useState(getTodayLocal());
   const [timeEditModal, setTimeEditModal] = useState<{ open: boolean; record: RegistroHoras | null }>({ open: false, record: null });
   const [showDebtModal, setShowDebtModal] = useState(false);
 
@@ -570,6 +578,47 @@ export default function RegistroHorasPage() {
   const deleteMutation = useDeleteRegistroHoras();
   const resubmitMutation = useResubmitRegistro();
   const updateTimesMutation = useUpdateTimerTimes();
+
+  const todayRange = useMemo(() => {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    return { start, end };
+  }, []);
+
+  const getRecordInterval = useCallback((record: RegistroHoras) => {
+    const startRaw = record.timerInicio || record.fecha;
+    if (!startRaw) return null;
+
+    const start = new Date(startRaw);
+    let end: Date;
+
+    if (record.timerFin) {
+      end = new Date(record.timerFin);
+    } else if (record.estado === 'RUNNING' || record.estado === 'PAUSADO') {
+      end = new Date();
+    } else {
+      const hours = Math.max(0, Number(record.horas || 0));
+      end = new Date(start.getTime() + hours * 60 * 60 * 1000);
+    }
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+    if (end < start) return null;
+
+    return { start, end };
+  }, []);
+
+  const getTodayOverlapHours = useCallback((record: RegistroHoras) => {
+    const interval = getRecordInterval(record);
+    if (!interval) return 0;
+
+    const overlapStart = Math.max(interval.start.getTime(), todayRange.start.getTime());
+    const overlapEnd = Math.min(interval.end.getTime(), todayRange.end.getTime());
+    const overlapMs = overlapEnd - overlapStart;
+
+    return overlapMs > 0 ? overlapMs / (1000 * 60 * 60) : 0;
+  }, [getRecordInterval, todayRange.end, todayRange.start]);
 
   // Get current user's name from users list
   const currentUserData = useMemo(() => {
@@ -595,9 +644,8 @@ export default function RegistroHorasPage() {
 
   // Registros de hoy del usuario actual
   const myTodayRegistros = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
-    return myRegistros.filter(r => r.fecha.split('T')[0] === today);
-  }, [myRegistros]);
+    return myRegistros.filter((r) => getTodayOverlapHours(r) > 0);
+  }, [getTodayOverlapHours, myRegistros]);
 
   const manualCalculatedHours = useMemo(() => {
     if (!formData.timerInicio || !formData.timerFin) return 0;
@@ -612,7 +660,7 @@ export default function RegistroHorasPage() {
     let baseRegistros = viewMode === 'personal' ? myRegistros : timeRecords;
 
     if (dateFilter) {
-      baseRegistros = baseRegistros.filter((r) => toLocalDateInput(r.fecha) === dateFilter);
+      baseRegistros = baseRegistros.filter((r) => toLocalDateKey(r.fecha) === dateFilter);
     }
 
     // Filter by approval status
@@ -638,12 +686,12 @@ export default function RegistroHorasPage() {
 
   // Estadisticas PERSONALES del usuario actual (HOY)
   const myTodayStats = useMemo(() => {
-    const totalHorasHoy = myTodayRegistros.reduce((acc, r) => acc + (r.horas || 0), 0);
+    const totalHorasHoy = myTodayRegistros.reduce((acc, r) => acc + getTodayOverlapHours(r), 0);
     return {
       totalHorasHoy,
       registrosHoy: myTodayRegistros.length
     };
-  }, [myTodayRegistros]);
+  }, [getTodayOverlapHours, myTodayRegistros]);
 
   // Estadisticas personales totales
   const myTotalStats = useMemo(() => {
@@ -656,9 +704,8 @@ export default function RegistroHorasPage() {
 
   // Estadisticas del equipo (para admin)
   const teamStats = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
-    const todayRegistros = timeRecords.filter(r => r.fecha.split('T')[0] === today);
-    const totalHorasHoy = todayRegistros.reduce((acc, r) => acc + (r.horas || 0), 0);
+    const todayRegistros = timeRecords.filter((r) => getTodayOverlapHours(r) > 0);
+    const totalHorasHoy = todayRegistros.reduce((acc, r) => acc + getTodayOverlapHours(r), 0);
     const totalHoras = timeRecords.reduce((acc, r) => acc + (r.horas || 0), 0);
     const usersActivos = new Set(todayRegistros.map(r => r.usuarioId)).size;
 
@@ -669,12 +716,11 @@ export default function RegistroHorasPage() {
       totalRegistros: timeRecords.length,
       usersActivos
     };
-  }, [timeRecords]);
+  }, [getTodayOverlapHours, timeRecords]);
 
   // Estadisticas por usuario (para graficos admin)
   const statsByUser = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
-    const todayRegistros = timeRecords.filter(r => r.fecha.split('T')[0] === today);
+    const todayRegistros = timeRecords.filter((r) => getTodayOverlapHours(r) > 0);
 
     const userMap = new Map<number, { nombre: string; horasHoy: number; registrosHoy: number; horasTotal: number }>();
 
@@ -693,7 +739,7 @@ export default function RegistroHorasPage() {
       const userId = r.usuarioId;
       if (userId && userMap.has(userId)) {
         const stats = userMap.get(userId)!;
-        stats.horasHoy += r.horas || 0;
+        stats.horasHoy += getTodayOverlapHours(r);
         stats.registrosHoy += 1;
       }
     });
@@ -710,26 +756,31 @@ export default function RegistroHorasPage() {
     return Array.from(userMap.entries())
       .map(([id, stats]) => ({ id, ...stats }))
       .sort((a, b) => b.horasHoy - a.horasHoy);
-  }, [timeRecords, users]);
+  }, [getTodayOverlapHours, timeRecords, users]);
 
   const startHourDistribution = useMemo(() => {
     const buckets = Array.from({ length: 24 }, (_, hour) => ({ hour, count: 0 }));
     timeRecords.forEach((record) => {
-      if (!record.timerInicio) return;
-      const hour = new Date(record.timerInicio).getHours();
+      const startRaw = record.timerInicio || record.fecha;
+      if (!startRaw) return;
+      const start = new Date(startRaw);
+      if (start < todayRange.start || start >= todayRange.end) return;
+      const hour = start.getHours();
       buckets[hour].count += 1;
     });
     return buckets;
-  }, [timeRecords]);
+  }, [timeRecords, todayRange.end, todayRange.start]);
 
   const overnightRecords = useMemo(() => {
     return timeRecords.filter((record) => {
       if (!record.timerInicio || !record.timerFin) return false;
+      const overlapHours = getTodayOverlapHours(record);
+      if (overlapHours <= 0) return false;
       const start = new Date(record.timerInicio);
       const end = new Date(record.timerFin);
       return start.toDateString() !== end.toDateString();
     });
-  }, [timeRecords]);
+  }, [getTodayOverlapHours, timeRecords]);
 
   const pauseStatsByUser = useMemo(() => {
     const map = new Map<number, { id: number; nombre: string; pauseCount: number; pausedMinutes: number }>();

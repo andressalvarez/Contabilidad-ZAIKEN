@@ -32,6 +32,7 @@ model Negocio {
   vsGrupos                 VSGrupo[]
   vsConfiguraciones        VSConfiguracion[]
   hourDebts                HourDebt[]
+  bugReports               BugReport[]
 
   // Sistema de seguridad
   securityRoles            SecurityRole[]
@@ -291,6 +292,8 @@ model Usuario {
   editedDebts        HourDebt[]        @relation("HourDebtEditor")
   deletedDebts       HourDebt[]        @relation("HourDebtDeleter")
   auditLogs          HourDebtAuditLog[]
+  reportedBugReports BugReport[]       @relation("BugReportReporter")
+  resolvedBugReports BugReport[]       @relation("BugReportResolver")
 
   // Roles de plataforma (opcional)
   rolesSistema  UsuarioRol[]
@@ -426,6 +429,35 @@ enum TimerStatus {
   RUNNING
   PAUSED
   STOPPED
+}
+
+enum BugReportStatus {
+  OPEN
+  RESOLVED
+}
+
+model BugReport {
+  id          Int             @id @default(autoincrement())
+  negocioId   Int             @map("negocio_id")
+  reporterId  Int             @map("reporter_id")
+  moduleUrl   String          @map("module_url")
+  evidenceUrl String          @map("evidence_url")
+  description String
+  status      BugReportStatus @default(OPEN)
+  resolvedAt  DateTime?       @map("resolved_at")
+  resolvedById Int?           @map("resolved_by_id")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  negocio     Negocio         @relation(fields: [negocioId], references: [id])
+  reporter    Usuario         @relation("BugReportReporter", fields: [reporterId], references: [id])
+  resolvedBy  Usuario?        @relation("BugReportResolver", fields: [resolvedById], references: [id])
+
+  @@index([negocioId])
+  @@index([negocioId, status])
+  @@index([negocioId, createdAt])
+  @@index([reporterId])
+  @@map("bug_reports")
 }
 
 model HourDebt {
@@ -654,5 +686,4 @@ model SecuritySettings {
 
   @@map("security_settings")
 }
-
 

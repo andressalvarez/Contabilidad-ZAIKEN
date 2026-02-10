@@ -132,6 +132,25 @@ export class HourDebtController {
   }
 
   /**
+   * Request monthly review for all users with active debt (admin only)
+   * POST /hour-debt/review-monthly
+   */
+  @Post('review-monthly')
+  @Permissions({ action: Action.Read, subject: 'HourDebt' })
+  async requestMonthlyReview(@Request() req, @NegocioId() negocioId: number) {
+    if (!this.hasPermissionCode(req, 'HOUR_DEBT.GLOBAL.MANAGE')) {
+      throw new ForbiddenException(
+        'Solo admins pueden solicitar revisión mensual de deuda',
+      );
+    }
+
+    return this.hourDebtService.requestMonthlyReview(
+      negocioId,
+      req.user.userId,
+    );
+  }
+
+  /**
    * Get specific debt (admin or owner)
    * GET /hour-debt/:id
    */

@@ -1,329 +1,381 @@
-'use client'
+'use client';
 
-import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { Settings, LogOut, X, Shield, FileText } from 'lucide-react'
-import { useRegistroHoras } from '@/hooks/useRegistroHoras'
-import { useCan } from '@/hooks/usePermissions'
-import { Action } from '@/types/permissions'
-import { clearAuthToken } from '@/lib/auth'
-import { useUser } from '@/hooks/useUser'
-import { useSidebar } from '@/contexts/SidebarContext'
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { Check, ChevronDown, LogOut, X } from 'lucide-react';
+import { useRegistroHoras } from '@/hooks/useRegistroHoras';
+import { clearAuthToken } from '@/lib/auth';
+import { useUser } from '@/hooks/useUser';
+import { useSidebar } from '@/contexts/SidebarContext';
+import { Action, useAbility } from '@/contexts/AbilityContext';
+import { useNavigationLayout } from '@/hooks/useSettings';
+import { NAVIGATION_CATALOG_BY_KEY } from '@/generated/navigation-catalog';
+import { itemMatchesPath, normalizeNavigationLayout } from '@/lib/navigation';
+import type { NavigationCatalogItem } from '@/types/navigation';
 
-export default function Sidebar() {
-  const pathname = usePathname()
-  const router = useRouter()
-  const { user } = useUser()
-  const { data: registrosHoras = [] } = useRegistroHoras()
-  const { isOpen, close } = useSidebar()
+type ResolvedItem = {
+  itemKey: string;
+  order: number;
+  shortcut?: boolean;
+  catalog: NavigationCatalogItem;
+};
 
-  const canReadDashboard = useCan(Action.Read, 'Dashboard')
-  const canReadStats = useCan(Action.Read, 'Estadisticas')
-  const canReadBusinessRoles = useCan(Action.Read, 'BusinessRole')
-  const canReadValorHora = useCan(Action.Read, 'ValorHora')
-  const canReadRegistroHoras = useCan(Action.Read, 'RegistroHoras')
-  const canApprove = useCan(Action.Approve, 'RegistroHoras')
-  const canManageDebt = useCan(Action.Manage, 'HourDebt')
-  const canReadDebt = useCan(Action.Read, 'HourDebt')
-  const canReadCampanas = useCan(Action.Read, 'Campana')
-  const canReadTransacciones = useCan(Action.Read, 'Transaccion')
-  const canReadCategorias = useCan(Action.Read, 'Categoria')
-  const canReadDistribucionUtilidades = useCan(Action.Read, 'DistribucionUtilidades')
-  const canReadDistribucionDetalle = useCan(Action.Read, 'DistribucionDetalle')
-  const canReadUsers = useCan(Action.Read, 'Usuario')
-  const canManageSettings = useCan(Action.Manage, 'Settings')
-  const canManageSecurity = useCan(Action.Manage, 'SecurityRole')
-  const canReadAudit = useCan(Action.Read, 'SecurityAuditLog')
+type ResolvedSection = {
+  id: string;
+  title: string;
+  order: number;
+  items: ResolvedItem[];
+};
 
-  const showPersonal = canReadBusinessRoles || canReadValorHora || canReadRegistroHoras || canApprove || canManageDebt || canReadDebt
-  const showOperations = canReadCampanas || canReadTransacciones || canReadCategorias
-  const showDistribution = canReadDistribucionUtilidades || canReadDistribucionDetalle
-  const showAdmin = canReadUsers || canManageSecurity || canReadAudit || canManageSettings
+type ResolvedWorld = {
+  id: string;
+  name: string;
+  order: number;
+  enabled?: boolean;
+  sections: ResolvedSection[];
+};
 
-  const handleLogout = () => {
-    clearAuthToken()
-    router.push('/login')
+function readLocalStorageMap(key: string): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const value = window.localStorage.getItem(key);
+    if (!value) return {};
+    const parsed = JSON.parse(value);
+    return typeof parsed === 'object' && parsed !== null ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeLocalStorageMap(key: string, value: Record<string, string>) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // no-op
+  }
+}
+
+function getFirstWorldRoute(world: ResolvedWorld): string | null {
+  for (const section of world.sections) {
+    for (const item of section.items) {
+      return item.catalog.path;
+    }
+  }
+  return null;
+}
+
+function worldContainsPath(world: ResolvedWorld, pathname: string): boolean {
+  return world.sections.some((section) =>
+    section.items.some((item) => itemMatchesPath(item.catalog, pathname)),
+  );
+}
+
+function getItemClasses(itemKey: string, isActive: boolean): string {
+  const isAmber = itemKey === 'aprobar_horas' || itemKey === 'deuda_horas';
+
+  if (isAmber) {
+    return isActive
+      ? 'text-amber-600 bg-amber-50'
+      : 'text-gray-700 hover:bg-amber-50';
   }
 
-  const pendingCount = registrosHoras.filter(
-    (r) => !r.aprobado && !r.rechazado && r.estado === 'COMPLETADO'
-  ).length
+  return isActive ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50';
+}
 
-  const isActive = (path: string) => pathname === path
+export default function Sidebar() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const ability = useAbility();
+  const { user } = useUser();
+  const { data: registrosHoras = [] } = useRegistroHoras();
+  const { data: navigationLayout } = useNavigationLayout();
+  const { isOpen, close } = useSidebar();
+
+  const normalizedLayout = useMemo(
+    () => normalizeNavigationLayout(navigationLayout || undefined),
+    [navigationLayout],
+  );
+
+  const storageKey = useMemo(() => {
+    if (user) {
+      return `zaiken.nav.activeWorld.${user.negocioId}.${user.id}`;
+    }
+    return 'zaiken.nav.activeWorld.guest';
+  }, [user]);
+
+  const lastRouteKey = useMemo(() => {
+    if (user) {
+      return `zaiken.nav.lastRouteByWorld.${user.negocioId}.${user.id}`;
+    }
+    return 'zaiken.nav.lastRouteByWorld.guest';
+  }, [user]);
+
+  const pendingCount = registrosHoras.filter(
+    (record) => !record.aprobado && !record.rechazado && record.estado === 'COMPLETADO',
+  ).length;
+
+  const hasAccessToItem = (item: NavigationCatalogItem): boolean => {
+    if (!item.defaultPermission) return true;
+
+    const action = item.defaultPermission.action as Action;
+    const subject = item.defaultPermission.subject;
+    return ability.can(action, subject);
+  };
+
+  const resolvedWorlds = useMemo<ResolvedWorld[]>(() => {
+    const worlds = [...normalizedLayout.worlds]
+      .filter((world) => world.enabled !== false)
+      .sort((a, b) => a.order - b.order);
+
+    return worlds.map((world) => {
+      const resolvedSections: ResolvedSection[] = [...world.sections]
+        .sort((a, b) => a.order - b.order)
+        .map((section) => {
+          const resolvedItems: ResolvedItem[] = [...section.items]
+            .sort((a, b) => a.order - b.order)
+            .map((item) => {
+              const catalog = NAVIGATION_CATALOG_BY_KEY[item.itemKey];
+              if (!catalog || !hasAccessToItem(catalog)) return null;
+
+              const resolvedItem: ResolvedItem = {
+                itemKey: item.itemKey,
+                order: item.order,
+                catalog,
+              };
+
+              if (item.shortcut) {
+                resolvedItem.shortcut = true;
+              }
+
+              return resolvedItem;
+            })
+            .filter((item): item is ResolvedItem => item !== null);
+
+          return {
+            id: section.id,
+            title: section.title,
+            order: section.order,
+            items: resolvedItems,
+          };
+        })
+        .filter((section) => section.items.length > 0);
+
+      return {
+        id: world.id,
+        name: world.name,
+        order: world.order,
+        enabled: world.enabled,
+        sections: resolvedSections,
+      };
+    });
+  }, [hasAccessToItem, normalizedLayout.worlds]);
+
+  const [activeWorldId, setActiveWorldId] = useState<string>('');
+  const [isWorldMenuOpen, setIsWorldMenuOpen] = useState(false);
+  const [isManualWorldSelection, setIsManualWorldSelection] = useState(false);
+
+  useEffect(() => {
+    if (resolvedWorlds.length === 0) return;
+
+    const validActive = resolvedWorlds.some((world) => world.id === activeWorldId);
+    if (validActive) return;
+
+    const savedWorldId =
+      typeof window !== 'undefined' ? window.localStorage.getItem(storageKey) : null;
+    const nextWorldId = savedWorldId && resolvedWorlds.some((world) => world.id === savedWorldId)
+      ? savedWorldId
+      : resolvedWorlds[0].id;
+
+    setActiveWorldId(nextWorldId);
+  }, [activeWorldId, resolvedWorlds, storageKey]);
+
+  useEffect(() => {
+    if (!activeWorldId || typeof window === 'undefined') return;
+    window.localStorage.setItem(storageKey, activeWorldId);
+  }, [activeWorldId, storageKey]);
+
+  useEffect(() => {
+    if (!isWorldMenuOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      const clickedInsideWorldMenu = !!target?.closest('[data-world-menu-root="true"]');
+      if (!clickedInsideWorldMenu) {
+        setIsWorldMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isWorldMenuOpen]);
+
+  const matchingWorldIds = useMemo(() => {
+    return resolvedWorlds
+      .filter((world) => worldContainsPath(world, pathname))
+      .map((world) => world.id);
+  }, [pathname, resolvedWorlds]);
+
+  useEffect(() => {
+    if (isManualWorldSelection) return;
+    if (matchingWorldIds.length === 0) return;
+    setActiveWorldId((current) => {
+      if (current && matchingWorldIds.includes(current)) return current;
+      return matchingWorldIds[0];
+    });
+  }, [isManualWorldSelection, matchingWorldIds]);
+
+  useEffect(() => {
+    setIsManualWorldSelection(false);
+    setIsWorldMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!pathname || resolvedWorlds.length === 0) return;
+
+    const owner = resolvedWorlds.find((world) => worldContainsPath(world, pathname));
+    if (!owner) return;
+
+    const currentMap = readLocalStorageMap(lastRouteKey);
+    if (currentMap[owner.id] === pathname) return;
+
+    currentMap[owner.id] = pathname;
+    writeLocalStorageMap(lastRouteKey, currentMap);
+  }, [lastRouteKey, pathname, resolvedWorlds]);
+
+  const activeWorld =
+    resolvedWorlds.find((world) => world.id === activeWorldId) || resolvedWorlds[0] || null;
+
+  const handleWorldChange = (worldId: string) => {
+    const world = resolvedWorlds.find((item) => item.id === worldId);
+    if (!world) return;
+
+    setIsManualWorldSelection(true);
+    setActiveWorldId(worldId);
+
+    const storedRoutes = readLocalStorageMap(lastRouteKey);
+    const preferredRoute = storedRoutes[worldId];
+    const nextRoute =
+      preferredRoute && worldContainsPath(world, preferredRoute)
+        ? preferredRoute
+        : getFirstWorldRoute(world);
+
+    if (nextRoute && nextRoute !== pathname) {
+      router.push(nextRoute);
+    }
+
+    setIsWorldMenuOpen(false);
+  };
+
+  const handleLogout = () => {
+    clearAuthToken();
+    router.push('/login');
+  };
+
+  const renderItemIcon = (item: NavigationCatalogItem) => {
+    const icon = item.icon || 'bi-circle-fill';
+    return <i className={`bi ${icon}`}></i>;
+  };
 
   const NavigationContent = () => (
     <>
-      {(canReadDashboard || canReadStats) && (
-        <div className="mb-6">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Principal</h3>
-          <ul className="space-y-1">
-            {canReadDashboard && (
-              <li>
-                <Link
-                  href="/"
-                  className={`flex items-center gap-3 px-3 py-2.5 sm:py-2 text-sm font-medium rounded-lg transition-colors ${
-                    isActive('/') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <i className="bi bi-grid-1x2-fill"></i>
-                  <span>Dashboard</span>
-                </Link>
-              </li>
-            )}
-            {canReadStats && (
-              <li>
-                <Link
-                  href="/estadisticas"
-                  className={`flex items-center gap-3 px-3 py-2.5 sm:py-2 text-sm font-medium rounded-lg transition-colors ${
-                    isActive('/estadisticas') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <i className="bi bi-bar-chart-fill"></i>
-                  <span>Estadisticas</span>
-                </Link>
-              </li>
-            )}
-          </ul>
+      <div className="mb-4">
+        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
+          Dominios de negocio
+        </h3>
+        <div className="relative" data-world-menu-root="true">
+          <button
+            type="button"
+            onClick={() => setIsWorldMenuOpen((prev) => !prev)}
+            className="w-full inline-flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-800 hover:bg-gray-50 transition-colors"
+            aria-haspopup="menu"
+            aria-expanded={isWorldMenuOpen}
+            disabled={resolvedWorlds.length === 0}
+          >
+            <span className="truncate">{activeWorld?.name || 'Seleccionar dominio'}</span>
+            <ChevronDown
+              className={`h-4 w-4 text-gray-500 transition-transform ${isWorldMenuOpen ? 'rotate-180' : ''}`}
+            />
+          </button>
+
+          {isWorldMenuOpen && resolvedWorlds.length > 0 && (
+            <div className="absolute left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-20 overflow-hidden">
+              <ul className="py-1" role="menu" aria-label="Seleccionar dominio">
+                {resolvedWorlds.map((world) => {
+                  const isActive = world.id === activeWorld?.id;
+                  return (
+                    <li key={world.id}>
+                      <button
+                        type="button"
+                        onClick={() => handleWorldChange(world.id)}
+                        role="menuitemradio"
+                        aria-checked={isActive}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-sm transition-colors ${
+                          isActive
+                            ? 'bg-indigo-50 text-indigo-700 font-medium'
+                            : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        <span className="truncate">{world.name}</span>
+                        {isActive && <Check className="h-4 w-4" />}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {!activeWorld && (
+        <div className="text-sm text-gray-500 py-6 border border-dashed border-gray-200 rounded-lg text-center">
+          No hay dominios configurados
         </div>
       )}
 
-      {showPersonal && (
-        <div className="mb-6">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Gestion de Personal</h3>
-          <ul className="space-y-1">
-            {canReadBusinessRoles && (
-              <li>
-                <Link
-                  href="/roles"
-                  className={`flex items-center gap-3 px-3 py-2.5 sm:py-2 text-sm font-medium rounded-lg transition-colors ${
-                    isActive('/roles') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <i className="bi bi-person-badge-fill"></i>
-                  <span>Roles</span>
-                </Link>
-              </li>
-            )}
-            {canReadValorHora && (
-              <li>
-                <Link
-                  href="/valor-hora"
-                  className={`flex items-center gap-3 px-3 py-2.5 sm:py-2 text-sm font-medium rounded-lg transition-colors ${
-                    isActive('/valor-hora') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <i className="bi bi-clock-fill"></i>
-                  <span>Valor Hora</span>
-                </Link>
-              </li>
-            )}
-            {canReadRegistroHoras && (
-              <li>
-                <Link
-                  href="/registro-horas"
-                  className={`flex items-center gap-3 px-3 py-2.5 sm:py-2 text-sm font-medium rounded-lg transition-colors ${
-                    isActive('/registro-horas') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <i className="bi bi-calendar2-check-fill"></i>
-                  <span>Registro Horas</span>
-                </Link>
-              </li>
-            )}
-            {canApprove && (
-              <li>
-                <Link
-                  href="/horas-pendientes"
-                  className={`flex items-center justify-between gap-3 px-3 py-2.5 sm:py-2 text-sm font-medium rounded-lg transition-colors ${
-                    isActive('/horas-pendientes') ? 'text-amber-600 bg-amber-50' : 'text-gray-700 hover:bg-amber-50'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <i className="bi bi-clock-history"></i>
-                    <span>Aprobar Horas</span>
-                  </div>
-                  {pendingCount > 0 && (
-                    <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
-                      {pendingCount}
-                    </span>
-                  )}
-                </Link>
-              </li>
-            )}
-            {(canManageDebt || canReadDebt) && (
-              <li>
-                <Link
-                  href="/deuda-horas"
-                  className={`flex items-center gap-3 px-3 py-2.5 sm:py-2 text-sm font-medium rounded-lg transition-colors ${
-                    isActive('/deuda-horas') ? 'text-amber-600 bg-amber-50' : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <i className="bi bi-hourglass-split"></i>
-                  <span>Deuda de Horas</span>
-                </Link>
-              </li>
-            )}
-          </ul>
+      {activeWorld && activeWorld.sections.length === 0 && (
+        <div className="text-sm text-gray-500 py-6 border border-dashed border-gray-200 rounded-lg text-center">
+          Este dominio no tiene items visibles
         </div>
       )}
 
-      {showOperations && (
-        <div className="mb-6">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Operaciones</h3>
+      {activeWorld?.sections.map((section) => (
+        <div className="mb-6" key={section.id}>
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
+            {section.title}
+          </h3>
           <ul className="space-y-1">
-            {canReadCampanas && (
-              <li>
-                <Link
-                  href="/campanas"
-                  className={`flex items-center gap-3 px-3 py-2.5 sm:py-2 text-sm font-medium rounded-lg transition-colors ${
-                    isActive('/campanas') || isActive('/gastos')
-                      ? 'text-indigo-600 bg-indigo-50'
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <i className="bi bi-receipt"></i>
-                  <span>Campañas</span>
-                </Link>
-              </li>
-            )}
-            {canReadTransacciones && (
-              <>
-                <li>
+            {section.items.map((item) => {
+              const isActive = itemMatchesPath(item.catalog, pathname);
+              const itemClass = getItemClasses(item.itemKey, isActive);
+              const isApproveHours = item.itemKey === 'aprobar_horas';
+
+              return (
+                <li key={`${section.id}-${item.itemKey}-${item.order}`}>
                   <Link
-                    href="/transacciones"
+                    href={item.catalog.path}
                     className={`flex items-center gap-3 px-3 py-2.5 sm:py-2 text-sm font-medium rounded-lg transition-colors ${
-                      isActive('/transacciones') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50'
-                    }`}
+                      isApproveHours ? 'justify-between' : ''
+                    } ${itemClass}`}
                   >
-                    <i className="bi bi-wallet2"></i>
-                    <span>Transacciones</span>
+                    <div className="flex items-center gap-3">
+                      {renderItemIcon(item.catalog)}
+                      <span>{item.catalog.title}</span>
+                    </div>
+                    {isApproveHours && pendingCount > 0 && (
+                      <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
+                        {pendingCount}
+                      </span>
+                    )}
                   </Link>
                 </li>
-                <li>
-                  <Link
-                    href="/tipos-transaccion"
-                    className={`flex items-center gap-3 px-3 py-2.5 sm:py-2 text-sm font-medium rounded-lg transition-colors ${
-                      isActive('/tipos-transaccion') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    <i className="bi bi-credit-card-fill"></i>
-                    <span>Tipos de Transaccion</span>
-                  </Link>
-                </li>
-              </>
-            )}
-            {canReadCategorias && (
-              <li>
-                <Link
-                  href="/categorias"
-                  className={`flex items-center gap-3 px-3 py-2.5 sm:py-2 text-sm font-medium rounded-lg transition-colors ${
-                    isActive('/categorias') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <i className="bi bi-tags-fill"></i>
-                  <span>Categorias</span>
-                </Link>
-              </li>
-            )}
+              );
+            })}
           </ul>
         </div>
-      )}
-
-      {showDistribution && (
-        <div className="mb-6">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Distribucion</h3>
-          <ul className="space-y-1">
-            {canReadDistribucionUtilidades && (
-              <li>
-                <Link
-                  href="/distribucion-utilidades"
-                  className={`flex items-center gap-3 px-3 py-2.5 sm:py-2 text-sm font-medium rounded-lg transition-colors ${
-                    isActive('/distribucion-utilidades') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <i className="bi bi-pie-chart-fill"></i>
-                  <span>Distribucion Utilidades</span>
-                </Link>
-              </li>
-            )}
-            {canReadDistribucionDetalle && (
-              <li>
-                <Link
-                  href="/distribucion-detalle"
-                  className={`flex items-center gap-3 px-3 py-2.5 sm:py-2 text-sm font-medium rounded-lg transition-colors ${
-                    isActive('/distribucion-detalle') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <i className="bi bi-list-check"></i>
-                  <span>Distribucion Detalle</span>
-                </Link>
-              </li>
-            )}
-          </ul>
-        </div>
-      )}
-
-      {showAdmin && (
-        <div>
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Administracion</h3>
-          <ul className="space-y-1">
-            {canReadUsers && (
-              <li>
-                <Link
-                  href="/usuarios"
-                  className={`flex items-center gap-3 px-3 py-2.5 sm:py-2 text-sm font-medium rounded-lg transition-colors ${
-                    isActive('/usuarios') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <i className="bi bi-person-gear"></i>
-                  <span>Usuarios</span>
-                </Link>
-              </li>
-            )}
-            {canManageSecurity && (
-              <li>
-                <Link
-                  href="/admin/seguridad/roles"
-                  className={`flex items-center gap-3 px-3 py-2.5 sm:py-2 text-sm font-medium rounded-lg transition-colors ${
-                    isActive('/admin/seguridad/roles') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <Shield className="h-4 w-4" />
-                  <span>Roles y Permisos</span>
-                </Link>
-              </li>
-            )}
-            {canReadAudit && (
-              <li>
-                <Link
-                  href="/admin/seguridad/auditoria"
-                  className={`flex items-center gap-3 px-3 py-2.5 sm:py-2 text-sm font-medium rounded-lg transition-colors ${
-                    isActive('/admin/seguridad/auditoria') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <FileText className="h-4 w-4" />
-                  <span>Auditoria</span>
-                </Link>
-              </li>
-            )}
-            {canManageSettings && (
-              <li>
-                <Link
-                  href="/configuracion"
-                  className={`flex items-center gap-3 px-3 py-2.5 sm:py-2 text-sm font-medium rounded-lg transition-colors ${
-                    isActive('/configuracion') || isActive('/admin/seguridad/configuracion')
-                      ? 'text-indigo-600 bg-indigo-50'
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <Settings className="h-4 w-4" />
-                  <span>Configuracion</span>
-                </Link>
-              </li>
-            )}
-          </ul>
-        </div>
-      )}
+      ))}
 
       <div className="mt-6 pt-6 border-t border-gray-200">
         {user && (
@@ -343,7 +395,7 @@ export default function Sidebar() {
         </button>
       </div>
     </>
-  )
+  );
 
   return (
     <>
@@ -389,10 +441,12 @@ export default function Sidebar() {
             className="flex items-center justify-center gap-2 w-full px-3 py-2.5 text-sm font-medium rounded-lg text-red-600 hover:bg-red-50 transition-colors"
           >
             <LogOut className="h-4 w-4" />
-            <span>Cerrar Sesión</span>
+            <span>Cerrar Sesion</span>
           </button>
         </div>
       </aside>
     </>
-  )
+  );
 }
+
+

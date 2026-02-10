@@ -17,6 +17,7 @@ import {
   History,
   User,
   Edit,
+  ClipboardCheck,
 } from 'lucide-react';
 import { useCan } from '@/hooks/usePermissions';
 import { Action } from '@/contexts/AbilityContext';
@@ -31,6 +32,7 @@ import {
   useMyBalance,
   useMyHistory,
   useUpdateDebt,
+  useRequestMonthlyDebtReview,
 } from '@/hooks/useHourDebt';
 import { useUsuarios } from '@/hooks/useUsuarios';
 import HourDebtService, { HourDebt, DebtStatus, CreateDebtDto, UpdateDebtDto } from '@/services/hourDebt.service';
@@ -38,7 +40,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { showPrompt } from '@/lib/app-dialog';
+import { showConfirm, showPrompt } from '@/lib/app-dialog';
 
 export default function DeudaHorasPage() {
   const canManageDebt = useCan(Action.Manage, 'HourDebt');
@@ -66,6 +68,7 @@ export default function DeudaHorasPage() {
   const updateMutation = useUpdateDebt();
   const deleteMutation = useDeleteDebt();
   const cancelMutation = useCancelDebt();
+  const reviewMutation = useRequestMonthlyDebtReview();
 
   const [formData, setFormData] = useState<CreateDebtDto>({
     usuarioId: undefined,
@@ -200,6 +203,21 @@ export default function DeudaHorasPage() {
     setEditMinutesRemaining(debt.remainingMinutes % 60);
   };
 
+  const handleRequestMonthlyReview = async () => {
+    const confirmed = await showConfirm({
+      title: 'Revisar descuentos del mes',
+      message:
+        'Se ejecutará una auditoría para validar si durante el mes se descontaron correctamente las deudas. ¿Deseas continuar?',
+      confirmText: 'Ejecutar revisión',
+    });
+    if (!confirmed) return;
+
+    const result = await reviewMutation.mutateAsync();
+    toast.info(
+      `Resumen mensual: diferencia neta ${HourDebtService.minutesToHoursString(Math.abs(result.totalExpectedExcessMinutes - result.totalDeductedMinutes))} (${result.usersWithGaps} usuarios a revisar)`,
+    );
+  };
+
   const filteredDebts = debts?.filter((debt) => {
     const matchesSearch =
       debt.usuario?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -230,13 +248,26 @@ export default function DeudaHorasPage() {
               </p>
             </div>
 
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors shadow-sm text-sm sm:text-base"
-            >
-              <Plus className="h-4 w-4" />
-              Nueva Deuda
-            </button>
+            <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2">
+              {canManageDebt && (
+                <button
+                  onClick={handleRequestMonthlyReview}
+                  disabled={reviewMutation.isPending}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-sm text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ClipboardCheck className="h-4 w-4" />
+                  {reviewMutation.isPending ? 'Revisando...' : 'Revisar descuento mensual'}
+                </button>
+              )}
+
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors shadow-sm text-sm sm:text-base"
+              >
+                <Plus className="h-4 w-4" />
+                Nueva Deuda
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1031,4 +1062,3 @@ export default function DeudaHorasPage() {
     </MainLayout>
   );
 }
-

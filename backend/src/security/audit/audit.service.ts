@@ -32,6 +32,10 @@ export enum SecurityEventType {
 
   // Settings
   SETTINGS_UPDATE = 'SETTINGS_UPDATE',
+
+  // Bug reports
+  BUG_REPORT_CREATE = 'BUG_REPORT_CREATE',
+  BUG_REPORT_STATUS_UPDATE = 'BUG_REPORT_STATUS_UPDATE',
 }
 
 export interface CreateAuditLogDto {

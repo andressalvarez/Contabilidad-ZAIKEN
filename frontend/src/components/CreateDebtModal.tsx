@@ -4,10 +4,30 @@ import { useState, FormEvent } from 'react';
 import { X, AlertCircle, Clock, Calendar, FileText, Save } from 'lucide-react';
 import { useCreateDebt } from '@/hooks/useHourDebt';
 import { toast } from 'sonner';
+import { getTodayLocal } from '@/utils/fechas';
 
 interface CreateDebtModalProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+function parseHoursInput(value: string): number {
+  const raw = value.trim();
+  if (!raw) return NaN;
+
+  if (raw.includes(':')) {
+    const [hoursRaw, minutesRaw] = raw.split(':');
+    const hours = Number.parseInt(hoursRaw, 10);
+    const minutes = Number.parseInt(minutesRaw, 10);
+
+    if (!Number.isFinite(hours) || !Number.isFinite(minutes) || minutes < 0 || minutes > 59) {
+      return NaN;
+    }
+
+    return hours + minutes / 60;
+  }
+
+  return Number.parseFloat(raw.replace(',', '.'));
 }
 
 /**
@@ -18,7 +38,7 @@ export default function CreateDebtModal({ isOpen, onClose }: CreateDebtModalProp
   const createDebt = useCreateDebt();
   const [formData, setFormData] = useState({
     hoursOwed: '',
-    date: new Date().toISOString().split('T')[0], // Today's date by default
+    date: getTodayLocal(),
     reason: '',
   });
 
@@ -29,9 +49,9 @@ export default function CreateDebtModal({ isOpen, onClose }: CreateDebtModalProp
     e.preventDefault();
 
     // Validate hours
-    const hours = parseFloat(formData.hoursOwed);
-    if (isNaN(hours) || hours < 0.1 || hours > 16) {
-      toast.error('Las horas deben estar entre 0.1 y 16');
+    const hours = parseHoursInput(formData.hoursOwed);
+    if (isNaN(hours) || hours <= 0 || hours > 16) {
+      toast.error('Las horas deben estar entre 0.01 y 16');
       return;
     }
 
@@ -57,7 +77,7 @@ export default function CreateDebtModal({ isOpen, onClose }: CreateDebtModalProp
       // Reset form and close modal on success
       setFormData({
         hoursOwed: '',
-        date: new Date().toISOString().split('T')[0],
+        date: getTodayLocal(),
         reason: '',
       });
       onClose();
@@ -71,7 +91,7 @@ export default function CreateDebtModal({ isOpen, onClose }: CreateDebtModalProp
     // Reset form when closing without saving
     setFormData({
       hoursOwed: '',
-      date: new Date().toISOString().split('T')[0],
+      date: getTodayLocal(),
       reason: '',
     });
     onClose();
@@ -108,19 +128,17 @@ export default function CreateDebtModal({ isOpen, onClose }: CreateDebtModalProp
               Horas Adeudadas *
             </label>
             <input
-              type="number"
-              step="0.1"
-              min="0.1"
-              max="16"
+              type="text"
+              inputMode="decimal"
               value={formData.hoursOwed}
               onChange={(e) => setFormData({ ...formData, hoursOwed: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white"
-              placeholder="Ej: 8"
+              placeholder="Ej: 0.15 o 1:30"
               required
               disabled={createDebt.isPending}
             />
             <p className="text-xs text-gray-500 mt-1">
-              Máximo 16 horas por día
+              Puedes escribir decimal (0.15) o horas:minutos (1:30). Maximo 16h por dia.
             </p>
           </div>
 
@@ -134,7 +152,7 @@ export default function CreateDebtModal({ isOpen, onClose }: CreateDebtModalProp
               type="date"
               value={formData.date}
               onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              max={new Date().toISOString().split('T')[0]} // Can't select future dates
+              max={getTodayLocal()}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white"
               required
               disabled={createDebt.isPending}
@@ -155,7 +173,7 @@ export default function CreateDebtModal({ isOpen, onClose }: CreateDebtModalProp
               onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white"
               rows={3}
-              placeholder="Ej: Día de ausencia justificada, permiso médico, etc."
+              placeholder="Ej: Dia de ausencia justificada, permiso medico, etc."
               disabled={createDebt.isPending}
             />
             <p className="text-xs text-gray-500 mt-1">

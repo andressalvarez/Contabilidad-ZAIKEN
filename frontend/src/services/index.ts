@@ -10,3 +10,4 @@ export { DistribucionUtilidadesService } from './distribucion-utilidades.service
 export { UsuariosService } from './usuarios.service';
 export { SecurityService } from './security.service';
 export { SettingsService } from './settings.service';
+export { BugReportsService } from './bug-reports.service';

@@ -4,6 +4,7 @@ import Header from './Header'
 import Sidebar from './Sidebar'
 import PermissionRouteGuard from './PermissionRouteGuard'
 import { SidebarProvider } from '@/contexts/SidebarContext'
+import BugFeedbackBubble from '@/components/feedback/BugFeedbackBubble'
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -23,6 +24,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             </div>
           </main>
         </div>
+        <BugFeedbackBubble />
       </div>
     </SidebarProvider>
   )

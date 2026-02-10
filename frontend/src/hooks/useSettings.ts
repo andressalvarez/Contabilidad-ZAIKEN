@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import SettingsService, { SmtpConfig } from '@/services/settings.service';
 import { toast } from 'sonner';
+import type { NavigationLayout } from '@/types/navigation';
 
 export function useSmtpConfig() {
   return useQuery({
@@ -41,6 +42,49 @@ export function useTestSmtpConnection() {
     },
     onError: () => {
       toast.error('Error al probar la conexión');
+    },
+  });
+}
+
+export function useNavigationLayout() {
+  return useQuery({
+    queryKey: ['navigation-layout'],
+    queryFn: () => SettingsService.getNavigationLayout(),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useUpdateNavigationLayout() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (layout: NavigationLayout) =>
+      SettingsService.updateNavigationLayout(layout),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['navigation-layout'] });
+      toast.success('Navegacion actualizada correctamente');
+    },
+    onError: (error: any) => {
+      const message =
+        error.response?.data?.message || 'Error al actualizar navegacion';
+      toast.error(message);
+    },
+  });
+}
+
+export function useResetNavigationLayout() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => SettingsService.resetNavigationLayout(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['navigation-layout'] });
+      toast.success('Navegacion restaurada al estado base');
+    },
+    onError: (error: any) => {
+      const message =
+        error.response?.data?.message || 'Error al restaurar navegacion';
+      toast.error(message);
     },
   });
 }

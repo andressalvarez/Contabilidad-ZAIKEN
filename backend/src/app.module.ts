@@ -22,6 +22,7 @@ import { EmailModule } from './email/email.module';
 import { SettingsModule } from './settings/settings.module';
 import { HourDebtModule } from './hour-debt/hour-debt.module';
 import { SecurityModule } from './security/security.module';
+import { BugReportsModule } from './bug-reports/bug-reports.module';
 import { PermissionsGuard } from './common/guards/permissions.guard';
 
 @Module({
@@ -51,6 +52,7 @@ import { PermissionsGuard } from './common/guards/permissions.guard';
     SettingsModule,
     HourDebtModule,
     SecurityModule,
+    BugReportsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { RegistroHorasService } from '@/services';
 import MainLayout from '@/components/layout/MainLayout';
-import { Check, X, Clock, AlertCircle, RefreshCw, User, Calendar } from 'lucide-react';
+import { Check, X, Clock, AlertCircle, RefreshCw, User, Calendar, Search, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { RegistroHoras } from '@/types';
 import { useCan } from '@/components/Can';
@@ -11,6 +11,45 @@ import { Action } from '@/contexts/AbilityContext';
 import { showConfirm } from '@/lib/app-dialog';
 import { useQueryClient } from '@tanstack/react-query';
 import { timeRecordKeys } from '@/hooks/useRegistroHoras';
+import { getTodayLocal } from '@/utils/fechas';
+
+type DateMode = 'today' | 'selected' | 'week' | 'month' | 'all';
+
+function toLocalDate(value?: string | Date | null): string {
+  if (!value) return '';
+  const date = typeof value === 'string' ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return '';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function isInCurrentWeek(value?: string | Date | null): boolean {
+  if (!value) return false;
+  const date = typeof value === 'string' ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return false;
+
+  const now = new Date();
+  const mondayOffset = (now.getDay() + 6) % 7;
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  start.setDate(now.getDate() - mondayOffset);
+
+  const end = new Date(start);
+  end.setDate(start.getDate() + 7);
+
+  return date >= start && date < end;
+}
+
+function isInCurrentMonth(value?: string | Date | null): boolean {
+  if (!value) return false;
+  const date = typeof value === 'string' ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return false;
+
+  const now = new Date();
+  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+}
 
 export default function HorasPendientesPage() {
   const queryClient = useQueryClient();
@@ -20,7 +59,10 @@ export default function HorasPendientesPage() {
   const [activeTab, setActiveTab] = useState<'pending' | 'rejected'>('pending');
   const [rejectingId, setRejectingId] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState('');
-  const [dateFilter, setDateFilter] = useState(new Date().toISOString().split('T')[0]);
+  const [dateMode, setDateMode] = useState<DateMode>('today');
+  const [dateFilter, setDateFilter] = useState(getTodayLocal());
+  const [userFilter, setUserFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const canApprove = useCan(Action.Approve, 'RegistroHoras');
 
@@ -109,15 +151,65 @@ export default function HorasPendientesPage() {
     return `${h}h ${m}m`;
   };
 
-  const visiblePending = pendingRecords.filter((record) => {
-    if (!dateFilter) return true;
-    return new Date(record.fecha).toISOString().split('T')[0] === dateFilter;
-  });
+  const userOptions = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const record of [...pendingRecords, ...rejectedRecords]) {
+      if (!record.usuarioId) continue;
+      if (!map.has(record.usuarioId)) {
+        map.set(record.usuarioId, record.usuario?.nombre || `Usuario #${record.usuarioId}`);
+      }
+    }
+    return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1], 'es'));
+  }, [pendingRecords, rejectedRecords]);
 
-  const visibleRejected = rejectedRecords.filter((record) => {
-    if (!dateFilter) return true;
-    return new Date(record.fecha).toISOString().split('T')[0] === dateFilter;
-  });
+  const matchesDateFilter = (record: RegistroHoras): boolean => {
+    const recordDate = toLocalDate(record.fecha);
+    if (!recordDate) return false;
+
+    if (dateMode === 'all') return true;
+    if (dateMode === 'today') return recordDate === getTodayLocal();
+    if (dateMode === 'selected') return !dateFilter || recordDate === dateFilter;
+    if (dateMode === 'week') return isInCurrentWeek(record.fecha);
+    if (dateMode === 'month') return isInCurrentMonth(record.fecha);
+    return true;
+  };
+
+  const matchesUserFilter = (record: RegistroHoras): boolean => {
+    if (userFilter === 'all') return true;
+    return String(record.usuarioId) === userFilter;
+  };
+
+  const matchesSearchFilter = (record: RegistroHoras): boolean => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return true;
+
+    const searchable = [
+      record.usuario?.nombre || '',
+      record.descripcion || '',
+      record.motivoRechazo || '',
+      record.campana?.nombre || '',
+      String(record.horas || ''),
+      toLocalDate(record.fecha),
+    ]
+      .join(' ')
+      .toLowerCase();
+
+    return searchable.includes(q);
+  };
+
+  const visiblePending = pendingRecords.filter(
+    (record) =>
+      matchesDateFilter(record) &&
+      matchesUserFilter(record) &&
+      matchesSearchFilter(record),
+  );
+
+  const visibleRejected = rejectedRecords.filter(
+    (record) =>
+      matchesDateFilter(record) &&
+      matchesUserFilter(record) &&
+      matchesSearchFilter(record),
+  );
 
   if (!canApprove) {
     return (
@@ -145,16 +237,67 @@ export default function HorasPendientesPage() {
                 <p className="text-gray-600 text-xs sm:text-sm">Revisa el rango real, la fecha de creacion y la nota antes de aprobar</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 w-full sm:w-auto">
+              <select
+                value={dateMode}
+                onChange={(e) => setDateMode(e.target.value as DateMode)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white min-h-[44px]"
+              >
+                <option value="today">Hoy</option>
+                <option value="selected">Dia especifico</option>
+                <option value="week">Esta semana</option>
+                <option value="month">Este mes</option>
+                <option value="all">Todo el tiempo</option>
+              </select>
+
+              {dateMode === 'selected' ? (
                 <input
                   type="date"
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value)}
-                  className="pl-8 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white min-h-[44px] w-full"
+                />
+              ) : (
+                <div className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 bg-gray-50 min-h-[44px]">
+                  <Calendar className="h-4 w-4 text-gray-400" />
+                  <span>
+                    {dateMode === 'today' && 'Filtrando por hoy'}
+                    {dateMode === 'week' && 'Filtrando por esta semana'}
+                    {dateMode === 'month' && 'Filtrando por este mes'}
+                    {dateMode === 'all' && 'Sin filtro de fecha'}
+                  </span>
+                </div>
+              )}
+
+              <div className="relative">
+                <Users className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <select
+                  value={userFilter}
+                  onChange={(e) => setUserFilter(e.target.value)}
+                  className="pl-8 pr-3 py-2 border border-gray-300 rounded-lg text-sm bg-white min-h-[44px] w-full"
+                >
+                  <option value="all">Todos los usuarios</option>
+                  {userOptions.map(([id, name]) => (
+                    <option key={id} value={String(id)}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar..."
+                  className="pl-8 pr-3 py-2 border border-gray-300 rounded-lg text-sm bg-white min-h-[44px] w-full"
                 />
               </div>
+            </div>
+
+            <div className="flex items-center gap-2">
               <button
                 onClick={loadData}
                 disabled={loading}

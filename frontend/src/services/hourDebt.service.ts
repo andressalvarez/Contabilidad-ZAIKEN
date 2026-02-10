@@ -82,6 +82,29 @@ export interface BusinessStats {
   paidThisMonth: number;
 }
 
+export interface MonthlyDebtReviewResponse {
+  requestedAt: string;
+  requestedBy: number;
+  monthStart: string;
+  monthEnd: string;
+  thresholdHours: number;
+  usersAnalyzed: number;
+  usersWithGaps: number;
+  totalExpectedExcessMinutes: number;
+  totalDeductedMinutes: number;
+  balanceFixesApplied: number;
+  users: Array<{
+    usuarioId: number;
+    nombre: string;
+    email: string;
+    expectedExcessMinutes: number;
+    deductedMinutes: number;
+    gapMinutes: number;
+    requiresManualReview: boolean;
+  }>;
+  message: string;
+}
+
 class HourDebtService {
   private getAuthHeaders() {
     const token = localStorage.getItem('auth_token');
@@ -218,6 +241,20 @@ class HourDebtService {
     const response = await axios.get(`${API_URL}/hour-debt/stats/business`, {
       headers: this.getAuthHeaders(),
     });
+    return response.data;
+  }
+
+  /**
+   * Request monthly debt review for all users with active debt (admin)
+   */
+  async requestMonthlyReview(): Promise<MonthlyDebtReviewResponse> {
+    const response = await axios.post(
+      `${API_URL}/hour-debt/review-monthly`,
+      {},
+      {
+        headers: this.getAuthHeaders(),
+      }
+    );
     return response.data;
   }
 
