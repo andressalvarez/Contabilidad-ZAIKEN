@@ -11,24 +11,6 @@ interface CreateDebtModalProps {
   onClose: () => void;
 }
 
-function parseHoursInput(value: string): number {
-  const raw = value.trim();
-  if (!raw) return NaN;
-
-  if (raw.includes(':')) {
-    const [hoursRaw, minutesRaw] = raw.split(':');
-    const hours = Number.parseInt(hoursRaw, 10);
-    const minutes = Number.parseInt(minutesRaw, 10);
-
-    if (!Number.isFinite(hours) || !Number.isFinite(minutes) || minutes < 0 || minutes > 59) {
-      return NaN;
-    }
-
-    return hours + minutes / 60;
-  }
-
-  return Number.parseFloat(raw.replace(',', '.'));
-}
 
 /**
  * Modal for creating a new hour debt entry
@@ -37,7 +19,8 @@ function parseHoursInput(value: string): number {
 export default function CreateDebtModal({ isOpen, onClose }: CreateDebtModalProps) {
   const createDebt = useCreateDebt();
   const [formData, setFormData] = useState({
-    hoursOwed: '',
+    hours: '',
+    minutes: '',
     date: getTodayLocal(),
     reason: '',
   });
@@ -48,10 +31,26 @@ export default function CreateDebtModal({ isOpen, onClose }: CreateDebtModalProp
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    // Validate hours
-    const hours = parseHoursInput(formData.hoursOwed);
-    if (isNaN(hours) || hours <= 0 || hours > 16) {
-      toast.error('Las horas deben estar entre 0.01 y 16');
+    // Parse hours and minutes
+    const hours = Number.parseInt(formData.hours, 10) || 0;
+    const minutes = Number.parseInt(formData.minutes, 10) || 0;
+
+    // Validate
+    if (hours < 0 || minutes < 0 || minutes > 59) {
+      toast.error('Los minutos deben estar entre 0 y 59');
+      return;
+    }
+
+    // Calculate total minutes
+    const totalMinutes = hours * 60 + minutes;
+
+    if (totalMinutes <= 0) {
+      toast.error('Debes ingresar al menos 1 minuto');
+      return;
+    }
+
+    if (totalMinutes > 16 * 60) {
+      toast.error('El tiempo adeudado no puede ser mayor a 16 horas');
       return;
     }
 
@@ -64,19 +63,17 @@ export default function CreateDebtModal({ isOpen, onClose }: CreateDebtModalProp
       return;
     }
 
-    // Convert hours to minutes
-    const minutesOwed = Math.round(hours * 60);
-
     try {
       await createDebt.mutateAsync({
-        minutesOwed,
+        minutesOwed: totalMinutes,
         date: formData.date,
         reason: formData.reason || undefined,
       });
 
       // Reset form and close modal on success
       setFormData({
-        hoursOwed: '',
+        hours: '',
+        minutes: '',
         date: getTodayLocal(),
         reason: '',
       });
@@ -90,7 +87,8 @@ export default function CreateDebtModal({ isOpen, onClose }: CreateDebtModalProp
   const handleClose = () => {
     // Reset form when closing without saving
     setFormData({
-      hoursOwed: '',
+      hours: '',
+      minutes: '',
       date: getTodayLocal(),
       reason: '',
     });
@@ -121,24 +119,44 @@ export default function CreateDebtModal({ isOpen, onClose }: CreateDebtModalProp
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Hours Owed */}
+          {/* Time Owed */}
           <div>
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
               <Clock className="h-4 w-4" />
-              Horas Adeudadas *
+              Tiempo Adeudado *
             </label>
-            <input
-              type="text"
-              inputMode="decimal"
-              value={formData.hoursOwed}
-              onChange={(e) => setFormData({ ...formData, hoursOwed: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white"
-              placeholder="Ej: 0.15 o 1:30"
-              required
-              disabled={createDebt.isPending}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Horas</label>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  max="16"
+                  value={formData.hours}
+                  onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white"
+                  placeholder="0"
+                  disabled={createDebt.isPending}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Minutos</label>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  max="59"
+                  value={formData.minutes}
+                  onChange={(e) => setFormData({ ...formData, minutes: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white"
+                  placeholder="0"
+                  disabled={createDebt.isPending}
+                />
+              </div>
+            </div>
             <p className="text-xs text-gray-500 mt-1">
-              Puedes escribir decimal (0.15) o horas:minutos (1:30). Maximo 16h por dia.
+              Ej: 1h 30min = 1 hora y 30 minutos
             </p>
           </div>
 
