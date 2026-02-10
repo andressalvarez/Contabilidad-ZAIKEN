@@ -441,7 +441,7 @@ model BugReport {
   negocioId   Int             @map("negocio_id")
   reporterId  Int             @map("reporter_id")
   moduleUrl   String          @map("module_url")
-  evidenceUrl String          @map("evidence_url")
+  evidenceUrl String?         @map("evidence_url")
   description String
   status      BugReportStatus @default(OPEN)
   resolvedAt  DateTime?       @map("resolved_at")

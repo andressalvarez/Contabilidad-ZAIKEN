@@ -14,11 +14,11 @@ export class CreateBugReportDto {
   @IsNotEmpty()
   description: string;
 
+  @IsOptional()
   @IsString()
   @IsUrl({ require_protocol: true }, { message: 'La URL de evidencia no es valida' })
   @MaxLength(500)
-  @IsNotEmpty()
-  evidenceUrl: string;
+  evidenceUrl?: string;
 
   @IsOptional()
   @IsString()

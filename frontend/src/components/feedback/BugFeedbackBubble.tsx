@@ -48,19 +48,15 @@ export default function BugFeedbackBubble() {
       return;
     }
 
-    if (!normalizedEvidenceUrl) {
-      toast.error('La URL de evidencia es obligatoria');
-      return;
-    }
-
-    if (!isLightshotUrl(normalizedEvidenceUrl)) {
+    // Validar URL de Lightshot solo si se proporciona
+    if (normalizedEvidenceUrl && !isLightshotUrl(normalizedEvidenceUrl)) {
       toast.error('La evidencia debe ser una URL de Lightshot (prnt.sc o prntscr.com)');
       return;
     }
 
     await createBugReport.mutateAsync({
       description: normalizedDescription,
-      evidenceUrl: normalizedEvidenceUrl,
+      evidenceUrl: normalizedEvidenceUrl || undefined,
       moduleUrl: window.location.href,
     });
 
@@ -113,16 +109,15 @@ export default function BugFeedbackBubble() {
 
             <div>
               <label htmlFor="bug-evidence" className="mb-1 block text-xs font-medium text-gray-700">
-                URL de evidencia (Lightshot)
+                URL de evidencia (Lightshot) - Opcional
               </label>
               <input
                 id="bug-evidence"
                 type="url"
                 value={evidenceUrl}
                 onChange={(event) => setEvidenceUrl(event.target.value)}
-                placeholder="https://prnt.sc/..."
+                placeholder="https://prnt.sc/... (opcional)"
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500"
-                required
               />
             </div>
 

@@ -13,7 +13,7 @@ export interface BugReport {
   negocioId: number;
   reporterId: number;
   moduleUrl: string;
-  evidenceUrl: string;
+  evidenceUrl: string | null;
   description: string;
   status: BugReportStatus;
   resolvedAt: string | null;
@@ -26,7 +26,7 @@ export interface BugReport {
 
 export interface CreateBugReportDto {
   description: string;
-  evidenceUrl: string;
+  evidenceUrl?: string;
   moduleUrl?: string;
 }
 

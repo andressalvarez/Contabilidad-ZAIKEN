@@ -209,15 +209,19 @@ export default function FeedbackAdminPage() {
                           )}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700">
-                          <a
-                            href={report.evidenceUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-indigo-600 hover:underline"
-                          >
-                            Ver captura
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </a>
+                          {report.evidenceUrl ? (
+                            <a
+                              href={report.evidenceUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 text-indigo-600 hover:underline"
+                            >
+                              Ver captura
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                          ) : (
+                            <span className="text-gray-500 italic">Sin evidencia</span>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-sm">
                           <span
