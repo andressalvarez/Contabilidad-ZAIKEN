@@ -127,6 +127,15 @@ export default function DeductionHistoryModal({
               <div className="space-y-3">
                 {deductions.map((deduction, index) => {
                   const { date, time } = formatDateTime(deduction.deductedAt);
+                  const registro = deduction.registroHoras;
+                  const workDate = registro?.fecha
+                    ? new Date(registro.fecha).toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        weekday: 'short',
+                      })
+                    : 'Fecha desconocida';
 
                   return (
                     <div
@@ -148,7 +157,7 @@ export default function DeductionHistoryModal({
 
                           {/* Deduction details */}
                           <div className="flex-1">
-                            {/* Date and time */}
+                            {/* Payment date and time */}
                             <div className="flex items-center gap-3 mb-2">
                               <div className="flex items-center gap-1 text-sm text-gray-600">
                                 <Calendar className="h-3.5 w-3.5" />
@@ -160,16 +169,62 @@ export default function DeductionHistoryModal({
                               </div>
                             </div>
 
-                            {/* Record reference */}
-                            <p className="text-sm text-gray-700 mb-2">
-                              <span className="font-medium text-gray-900">
-                                Registro de trabajo #{deduction.registroHorasId}
-                              </span>
-                              {' '}pagó parte de esta deuda
-                            </p>
+                            {/* Record reference and work date */}
+                            <div className="mb-3">
+                              <p className="text-sm text-gray-700 mb-1">
+                                <span className="font-medium text-gray-900">
+                                  Registro de trabajo #{deduction.registroHorasId}
+                                </span>
+                                {' '}pagó parte de esta deuda
+                              </p>
+                              <p className="text-xs text-gray-600">
+                                Tiempo extra trabajado el: <span className="font-medium text-indigo-600">{workDate}</span>
+                              </p>
+                            </div>
+
+                            {/* Campaign if exists */}
+                            {registro?.campana && (
+                              <div className="bg-purple-50 border border-purple-200 rounded-md px-3 py-1.5 mb-2">
+                                <p className="text-xs text-purple-700">
+                                  Campaña: <span className="font-medium">{registro.campana.nombre}</span>
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Description if exists */}
+                            {registro?.descripcion && (
+                              <div className="bg-gray-50 border border-gray-200 rounded-md px-3 py-2 mb-2">
+                                <p className="text-xs text-gray-700">
+                                  <FileText className="h-3 w-3 inline mr-1" />
+                                  {registro.descripcion}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Work hours and schedule */}
+                            <div className="bg-blue-50 border border-blue-200 rounded-md px-3 py-2 mb-2">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-blue-700">
+                                  Total trabajado: <span className="font-semibold">{registro?.horas || 0}h</span>
+                                </span>
+                                {registro?.timerInicio && registro?.timerFin && (
+                                  <span className="text-blue-600">
+                                    {new Date(registro.timerInicio).toLocaleTimeString('es-ES', {
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                    {' → '}
+                                    {new Date(registro.timerFin).toLocaleTimeString('es-ES', {
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
 
                             {/* Hours deducted */}
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 mb-1">
                               <span className="text-xs text-gray-600">
                                 Horas deducidas:
                               </span>
@@ -181,9 +236,9 @@ export default function DeductionHistoryModal({
 
                             {/* Excess hours (if different from deducted) */}
                             {deduction.excessMinutes > 0 && (
-                              <div className="flex items-center gap-2 mt-1">
+                              <div className="flex items-center gap-2">
                                 <span className="text-xs text-gray-600">
-                                  Exceso aplicado:
+                                  Exceso total aplicado:
                                 </span>
                                 <span className="text-xs font-medium text-gray-700">
                                   {minutesToHours(deduction.excessMinutes)}
