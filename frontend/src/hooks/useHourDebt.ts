@@ -203,7 +203,7 @@ export function useRequestMonthlyDebtReview() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['hour-debt'] });
       toast.success(
-        `Auditoría completada: ${data.usersWithGaps} usuarios con diferencias`,
+        `Revision completada: ${HourDebtService.minutesToHoursString(data.autoAppliedMinutes)} aplicadas, ${data.usersWithGaps} usuarios con diferencia`,
       );
     },
     onError: (error: any) => {

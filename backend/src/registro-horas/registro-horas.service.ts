@@ -1,4 +1,11 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRegistroHorasDto, UpdateRegistroHorasDto } from './dto';
 import { HourDebtService } from '../hour-debt/hour-debt.service';
@@ -590,69 +597,81 @@ export class RegistroHorasService {
    * Aprueba un registro de horas
    */
   async approve(negocioId: number, id: number, userId: number) {
-    const registro = await this.prisma.registroHoras.findFirst({
-      where: { id, negocioId },
-      include: {
-        usuario: true,
-      },
-    });
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const registro = await tx.registroHoras.findFirst({
+          where: { id, negocioId },
+        });
 
-    if (!registro) {
-      throw new NotFoundException(`Registro #${id} no encontrado`);
-    }
+        if (!registro) {
+          throw new NotFoundException(`Registro #${id} no encontrado`);
+        }
 
-    if (registro.aprobado) {
-      throw new BadRequestException('El registro ya estÃ¡ aprobado');
-    }
+        if (registro.aprobado) {
+          throw new BadRequestException('El registro ya esta aprobado');
+        }
 
-    if (registro.rechazado) {
-      throw new BadRequestException('El registro estÃ¡ rechazado. ElimÃ­nelo o edÃ­telo primero.');
-    }
+        if (registro.rechazado) {
+          throw new BadRequestException('El registro esta rechazado. Eliminalo o editalo primero.');
+        }
 
-    // Persist approval first so the operation never returns a false-positive success.
-    const approved = await this.prisma.registroHoras.update({
-      where: { id },
-      data: {
-        aprobado: true,
-        aprobadoPor: userId,
-        fechaAprobacion: new Date(),
-        rechazado: false,
-        motivoRechazo: null,
-      },
-      include: {
-        usuario: {
-          select: {
-            id: true,
-            nombre: true,
-            email: true,
-            rolNegocio: {
+        const approved = await tx.registroHoras.update({
+          where: { id },
+          data: {
+            aprobado: true,
+            aprobadoPor: userId,
+            fechaAprobacion: new Date(),
+            rechazado: false,
+            motivoRechazo: null,
+          },
+          include: {
+            usuario: {
               select: {
                 id: true,
-                nombreRol: true,
+                nombre: true,
+                email: true,
+                rolNegocio: {
+                  select: {
+                    id: true,
+                    nombreRol: true,
+                  },
+                },
               },
             },
+            campana: true,
           },
-        },
-        campana: true,
-      },
-    });
+        });
 
-    const targetUserId = approved.usuarioId;
-    if (targetUserId) {
-      try {
-        await this.hourDebtService.applyDebtDeduction(
-          negocioId,
-          targetUserId,
-          approved.id,
-          approved.horas,
-          approved.fecha,
-        );
-      } catch (error) {
-        this.logger.error('Error applying debt deduction:', error);
+        const targetUserId = approved.usuarioId;
+        if (targetUserId) {
+          await this.hourDebtService.applyDebtDeduction(
+            negocioId,
+            targetUserId,
+            approved.id,
+            approved.horas,
+            approved.fecha,
+            tx,
+          );
+        }
+
+        return approved;
+      });
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
       }
-    }
 
-    return approved;
+      this.logger.error(
+        `Error approving record #${id} and applying debt deduction`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw new InternalServerErrorException(
+        'No se pudo aprobar el registro con descuento automatico de deuda. Intenta nuevamente.',
+      );
+    }
   }
 
   /**

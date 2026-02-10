@@ -463,7 +463,7 @@ export class HourDebtService {
     const monthEnd = now;
 
     // First, fix structural balance discrepancies.
-    const balanceAudit = await this.auditBalances(negocioId);
+    let balanceAudit = await this.auditBalances(negocioId);
 
     const negocio = await this.prisma.negocio.findUnique({
       where: { id: negocioId },
@@ -471,6 +471,16 @@ export class HourDebtService {
     });
     const threshold = (negocio?.configuracion as any)?.dailyHourThreshold || 8;
     const thresholdMinutes = Math.round(threshold * 60);
+
+    const autoApplySummary = await this.autoApplyMissingDeductionsForPeriod(
+      negocioId,
+      monthStart,
+      monthEnd,
+      thresholdMinutes,
+    );
+
+    // Re-check balances after applying missing deductions.
+    balanceAudit = await this.auditBalances(negocioId);
 
     const approvedRecords = await this.prisma.registroHoras.findMany({
       where: {
@@ -606,9 +616,13 @@ export class HourDebtService {
       0,
     );
     const totalDeductedMinutes = users.reduce((sum, u) => sum + u.deductedMinutes, 0);
+    const remainingGapMinutes = Math.max(
+      0,
+      totalExpectedExcessMinutes - totalDeductedMinutes,
+    );
 
     this.logger.log(
-      `Auditoria mensual de deuda ejecutada. negocio=${negocioId}, solicitadoPor=${requestedBy}, usuarios=${users.length}, usuariosConDiferencia=${usersWithGaps}`,
+      `Auditoria mensual de deuda ejecutada. negocio=${negocioId}, solicitadoPor=${requestedBy}, usuarios=${users.length}, usuariosConDiferencia=${usersWithGaps}, autoAplicadoMin=${autoApplySummary.autoAppliedMinutes}`,
     );
 
     return {
@@ -621,9 +635,317 @@ export class HourDebtService {
       usersWithGaps,
       totalExpectedExcessMinutes,
       totalDeductedMinutes,
+      remainingGapMinutes,
       balanceFixesApplied: balanceAudit.fixed,
+      autoAppliedMinutes: autoApplySummary.autoAppliedMinutes,
+      autoAppliedUsers: autoApplySummary.autoAppliedUsers,
+      autoAppliedUserDays: autoApplySummary.autoAppliedUserDays,
+      deductionOperations: autoApplySummary.deductionOperations,
       users,
-      message: 'Auditoría mensual de deuda ejecutada',
+      message:
+        'Auditoria mensual de deuda ejecutada y descuentos faltantes aplicados',
+    };
+  }
+
+  /**
+   * Reapply missing debt deductions for a period.
+   * Rule: only discount from debt creation day onward.
+   */
+  private async autoApplyMissingDeductionsForPeriod(
+    negocioId: number,
+    periodStart: Date,
+    periodEnd: Date,
+    thresholdMinutes: number,
+  ): Promise<{
+    autoAppliedMinutes: number;
+    autoAppliedUsers: number;
+    autoAppliedUserDays: number;
+    deductionOperations: number;
+  }> {
+    const approvedRecords = await this.prisma.registroHoras.findMany({
+      where: {
+        negocioId,
+        aprobado: true,
+        deletedAt: null,
+        fecha: {
+          gte: periodStart,
+          lte: periodEnd,
+        },
+      },
+      select: {
+        id: true,
+        usuarioId: true,
+        fecha: true,
+        horas: true,
+      },
+      orderBy: [{ fecha: 'asc' }, { id: 'asc' }],
+    });
+
+    if (approvedRecords.length === 0) {
+      return {
+        autoAppliedMinutes: 0,
+        autoAppliedUsers: 0,
+        autoAppliedUserDays: 0,
+        deductionOperations: 0,
+      };
+    }
+
+    const [debtCreationRows, existingDeductions, activeDebts] = await Promise.all([
+      this.prisma.hourDebt.findMany({
+        where: {
+          negocioId,
+          createdAt: { lte: periodEnd },
+          deletedAt: null,
+        },
+        select: {
+          usuarioId: true,
+          createdAt: true,
+        },
+      }),
+      this.prisma.debtDeduction.findMany({
+        where: {
+          deletedAt: null,
+          debt: { negocioId },
+          registroHoras: {
+            fecha: {
+              gte: periodStart,
+              lte: periodEnd,
+            },
+          },
+        },
+        select: {
+          id: true,
+          debtId: true,
+          registroHorasId: true,
+          minutesDeducted: true,
+          excessMinutes: true,
+          registroHoras: {
+            select: {
+              usuarioId: true,
+              fecha: true,
+            },
+          },
+        },
+      }),
+      this.prisma.hourDebt.findMany({
+        where: {
+          negocioId,
+          status: DebtStatus.ACTIVE,
+          remainingMinutes: { gt: 0 },
+          createdAt: { lte: periodEnd },
+          deletedAt: null,
+        },
+        select: {
+          id: true,
+          usuarioId: true,
+          date: true,
+          createdAt: true,
+          remainingMinutes: true,
+        },
+        orderBy: [{ date: 'asc' }, { id: 'asc' }],
+      }),
+    ]);
+
+    const firstDebtDayByUser = new Map<number, string>();
+    for (const debt of debtCreationRows) {
+      const createdDay = DateUtils.formatDate(debt.createdAt);
+      const existing = firstDebtDayByUser.get(debt.usuarioId);
+      if (!existing || createdDay < existing) {
+        firstDebtDayByUser.set(debt.usuarioId, createdDay);
+      }
+    }
+
+    type UserDayAggregate = {
+      usuarioId: number;
+      day: string;
+      totalApprovedMinutes: number;
+      recordIds: number[];
+    };
+    const approvedByUserDay = new Map<string, UserDayAggregate>();
+
+    for (const record of approvedRecords) {
+      const firstDebtDay = firstDebtDayByUser.get(record.usuarioId);
+      if (!firstDebtDay) continue;
+
+      const day = DateUtils.formatDate(record.fecha);
+      if (day < firstDebtDay) continue;
+
+      const key = `${record.usuarioId}:${day}`;
+      const minutes = Math.round((record.horas || 0) * 60);
+      const current = approvedByUserDay.get(key);
+      if (current) {
+        current.totalApprovedMinutes += minutes;
+        current.recordIds.push(record.id);
+      } else {
+        approvedByUserDay.set(key, {
+          usuarioId: record.usuarioId,
+          day,
+          totalApprovedMinutes: minutes,
+          recordIds: [record.id],
+        });
+      }
+    }
+
+    const deductedByUserDay = new Map<string, number>();
+    const deductionByDebtAndRecord = new Map<
+      string,
+      {
+        id: number;
+        minutesDeducted: number;
+        excessMinutes: number;
+      }
+    >();
+
+    for (const deduction of existingDeductions) {
+      const userId = deduction.registroHoras?.usuarioId;
+      if (!userId) continue;
+
+      const day = DateUtils.formatDate(deduction.registroHoras.fecha);
+      const userDayKey = `${userId}:${day}`;
+      deductedByUserDay.set(
+        userDayKey,
+        (deductedByUserDay.get(userDayKey) || 0) + deduction.minutesDeducted,
+      );
+
+      deductionByDebtAndRecord.set(
+        `${deduction.debtId}:${deduction.registroHorasId}`,
+        {
+          id: deduction.id,
+          minutesDeducted: deduction.minutesDeducted,
+          excessMinutes: deduction.excessMinutes,
+        },
+      );
+    }
+
+    const debtsByUser = new Map<
+      number,
+      Array<{
+        id: number;
+        createdDay: string;
+        remainingMinutes: number;
+      }>
+    >();
+    for (const debt of activeDebts) {
+      const userDebts = debtsByUser.get(debt.usuarioId) || [];
+      userDebts.push({
+        id: debt.id,
+        createdDay: DateUtils.formatDate(debt.createdAt),
+        remainingMinutes: debt.remainingMinutes,
+      });
+      debtsByUser.set(debt.usuarioId, userDebts);
+    }
+
+    const userDayEntries = Array.from(approvedByUserDay.values()).sort((a, b) => {
+      const dayCompare = a.day.localeCompare(b.day);
+      if (dayCompare !== 0) return dayCompare;
+      return a.usuarioId - b.usuarioId;
+    });
+
+    let autoAppliedMinutes = 0;
+    let deductionOperations = 0;
+    let autoAppliedUserDays = 0;
+    const touchedUsers = new Set<number>();
+    const changedDebts = new Set<number>();
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const entry of userDayEntries) {
+        const dailyExcess = Math.max(0, entry.totalApprovedMinutes - thresholdMinutes);
+        if (dailyExcess <= 0) continue;
+
+        const userDayKey = `${entry.usuarioId}:${entry.day}`;
+        const alreadyDeducted = deductedByUserDay.get(userDayKey) || 0;
+        let missingMinutes = dailyExcess - alreadyDeducted;
+        if (missingMinutes <= 0) continue;
+
+        const userDebts = debtsByUser.get(entry.usuarioId) || [];
+        if (userDebts.length === 0) continue;
+
+        const anchorRecordId = entry.recordIds[entry.recordIds.length - 1];
+        let appliedInThisDay = 0;
+
+        for (const debt of userDebts) {
+          if (missingMinutes <= 0) break;
+          if (debt.remainingMinutes <= 0) continue;
+          if (entry.day < debt.createdDay) continue;
+
+          const deductAmount = Math.min(missingMinutes, debt.remainingMinutes);
+          if (deductAmount <= 0) continue;
+
+          const pairKey = `${debt.id}:${anchorRecordId}`;
+          const existing = deductionByDebtAndRecord.get(pairKey);
+
+          if (existing) {
+            const nextMinutesDeducted = existing.minutesDeducted + deductAmount;
+            const nextExcessMinutes = existing.excessMinutes + deductAmount;
+            await tx.debtDeduction.update({
+              where: { id: existing.id },
+              data: {
+                minutesDeducted: nextMinutesDeducted,
+                excessMinutes: nextExcessMinutes,
+              },
+            });
+            deductionByDebtAndRecord.set(pairKey, {
+              id: existing.id,
+              minutesDeducted: nextMinutesDeducted,
+              excessMinutes: nextExcessMinutes,
+            });
+          } else {
+            const created = await tx.debtDeduction.create({
+              data: {
+                debtId: debt.id,
+                registroHorasId: anchorRecordId,
+                minutesDeducted: deductAmount,
+                excessMinutes: deductAmount,
+              },
+              select: { id: true },
+            });
+            deductionByDebtAndRecord.set(pairKey, {
+              id: created.id,
+              minutesDeducted: deductAmount,
+              excessMinutes: deductAmount,
+            });
+          }
+
+          debt.remainingMinutes -= deductAmount;
+          missingMinutes -= deductAmount;
+          appliedInThisDay += deductAmount;
+          autoAppliedMinutes += deductAmount;
+          deductionOperations += 1;
+          changedDebts.add(debt.id);
+          touchedUsers.add(entry.usuarioId);
+        }
+
+        if (appliedInThisDay > 0) {
+          autoAppliedUserDays += 1;
+          deductedByUserDay.set(userDayKey, alreadyDeducted + appliedInThisDay);
+        }
+      }
+
+      if (changedDebts.size > 0) {
+        const debtUpdates = Array.from(debtsByUser.values())
+          .flat()
+          .filter((debt) => changedDebts.has(debt.id));
+
+        for (const debt of debtUpdates) {
+          await tx.hourDebt.update({
+            where: { id: debt.id },
+            data: {
+              remainingMinutes: debt.remainingMinutes,
+              status:
+                debt.remainingMinutes === 0
+                  ? DebtStatus.FULLY_PAID
+                  : DebtStatus.ACTIVE,
+            },
+          });
+        }
+      }
+    });
+
+    return {
+      autoAppliedMinutes,
+      autoAppliedUsers: touchedUsers.size,
+      autoAppliedUserDays,
+      deductionOperations,
     };
   }
 

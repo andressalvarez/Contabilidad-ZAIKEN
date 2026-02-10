@@ -100,9 +100,12 @@ export default function HorasPendientesPage() {
       await Promise.all([
         loadData(),
         queryClient.invalidateQueries({ queryKey: timeRecordKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ['hour-debt'] }),
       ]);
     } catch (error: any) {
-      toast.error(error.message || 'Error al aprobar registro');
+      const message =
+        error?.response?.data?.message || error?.message || 'Error al aprobar registro';
+      toast.error(message);
     }
   };
 
@@ -120,9 +123,12 @@ export default function HorasPendientesPage() {
       await Promise.all([
         loadData(),
         queryClient.invalidateQueries({ queryKey: timeRecordKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ['hour-debt'] }),
       ]);
     } catch (error: any) {
-      toast.error(error.message || 'Error al rechazar registro');
+      const message =
+        error?.response?.data?.message || error?.message || 'Error al rechazar registro';
+      toast.error(message);
     }
   };
 

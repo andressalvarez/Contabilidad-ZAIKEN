@@ -205,16 +205,16 @@ export default function DeudaHorasPage() {
 
   const handleRequestMonthlyReview = async () => {
     const confirmed = await showConfirm({
-      title: 'Revisar descuentos del mes',
+      title: 'Revisar y aplicar descuentos del mes',
       message:
-        'Se ejecutará una auditoría para validar si durante el mes se descontaron correctamente las deudas. ¿Deseas continuar?',
+        'Se ejecutará una revisión mensual y se aplicarán descuentos faltantes desde la fecha de creación de cada deuda. ¿Deseas continuar?',
       confirmText: 'Ejecutar revisión',
     });
     if (!confirmed) return;
 
     const result = await reviewMutation.mutateAsync();
     toast.info(
-      `Resumen mensual: diferencia neta ${HourDebtService.minutesToHoursString(Math.abs(result.totalExpectedExcessMinutes - result.totalDeductedMinutes))} (${result.usersWithGaps} usuarios a revisar)`,
+      `Revisión mensual: ${HourDebtService.minutesToHoursString(result.autoAppliedMinutes)} aplicadas, diferencia pendiente ${HourDebtService.minutesToHoursString(result.remainingGapMinutes)} (${result.usersWithGaps} usuarios con diferencia)`,
     );
   };
 

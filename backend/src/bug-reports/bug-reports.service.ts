@@ -8,7 +8,7 @@ type CreateBugReportParams = {
   negocioId: number;
   reporterId: number;
   description: string;
-  evidenceUrl: string;
+  evidenceUrl?: string;
   moduleUrl?: string;
   referer?: string | string[];
   actorEmail?: string;

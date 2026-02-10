@@ -92,7 +92,12 @@ export interface MonthlyDebtReviewResponse {
   usersWithGaps: number;
   totalExpectedExcessMinutes: number;
   totalDeductedMinutes: number;
+  remainingGapMinutes: number;
   balanceFixesApplied: number;
+  autoAppliedMinutes: number;
+  autoAppliedUsers: number;
+  autoAppliedUserDays: number;
+  deductionOperations: number;
   users: Array<{
     usuarioId: number;
     nombre: string;
