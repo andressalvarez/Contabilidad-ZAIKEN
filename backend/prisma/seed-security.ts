@@ -31,6 +31,7 @@ const SUBJECT_LABEL: Record<string, string> = {
   Permission: 'catalogo de permisos',
   RegistroHoras: 'registro de horas',
   HourDebt: 'deuda de horas',
+  DebtDeduction: 'historial de pagos de deuda',
   Transaccion: 'transacciones',
   Categoria: 'categorias',
   Campana: 'campanas',
@@ -52,6 +53,7 @@ const SUBJECT_SCOPE: Record<string, string> = {
   SecuritySession: '/admin/seguridad/sesiones',
   RegistroHoras: '/registro-horas',
   HourDebt: '/deuda-horas',
+  DebtDeduction: '/deuda-horas',
   Transaccion: '/transacciones',
   Categoria: '/categorias',
   Campana: '/campanas',
@@ -108,6 +110,8 @@ const PERMISSIONS: PermissionSpec[] = [
   { subject: 'HourDebt', action: 'update', category: 'hours', displayOrder: 100 },
   { subject: 'HourDebt', action: 'delete', category: 'hours', displayOrder: 110 },
   { subject: 'HourDebt', action: 'manage', category: 'hours', displayOrder: 120 },
+
+  { subject: 'DebtDeduction', action: 'read', category: 'hours', displayOrder: 130 },
 
   { subject: 'Transaccion', action: 'read', category: 'finance', displayOrder: 10 },
   { subject: 'Transaccion', action: 'create', category: 'finance', displayOrder: 20 },
@@ -331,6 +335,8 @@ async function upsertBaseRolesAndPermissions() {
       .filter(
         (p) =>
           (p.subject === 'RegistroHoras' && ['read', 'create', 'update'].includes(p.action)) ||
+          (p.subject === 'HourDebt' && p.action === 'read') ||
+          (p.subject === 'DebtDeduction' && p.action === 'read') ||
           (p.subject === 'Dashboard' && p.action === 'read') ||
           (p.subject === 'Campana' && p.action === 'read') ||
           (p.subject === 'Transaccion' && p.action === 'read') ||
@@ -343,6 +349,8 @@ async function upsertBaseRolesAndPermissions() {
       .filter(
         (p) =>
           (p.subject === 'RegistroHoras' && ['read', 'create'].includes(p.action)) ||
+          (p.subject === 'HourDebt' && p.action === 'read') ||
+          (p.subject === 'DebtDeduction' && p.action === 'read') ||
           (p.subject === 'Dashboard' && p.action === 'read'),
       )
       .map((p) => p.id);
