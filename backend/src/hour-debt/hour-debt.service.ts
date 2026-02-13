@@ -338,9 +338,9 @@ export class HourDebtService {
    */
   async getDeductionHistory(negocioId: number, debtId: number) {
     // Verify debt belongs to negocio
-    await this.findOne(debtId, negocioId);
+    const debt = await this.findOne(debtId, negocioId);
 
-    return this.prisma.debtDeduction.findMany({
+    const deductions = await this.prisma.debtDeduction.findMany({
       where: {
         debtId,
         deletedAt: null,
@@ -353,11 +353,49 @@ export class HourDebtService {
             horas: true,
             timerInicio: true,
             timerFin: true,
+            usuarioId: true,
           },
         },
       },
       orderBy: { deductedAt: 'desc' },
     });
+
+    // Calculate total hours worked each day to show accurate excess calculation
+    const deductionsWithTotals = await Promise.all(
+      deductions.map(async (deduction) => {
+        if (!deduction.registroHoras) {
+          return { ...deduction, totalDayHours: 0 };
+        }
+
+        // Get all approved registros for this user on this date
+        const normalizedDate = DateUtils.normalizeToBusinessDate(
+          deduction.registroHoras.fecha,
+        );
+
+        const dayRegistros = await this.prisma.registroHoras.findMany({
+          where: {
+            negocioId,
+            usuarioId: debt.usuarioId,
+            fecha: normalizedDate,
+            estado: 'aprobado',
+            deletedAt: null,
+          },
+          select: { horas: true },
+        });
+
+        const totalDayHours = dayRegistros.reduce(
+          (sum, reg) => sum + (reg.horas || 0),
+          0,
+        );
+
+        return {
+          ...deduction,
+          totalDayHours,
+        };
+      }),
+    );
+
+    return deductionsWithTotals;
   }
 
   /**

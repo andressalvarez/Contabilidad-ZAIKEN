@@ -49,6 +49,7 @@ export interface DebtDeduction {
   excessMinutes: number;
   deductedAt: string;
   deletedAt?: string;
+  totalDayHours?: number;
   registroHoras?: {
     id: number;
     fecha: string;

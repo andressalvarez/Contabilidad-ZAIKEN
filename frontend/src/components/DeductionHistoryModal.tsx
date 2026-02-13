@@ -186,7 +186,8 @@ export default function DeductionHistoryModal({
                     : 'Fecha desconocida';
 
                   // Calculate excess breakdown
-                  const totalWorkedMinutes = (registro?.horas || 0) * 60;
+                  // Use totalDayHours (all approved hours for that day) instead of just this registro's hours
+                  const totalWorkedMinutes = (deduction.totalDayHours || registro?.horas || 0) * 60;
                   const thresholdMinutes = DAILY_THRESHOLD_HOURS * 60;
                   const calculatedExcess = Math.max(0, totalWorkedMinutes - thresholdMinutes);
                   const excessUsedForThisDebt = deduction.minutesDeducted;
@@ -279,9 +280,14 @@ export default function DeductionHistoryModal({
                                 </span>
                               </div>
                               <p className="text-xs text-gray-600 mt-2">
-                                Trabajaste <strong className="text-blue-700">{minutesToDecimal(totalWorkedMinutes)}h</strong>,
-                                el umbral diario es <strong className="text-gray-700">{DAILY_THRESHOLD_HOURS}h</strong>,
-                                generando <strong className="text-green-700">{minutesToDecimal(calculatedExcess)}h</strong> de exceso
+                                Total trabajado ese día: <strong className="text-blue-700">{minutesToDecimal(totalWorkedMinutes)}h</strong>
+                                {registro && deduction.totalDayHours && deduction.totalDayHours > registro.horas && (
+                                  <span className="text-blue-600"> (incluye {minutesToDecimal((deduction.totalDayHours - registro.horas) * 60)}h de otros registros)</span>
+                                )}
+                                <br />
+                                Umbral diario: <strong className="text-gray-700">{DAILY_THRESHOLD_HOURS}h</strong>
+                                {' → '}
+                                Exceso generado: <strong className="text-green-700">{minutesToDecimal(calculatedExcess)}h</strong>
                               </p>
                             </div>
 
