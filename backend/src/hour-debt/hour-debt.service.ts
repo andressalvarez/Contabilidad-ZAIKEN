@@ -781,7 +781,7 @@ export class HourDebtService {
       }
 
       // Reset all affected debts to their original state
-      const resetOps = [];
+      const resetOps: Array<Promise<HourDebt>> = [];
       for (const debtId of debtsToReset) {
         const debt = allDebts.find((d) => d.id === debtId);
         if (debt) {
