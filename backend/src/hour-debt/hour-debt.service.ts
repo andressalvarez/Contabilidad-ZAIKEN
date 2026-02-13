@@ -377,7 +377,7 @@ export class HourDebtService {
             negocioId,
             usuarioId: debt.usuarioId,
             fecha: normalizedDate,
-            estado: 'aprobado',
+            aprobado: true,
             deletedAt: null,
           },
           select: { horas: true },
@@ -769,7 +769,34 @@ export class HourDebtService {
       `Eliminando ${deductionsInPeriod.length} deducciones (${totalDeletedMinutes} min) y reseteando ${debtsToReset.size} deudas`,
     );
 
-    // Step 3: Delete all deductions and reset debts within a transaction
+    // Step 3: Calculate deductions from OTHER months (to preserve them)
+    const deductionsFromOtherMonths = await this.prisma.debtDeduction.findMany({
+      where: {
+        debtId: { in: Array.from(debtsToReset) },
+        deletedAt: null,
+        registroHoras: {
+          fecha: {
+            OR: [
+              { lt: monthStart },
+              { gt: monthEnd },
+            ],
+          },
+        },
+      },
+      select: {
+        debtId: true,
+        minutesDeducted: true,
+      },
+    });
+
+    // Build map of deductions from other months per debt
+    const deductionsFromOtherMonthsMap = new Map<number, number>();
+    for (const deduction of deductionsFromOtherMonths) {
+      const current = deductionsFromOtherMonthsMap.get(deduction.debtId) || 0;
+      deductionsFromOtherMonthsMap.set(deduction.debtId, current + deduction.minutesDeducted);
+    }
+
+    // Step 4: Delete all deductions and reset debts within a transaction
     const resetResults = await this.prisma.$transaction(async (tx) => {
       // Delete all deductions for the period
       if (deletedDeductionIds.length > 0) {
@@ -780,17 +807,20 @@ export class HourDebtService {
         });
       }
 
-      // Reset all affected debts to their original state
+      // Reset all affected debts, preserving deductions from other months
       const resetOps: Array<Promise<HourDebt>> = [];
       for (const debtId of debtsToReset) {
         const debt = allDebts.find((d) => d.id === debtId);
         if (debt) {
+          const deductionsFromOtherMonths = deductionsFromOtherMonthsMap.get(debtId) || 0;
+          const resetRemaining = Math.max(0, debt.minutesOwed - deductionsFromOtherMonths);
+
           resetOps.push(
             tx.hourDebt.update({
               where: { id: debtId },
               data: {
-                remainingMinutes: debt.minutesOwed,
-                status: DebtStatus.ACTIVE,
+                remainingMinutes: resetRemaining,
+                status: resetRemaining === 0 ? DebtStatus.FULLY_PAID : DebtStatus.ACTIVE,
               },
             }),
           );
@@ -805,7 +835,7 @@ export class HourDebtService {
       `Limpieza completada: ${resetResults.deductionsDeleted} deducciones eliminadas, ${resetResults.debtsReset} deudas reseteadas`,
     );
 
-    // Step 4: Get all approved registros for the period
+    // Step 5: Get all approved registros for the period
     const approvedRecords = await this.prisma.registroHoras.findMany({
       where: {
         negocioId,
@@ -825,7 +855,7 @@ export class HourDebtService {
       orderBy: [{ fecha: 'asc' }, { id: 'asc' }],
     });
 
-    // Step 5: Build first debt day map (only deduct from debt creation date onward)
+    // Step 6: Build first debt day map (only deduct from debt creation date onward)
     const firstDebtDayByUser = new Map<number, string>();
     for (const debt of allDebts) {
       const createdDay = DateUtils.formatDate(debt.createdAt);
@@ -835,7 +865,7 @@ export class HourDebtService {
       }
     }
 
-    // Step 6: Aggregate approved hours by user-day
+    // Step 7: Aggregate approved hours by user-day
     type UserDayAggregate = {
       usuarioId: number;
       day: string;
@@ -867,14 +897,31 @@ export class HourDebtService {
       }
     }
 
-    // Step 7: Sort user-day entries chronologically
+    // Step 8: Sort user-day entries chronologically
     const userDayEntries = Array.from(approvedByUserDay.values()).sort((a, b) => {
       const dayCompare = a.day.localeCompare(b.day);
       if (dayCompare !== 0) return dayCompare;
       return a.usuarioId - b.usuarioId;
     });
 
-    // Step 8: Build active debts map (FIFO order)
+    // Step 9: Reload debts after reset to get correct remainingMinutes
+    const debtsAfterReset = await this.prisma.hourDebt.findMany({
+      where: {
+        negocioId,
+        deletedAt: null,
+        createdAt: { lte: monthEnd },
+      },
+      select: {
+        id: true,
+        usuarioId: true,
+        createdAt: true,
+        remainingMinutes: true,
+        status: true,
+      },
+      orderBy: [{ date: 'asc' }, { id: 'asc' }],
+    });
+
+    // Build active debts map (FIFO order) with correct remainingMinutes after reset
     const debtsByUser = new Map<
       number,
       Array<{
@@ -883,17 +930,20 @@ export class HourDebtService {
         remainingMinutes: number;
       }>
     >();
-    for (const debt of allDebts) {
-      const userDebts = debtsByUser.get(debt.usuarioId) || [];
-      userDebts.push({
-        id: debt.id,
-        createdDay: DateUtils.formatDate(debt.createdAt),
-        remainingMinutes: debt.minutesOwed, // Reset to original
-      });
-      debtsByUser.set(debt.usuarioId, userDebts);
+    for (const debt of debtsAfterReset) {
+      // Only include debts that still have remaining minutes after preserving other months
+      if (debt.remainingMinutes > 0) {
+        const userDebts = debtsByUser.get(debt.usuarioId) || [];
+        userDebts.push({
+          id: debt.id,
+          createdDay: DateUtils.formatDate(debt.createdAt),
+          remainingMinutes: debt.remainingMinutes, // Use actual remaining after reset
+        });
+        debtsByUser.set(debt.usuarioId, userDebts);
+      }
     }
 
-    // Step 9: Apply deductions in chronological order (FIFO)
+    // Step 10: Apply deductions in chronological order (FIFO)
     let newDeductionsCreated = 0;
     let totalMinutesDeducted = 0;
     const touchedUsers = new Set<number>();
@@ -942,7 +992,7 @@ export class HourDebtService {
         }
       }
 
-      // Step 10: Update all affected debts with correct remainingMinutes and status
+      // Step 11: Update all affected debts with correct remainingMinutes and status
       if (touchedDebts.size > 0) {
         const debtUpdates = Array.from(debtsByUser.values())
           .flat()
@@ -963,7 +1013,7 @@ export class HourDebtService {
       }
     });
 
-    // Step 11: Calculate final statistics
+    // Step 12: Calculate final statistics
     const finalDebts = await this.prisma.hourDebt.findMany({
       where: {
         negocioId,

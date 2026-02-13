@@ -44,8 +44,9 @@ export default function DeductionHistoryModal({
 
   // Convert minutes to readable format
   const minutesToHours = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
+    const roundedMinutes = Math.round(minutes);
+    const hours = Math.floor(roundedMinutes / 60);
+    const mins = roundedMinutes % 60;
     return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
   };
 
@@ -187,7 +188,7 @@ export default function DeductionHistoryModal({
 
                   // Calculate excess breakdown
                   // Use totalDayHours (all approved hours for that day) instead of just this registro's hours
-                  const totalWorkedMinutes = (deduction.totalDayHours || registro?.horas || 0) * 60;
+                  const totalWorkedMinutes = Math.round((deduction.totalDayHours || registro?.horas || 0) * 60);
                   const thresholdMinutes = DAILY_THRESHOLD_HOURS * 60;
                   const calculatedExcess = Math.max(0, totalWorkedMinutes - thresholdMinutes);
                   const excessUsedForThisDebt = deduction.minutesDeducted;
@@ -280,14 +281,14 @@ export default function DeductionHistoryModal({
                                 </span>
                               </div>
                               <p className="text-xs text-gray-600 mt-2">
-                                Total trabajado ese día: <strong className="text-blue-700">{minutesToDecimal(totalWorkedMinutes)}h</strong>
+                                Total trabajado ese día: <strong className="text-blue-700">{minutesToHours(totalWorkedMinutes)}</strong>
                                 {registro && deduction.totalDayHours && deduction.totalDayHours > registro.horas && (
-                                  <span className="text-blue-600"> (incluye {minutesToDecimal((deduction.totalDayHours - registro.horas) * 60)}h de otros registros)</span>
+                                  <span className="text-blue-600"> (incluye {minutesToHours(Math.round((deduction.totalDayHours - registro.horas) * 60))} de otros registros)</span>
                                 )}
                                 <br />
                                 Umbral diario: <strong className="text-gray-700">{DAILY_THRESHOLD_HOURS}h</strong>
                                 {' → '}
-                                Exceso generado: <strong className="text-green-700">{minutesToDecimal(calculatedExcess)}h</strong>
+                                Exceso generado: <strong className="text-green-700">{minutesToHours(calculatedExcess)}</strong>
                               </p>
                             </div>
 

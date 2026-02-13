@@ -202,13 +202,8 @@ export function useCorrectMonthlyDeductions() {
 
   return useMutation({
     mutationFn: () => HourDebtService.correctMonthlyDeductions(),
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hour-debt'] });
-      const { correction } = data;
-      toast.success(
-        `Corrección completada: ${correction.deductionsDeleted} deducciones eliminadas, ${correction.deductionsCreated} nuevas creadas. ${HourDebtService.minutesToHoursString(correction.minutesApplied)} aplicadas a ${correction.usersAffected} usuarios`,
-      );
     },
-    
   });
 }
