@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CategoriasService } from '@/services';
 import type { CreateCategoriaDto, UpdateCategoriaDto } from '@/services/categorias.service';
 import { toast } from 'sonner';
-import { getErrorMessage } from '@/utils/errors';
 
 // Query keys
 export const categoriasKeys = {
@@ -49,9 +48,7 @@ export function useCreateCategoria() {
 
       toast.success('Categoría creada exitosamente');
     },
-    onError: (error: unknown) => {
-      toast.error(getErrorMessage(error));
-    },
+    // onError removido - el interceptor de axios maneja los errores automáticamente
   });
 }
 
@@ -74,9 +71,7 @@ export function useUpdateCategoria() {
 
       toast.success('Categoría actualizada exitosamente');
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Error al actualizar la categoría');
-    },
+    // onError removido - el interceptor de axios maneja los errores automáticamente
   });
 }
 
@@ -98,8 +93,6 @@ export function useDeleteCategoria() {
 
       toast.success('Categoría eliminada exitosamente');
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Error al eliminar la categoría');
-    },
+    // onError removido - el interceptor de axios maneja los errores automáticamente
   });
 }

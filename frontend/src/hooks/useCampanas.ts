@@ -36,9 +36,7 @@ export const useCreateCampana = () => {
       queryClient.invalidateQueries({ queryKey: ['campanas'] });
       toast.success('Campaña creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Error al crear campaña');
-    },
+    
   });
 };
 
@@ -52,9 +50,7 @@ export const useUpdateCampana = () => {
       queryClient.invalidateQueries({ queryKey: ['campanas'] });
       toast.success('Campaña actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Error al actualizar campaña');
-    },
+    
   });
 };
 
@@ -67,9 +63,7 @@ export const useDeleteCampana = () => {
       queryClient.invalidateQueries({ queryKey: ['campanas'] });
       toast.success('Campaña eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Error al eliminar campaña');
-    },
+    
   });
 };
 

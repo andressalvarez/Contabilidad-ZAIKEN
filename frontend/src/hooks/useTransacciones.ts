@@ -103,9 +103,7 @@ export function useCreateTransaccion() {
 
       toast.success('Transacción creada exitosamente');
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Error al crear la transacción');
-    },
+    
   });
 }
 
@@ -126,9 +124,7 @@ export function useUpdateTransaccion() {
 
       toast.success('Transacción actualizada exitosamente');
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Error al actualizar la transacción');
-    },
+    
   });
 }
 
@@ -144,9 +140,7 @@ export function useApproveTransaccion() {
 
       toast.success('Transacción aprobada exitosamente');
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Error al aprobar la transacción');
-    },
+    
   });
 }
 
@@ -162,9 +156,7 @@ export function useRejectTransaccion() {
 
       toast.success('Transacción rechazada');
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Error al rechazar la transacción');
-    },
+    
   });
 }
 
@@ -185,9 +177,7 @@ export function useDeleteTransaccion() {
 
       toast.success('Transacción eliminada exitosamente');
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Error al eliminar la transacción');
-    },
+    
   });
 }
 

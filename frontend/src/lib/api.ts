@@ -68,7 +68,7 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor with better JSON handling
+// Response interceptor with centralized error handling
 api.interceptors.response.use(
   (response) => {
     console.log('📥 API Response:', {
@@ -86,7 +86,7 @@ api.interceptors.response.use(
 
     return response;
   },
-  (error) => {
+  async (error) => {
     console.error('❌ API Error:', {
       message: error.message,
       status: error.response?.status,
@@ -97,16 +97,23 @@ api.interceptors.response.use(
       isJsonError: error.message?.includes('JSON')
     });
 
+    // Lazy import toast to avoid SSR issues
+    const { toast } = await import('sonner');
+
     // Specific handling for JSON errors
     if (error.message?.includes('JSON') || error.message?.includes('Unexpected end of JSON input')) {
       console.error('🔴 JSON Parse Error - Response might be empty or malformed');
-      return Promise.reject(new Error('Error al procesar la respuesta del servidor. Intente nuevamente.'));
+      const errorMsg = 'Error al procesar la respuesta del servidor. Intente nuevamente.';
+      toast.error(errorMsg);
+      return Promise.reject(new Error(errorMsg));
     }
 
     // Network error handling
     if (!error.response) {
       console.error('🔴 Network Error - Server might be down');
-      return Promise.reject(new Error('Error de conexión. Verifique que el servidor esté funcionando.'));
+      const errorMsg = 'Error de conexión. Verifique que el servidor esté funcionando.';
+      toast.error(errorMsg);
+      return Promise.reject(new Error(errorMsg));
     }
 
     // HTTP error handling
@@ -115,8 +122,10 @@ api.interceptors.response.use(
       localStorage.removeItem('auth_token');
       const currentPath = window.location.pathname;
       if (currentPath !== '/login' && currentPath !== '/register') {
+        toast.error('Sesión expirada. Por favor inicie sesión nuevamente.');
         window.location.href = '/login';
       }
+      return Promise.reject(new Error('Sesión expirada'));
     }
 
     // Return formatted error message
@@ -126,6 +135,11 @@ api.interceptors.response.use(
 
     if (Array.isArray(missingPermissionCodes) && missingPermissionCodes.length > 0) {
       errorMessage = `No tienes permisos suficientes. Falta: ${missingPermissionCodes.join(', ')}`;
+    }
+
+    // Show toast notification for all errors except 401 (already handled above)
+    if (error.response?.status !== 401) {
+      toast.error(errorMessage);
     }
 
     return Promise.reject(new Error(errorMessage));

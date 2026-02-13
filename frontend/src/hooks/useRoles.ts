@@ -64,9 +64,7 @@ export function useCreateRol() {
 
       toast.success('Rol creado exitosamente');
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Error al crear el rol');
-    },
+    
   });
 }
 
@@ -84,9 +82,7 @@ export function useUpdateRol() {
 
       toast.success('Rol actualizado exitosamente');
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Error al actualizar el rol');
-    },
+    
   });
 }
 
@@ -105,8 +101,6 @@ export function useDeleteRol() {
 
       toast.success('Rol eliminado exitosamente');
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Error al eliminar el rol');
-    },
+    
   });
 }

@@ -69,9 +69,7 @@ export function useCreateRegistroHoras() {
 
       toast.success('Registro de horas creado exitosamente');
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Error al crear el registro de horas');
-    },
+    
   });
 }
 
@@ -90,9 +88,7 @@ export function useUpdateRegistroHoras() {
 
       toast.success('Registro de horas actualizado exitosamente');
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Error al actualizar el registro de horas');
-    },
+    
   });
 }
 
@@ -112,9 +108,7 @@ export function useDeleteRegistroHoras() {
 
       toast.success('Registro de horas eliminado exitosamente');
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Error al eliminar el registro de horas');
-    },
+    
   });
 }
 
@@ -144,9 +138,7 @@ export function useStartTimer() {
       queryClient.invalidateQueries({ queryKey: [...timeRecordKeys.all, 'activeTimer'] });
       toast.success('⏱️ Timer iniciado');
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Error al iniciar el timer');
-    },
+    
   });
 }
 
@@ -161,9 +153,7 @@ export function usePauseTimer() {
       queryClient.invalidateQueries({ queryKey: [...timeRecordKeys.all, 'activeTimer'] });
       toast.success('⏸️ Timer pausado');
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Error al pausar el timer');
-    },
+    
   });
 }
 
@@ -178,9 +168,7 @@ export function useResumeTimer() {
       queryClient.invalidateQueries({ queryKey: [...timeRecordKeys.all, 'activeTimer'] });
       toast.success('▶️ Timer reanudado');
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Error al reanudar el timer');
-    },
+    
   });
 }
 
@@ -197,9 +185,7 @@ export function useStopTimer() {
       queryClient.invalidateQueries({ queryKey: [...timeRecordKeys.all, 'activeTimer'] });
       toast.success(`⏹️ Timer detenido - ${stoppedTimer.horas?.toFixed(2) || 0}h registradas`);
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Error al detener el timer');
-    },
+    
   });
 }
 
@@ -214,9 +200,7 @@ export function useCancelTimer() {
       queryClient.invalidateQueries({ queryKey: [...timeRecordKeys.all, 'activeTimer'] });
       toast.success('Timer cancelado');
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Error al cancelar el timer');
-    },
+    
   });
 }
 
@@ -235,10 +219,7 @@ export function useUpdateTimerTimes() {
       queryClient.setQueryData(timeRecordKeys.detail(updatedRecord.id), updatedRecord);
       toast.success(`Tiempos actualizados - ${updatedRecord.horas?.toFixed(2) || 0}h`);
     },
-    onError: (error: any) => {
-      const message = error.response?.data?.message || error.message || 'Error al actualizar tiempos';
-      toast.error(message);
-    },
+    
   });
 }
 
@@ -254,10 +235,7 @@ export function useResubmitRegistro() {
       queryClient.invalidateQueries({ queryKey: [...timeRecordKeys.all, 'rejected'] });
       toast.success('Registro re-enviado para revisión');
     },
-    onError: (error: any) => {
-      const message = error.response?.data?.message || error.message || 'Error al re-enviar registro';
-      toast.error(message);
-    },
+    
   });
 }
 
@@ -282,9 +260,6 @@ export function useForceCloseTimer() {
       queryClient.invalidateQueries({ queryKey: [...timeRecordKeys.all, 'activeTimer'] });
       toast.success('Timer cerrado forzadamente');
     },
-    onError: (error: any) => {
-      const message = error.response?.data?.message || error.message || 'Error al cerrar timer';
-      toast.error(message);
-    },
+    
   });
 }

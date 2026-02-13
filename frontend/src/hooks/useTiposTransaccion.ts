@@ -46,9 +46,7 @@ export const useCreateTipoTransaccion = () => {
       queryClient.invalidateQueries({ queryKey: ['tipos-transaccion'] });
       toast.success('Tipo de transacción creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.message || 'Error al crear tipo de transacción');
-    },
+    
   });
 };
 
@@ -64,9 +62,7 @@ export const useUpdateTipoTransaccion = () => {
       queryClient.invalidateQueries({ queryKey: ['tipos-transaccion'] });
       toast.success('Tipo de transacción actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.message || 'Error al actualizar tipo de transacción');
-    },
+    
   });
 };
 
@@ -81,8 +77,6 @@ export const useDeleteTipoTransaccion = () => {
       queryClient.invalidateQueries({ queryKey: ['tipos-transaccion'] });
       toast.success('Tipo de transacción eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.message || 'Error al eliminar tipo de transacción');
-    },
+    
   });
 };

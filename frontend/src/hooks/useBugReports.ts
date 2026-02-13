@@ -22,9 +22,7 @@ export function useCreateBugReport() {
       queryClient.invalidateQueries({ queryKey: ['bug-reports'] });
       toast.success('Reporte enviado. Gracias por el feedback.');
     },
-    onError: (error: unknown) => {
-      toast.error(getErrorMessage(error, 'No se pudo enviar el reporte'));
-    },
+    
   });
 }
 
@@ -45,8 +43,6 @@ export function useUpdateBugReportStatus() {
       queryClient.invalidateQueries({ queryKey: ['bug-reports'] });
       toast.success('Estado del reporte actualizado');
     },
-    onError: (error: unknown) => {
-      toast.error(getErrorMessage(error, 'No se pudo actualizar el estado'));
-    },
+    
   });
 }

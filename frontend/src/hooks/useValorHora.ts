@@ -67,9 +67,7 @@ export function useCreateValorHora() {
 
       toast.success('Valor por hora creado exitosamente');
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Error al crear el valor por hora');
-    },
+    
   });
 }
 
@@ -88,9 +86,7 @@ export function useUpdateValorHora() {
 
       toast.success('Valor por hora actualizado exitosamente');
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Error al actualizar el valor por hora');
-    },
+    
   });
 }
 
@@ -110,9 +106,7 @@ export function useDeleteValorHora() {
 
       toast.success('Valor por hora eliminado exitosamente');
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Error al eliminar el valor por hora');
-    },
+    
   });
 }
 

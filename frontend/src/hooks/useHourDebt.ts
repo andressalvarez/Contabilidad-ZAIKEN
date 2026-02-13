@@ -47,11 +47,7 @@ export function useCreateDebt() {
       queryClient.invalidateQueries({ queryKey: ['hour-debt'] });
       toast.success('Deuda registrada correctamente');
     },
-    onError: (error: any) => {
-      const message =
-        error.response?.data?.message || 'Error al crear deuda';
-      toast.error(message);
-    },
+    
   });
 }
 
@@ -107,11 +103,7 @@ export function useUpdateDebt() {
       queryClient.invalidateQueries({ queryKey: ['hour-debt'] });
       toast.success('Deuda actualizada correctamente');
     },
-    onError: (error: any) => {
-      const message =
-        error.response?.data?.message || 'Error al actualizar deuda';
-      toast.error(message);
-    },
+    
   });
 }
 
@@ -127,11 +119,7 @@ export function useDeleteDebt() {
       queryClient.invalidateQueries({ queryKey: ['hour-debt'] });
       toast.success('Deuda eliminada correctamente');
     },
-    onError: (error: any) => {
-      const message =
-        error.response?.data?.message || 'Error al eliminar deuda';
-      toast.error(message);
-    },
+    
   });
 }
 
@@ -148,11 +136,7 @@ export function useCancelDebt() {
       queryClient.invalidateQueries({ queryKey: ['hour-debt'] });
       toast.success('Deuda cancelada correctamente');
     },
-    onError: (error: any) => {
-      const message =
-        error.response?.data?.message || 'Error al cancelar deuda';
-      toast.error(message);
-    },
+    
   });
 }
 
@@ -206,11 +190,7 @@ export function useRequestMonthlyDebtReview() {
         `Revision completada: ${HourDebtService.minutesToHoursString(data.autoAppliedMinutes)} aplicadas, ${data.usersWithGaps} usuarios con diferencia`,
       );
     },
-    onError: (error: any) => {
-      const message =
-        error.response?.data?.message || 'Error al solicitar revisión mensual';
-      toast.error(message);
-    },
+    
   });
 }
 
@@ -229,10 +209,6 @@ export function useCorrectMonthlyDeductions() {
         `Corrección completada: ${correction.deductionsDeleted} deducciones eliminadas, ${correction.deductionsCreated} nuevas creadas. ${HourDebtService.minutesToHoursString(correction.minutesApplied)} aplicadas a ${correction.usersAffected} usuarios`,
       );
     },
-    onError: (error: any) => {
-      const message =
-        error.response?.data?.message || 'Error al ejecutar corrección mensual';
-      toast.error(message);
-    },
+    
   });
 }

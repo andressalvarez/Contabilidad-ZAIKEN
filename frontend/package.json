@@ -7,6 +7,8 @@
     "predev": "npm run nav:generate",
     "nav:generate": "tsx scripts/generate-navigation-catalog.ts",
     "text:check": "node scripts/check-mojibake.js",
+    "error:check": "node scripts/validate-error-handling.js",
+    "error:fix": "node scripts/validate-error-handling.js --fix",
     "prebuild": "npm run nav:generate && npm run text:check",
     "build": "next build",
     "start": "next start",

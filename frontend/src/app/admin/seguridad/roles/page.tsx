@@ -175,9 +175,7 @@ export default function SecurityRolesPage() {
       setIsCreating(false);
       toast.success('Rol creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Error al crear el rol');
-    },
+    
   });
 
   const updateRoleMutation = useMutation({
@@ -187,9 +185,7 @@ export default function SecurityRolesPage() {
       queryClient.invalidateQueries({ queryKey: ['security-roles'] });
       toast.success('Rol actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Error al actualizar el rol');
-    },
+    
   });
 
   const deleteRoleMutation = useMutation({
@@ -199,9 +195,7 @@ export default function SecurityRolesPage() {
       setSelectedRoleId(null);
       toast.success('Rol eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Error al eliminar el rol');
-    },
+    
   });
 
   const assignPermissionsMutation = useMutation({
@@ -211,9 +205,7 @@ export default function SecurityRolesPage() {
       queryClient.invalidateQueries({ queryKey: ['security-roles'] });
       toast.success('Permisos actualizados exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Error al asignar permisos');
-    },
+    
   });
 
   // Handlers

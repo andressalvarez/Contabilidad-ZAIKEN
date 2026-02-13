@@ -61,9 +61,7 @@ export default function SecuritySettingsPage() {
       toast.success('Configuración guardada exitosamente');
       setHasChanges(false);
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Error al guardar la configuración');
-    },
+    
   });
 
   const handleChange = (key: keyof UpdateSecuritySettingsDto, value: any) => {

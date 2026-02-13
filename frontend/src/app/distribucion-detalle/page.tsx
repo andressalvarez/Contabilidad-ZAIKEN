@@ -122,10 +122,7 @@ export default function DistribucionDetallePage() {
       })
       toast.success('Detalle de distribución creado exitosamente')
     },
-    onError: (error: any) => {
-      toast.error(handleApiError(error))
-    }
-  })
+    })
 
   const deleteDetalle = useMutation({
     mutationFn: async (id: number) => {
@@ -138,10 +135,7 @@ export default function DistribucionDetallePage() {
       setSelectedDetalle(null)
       toast.success('Detalle de distribución eliminado exitosamente')
     },
-    onError: (error: any) => {
-      toast.error(handleApiError(error))
-    }
-  })
+    })
 
   // Filtros
   const filteredDetalles = useMemo(() => {

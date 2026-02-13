@@ -21,11 +21,7 @@ export function useUpdateSmtpConfig() {
       queryClient.invalidateQueries({ queryKey: ['smtp-config'] });
       toast.success('Configuración SMTP actualizada correctamente');
     },
-    onError: (error: any) => {
-      const message =
-        error.response?.data?.message || 'Error al actualizar configuración';
-      toast.error(message);
-    },
+    
   });
 }
 
@@ -40,9 +36,7 @@ export function useTestSmtpConnection() {
         toast.error('Error en la conexión SMTP');
       }
     },
-    onError: () => {
-      toast.error('Error al probar la conexión');
-    },
+    
   });
 }
 
@@ -64,11 +58,7 @@ export function useUpdateNavigationLayout() {
       queryClient.invalidateQueries({ queryKey: ['navigation-layout'] });
       toast.success('Navegacion actualizada correctamente');
     },
-    onError: (error: any) => {
-      const message =
-        error.response?.data?.message || 'Error al actualizar navegacion';
-      toast.error(message);
-    },
+    
   });
 }
 
@@ -81,10 +71,6 @@ export function useResetNavigationLayout() {
       queryClient.invalidateQueries({ queryKey: ['navigation-layout'] });
       toast.success('Navegacion restaurada al estado base');
     },
-    onError: (error: any) => {
-      const message =
-        error.response?.data?.message || 'Error al restaurar navegacion';
-      toast.error(message);
-    },
+    
   });
 }

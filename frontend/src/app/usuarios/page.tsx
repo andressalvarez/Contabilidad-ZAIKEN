@@ -84,9 +84,7 @@ export default function UsuariosPage() {
       setIsCreateModalOpen(false);
       resetForm();
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Error al crear usuario');
-    },
+    
   });
 
   const updateMutation = useMutation({
@@ -98,9 +96,7 @@ export default function UsuariosPage() {
       setEditingUsuario(null);
       resetForm();
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Error al actualizar usuario');
-    },
+    
   });
 
   const deleteMutation = useMutation({
@@ -109,9 +105,7 @@ export default function UsuariosPage() {
       queryClient.invalidateQueries({ queryKey: ['usuarios'] });
       toast.success('Usuario eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Error al eliminar usuario');
-    },
+    
   });
 
   const sendPasswordResetMutation = useMutation({
@@ -119,9 +113,7 @@ export default function UsuariosPage() {
     onSuccess: (data) => {
       toast.success(data.message || 'Correo de recuperación enviado');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Error al enviar correo de recuperación');
-    },
+    
   });
 
   const handleSendPasswordReset = async (usuario: Usuario) => {

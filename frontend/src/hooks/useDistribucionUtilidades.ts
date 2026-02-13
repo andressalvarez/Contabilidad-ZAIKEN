@@ -64,10 +64,7 @@ export const useCreateDistribucion = () => {
       queryClient.invalidateQueries({ queryKey: DISTRIBUCION_KEYS.stats() });
       toast.success('Distribución creada exitosamente');
     },
-    onError: (error: any) => {
-      console.error('Error creating distribucion:', error);
-      toast.error(error.message || 'Error al crear la distribución');
-    },
+    
   });
 };
 
@@ -84,10 +81,7 @@ export const useUpdateDistribucion = () => {
       queryClient.invalidateQueries({ queryKey: DISTRIBUCION_KEYS.stats() });
       toast.success('Distribución actualizada exitosamente');
     },
-    onError: (error: any) => {
-      console.error('Error updating distribucion:', error);
-      toast.error(error.message || 'Error al actualizar la distribución');
-    },
+    
   });
 };
 
@@ -103,10 +97,7 @@ export const useDeleteDistribucion = () => {
       queryClient.removeQueries({ queryKey: DISTRIBUCION_KEYS.detail(deletedId) });
       toast.success('Distribución eliminada exitosamente');
     },
-    onError: (error: any) => {
-      console.error('Error deleting distribucion:', error);
-      toast.error(error.message || 'Error al eliminar la distribución');
-    },
+    
   });
 };
 
@@ -124,10 +115,7 @@ export const useDistribuirAutomaticamente = () => {
       queryClient.invalidateQueries({ queryKey: DISTRIBUCION_KEYS.stats() });
       toast.success('Utilidades distribuidas automáticamente');
     },
-    onError: (error: any) => {
-      console.error('Error distribuyendo automáticamente:', error);
-      toast.error(error.message || 'Error al distribuir automáticamente');
-    },
+    
   });
 };
 
@@ -141,10 +129,7 @@ export const useCreateDistribucionDetalle = () => {
       queryClient.invalidateQueries({ queryKey: DISTRIBUCION_KEYS.detalles(newDetalle.distribucionId) });
       toast.success('Detalle de distribución creado exitosamente');
     },
-    onError: (error: any) => {
-      console.error('Error creating distribucion detalle:', error);
-      toast.error(error.message || 'Error al crear el detalle de distribución');
-    },
+    
   });
 };
 
@@ -159,10 +144,7 @@ export const useUpdateDistribucionDetalle = () => {
       queryClient.invalidateQueries({ queryKey: DISTRIBUCION_KEYS.detalles(updatedDetalle.distribucionId) });
       toast.success('Detalle de distribución actualizado exitosamente');
     },
-    onError: (error: any) => {
-      console.error('Error updating distribucion detalle:', error);
-      toast.error(error.message || 'Error al actualizar el detalle de distribución');
-    },
+    
   });
 };
 
@@ -177,9 +159,6 @@ export const useDeleteDistribucionDetalle = () => {
       queryClient.invalidateQueries({ queryKey: DISTRIBUCION_KEYS.all });
       toast.success('Detalle de distribución eliminado exitosamente');
     },
-    onError: (error: any) => {
-      console.error('Error deleting distribucion detalle:', error);
-      toast.error(error.message || 'Error al eliminar el detalle de distribución');
-    },
+    
   });
 };
