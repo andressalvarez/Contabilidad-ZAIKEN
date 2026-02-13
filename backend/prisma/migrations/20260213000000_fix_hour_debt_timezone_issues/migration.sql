@@ -1,0 +1,25 @@
+-- Migration: Fix Hour Debt Timezone Issues
+-- Date: 2026-02-13
+-- Author: Claude AI
+-- Description: Fix para corregir problemas de zona horaria en sistema de deuda de horas
+--
+-- Problema 1: Las fechas enviadas desde frontend en formato YYYY-MM-DD se interpretaban
+--             incorrectamente en el backend debido a parsing UTC en vez de zona horaria
+--             de negocio (America/Bogota).
+--
+-- Problema 2: La compensación automática de deudas no funcionaba correctamente para
+--             deudas creadas el mismo día debido a comparación incorrecta de timestamps
+--             sin considerar zona horaria.
+--
+-- Solución:  Modificaciones en código (no en schema):
+--            1. DateUtils.normalizeToBusinessDate() ahora parsea explícitamente
+--               strings YYYY-MM-DD en la zona horaria del negocio
+--            2. HourDebtService.applyDebtDeduction() ahora compara created_at con
+--               el final del día de trabajo en vez de solo fechas
+--
+-- Archivos modificados:
+--   - backend/src/common/utils/date.utils.ts
+--   - backend/src/hour-debt/hour-debt.service.ts
+--
+-- No requiere cambios en schema de base de datos.
+-- Esta migración es solo para registro y auditoría.

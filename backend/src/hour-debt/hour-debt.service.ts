@@ -236,11 +236,18 @@ export class HourDebtService {
   ) {
     const before = await this.findOne(id, negocioId);
 
+    // Determine the correct status based on remainingMinutes
+    const newStatus =
+      updateDto.remainingMinutes === 0
+        ? DebtStatus.FULLY_PAID
+        : DebtStatus.ACTIVE;
+
     const updated = await this.prisma.hourDebt.update({
       where: { id },
       data: {
         minutesOwed: updateDto.minutesOwed,
         remainingMinutes: updateDto.remainingMinutes,
+        status: newStatus,
         editedById: adminId,
         editedAt: new Date(),
       },
@@ -998,12 +1005,15 @@ export class HourDebtService {
     }
 
     // 4. Get active debts with FOR UPDATE lock (prevent race conditions)
+    // Include debts created on or before the work day (up to end of that day)
+    const { end: endOfWorkDay } = DateUtils.getDateRange(normalizedDate);
+
     const activeDebts = await prisma.$queryRaw<RawHourDebt[]>(
       Prisma.sql`
         SELECT * FROM hour_debts
         WHERE negocio_id = ${negocioId}
           AND usuario_id = ${usuarioId}
-          AND created_at::date <= ${normalizedDate}::date
+          AND created_at <= ${endOfWorkDay}
           AND status = ${DebtStatus.ACTIVE}::"DebtStatus"
           AND remaining_minutes > 0
           AND deleted_at IS NULL

@@ -20,7 +20,14 @@ export class DateUtils {
     timezone?: string,
   ): Date {
     const tz = timezone || this.DEFAULT_TIMEZONE;
-    // Convert to midnight in the business timezone
+
+    // If date is a string in YYYY-MM-DD format, parse it explicitly in the target timezone
+    // to avoid UTC interpretation issues
+    if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return moment.tz(date, 'YYYY-MM-DD', tz).startOf('day').toDate();
+    }
+
+    // For Date objects or other string formats, convert to the target timezone
     return moment.tz(date, tz).startOf('day').toDate();
   }
 
