@@ -692,6 +692,367 @@ export class HourDebtService {
   }
 
   /**
+   * ROBUST CORRECTOR: Deletes all deductions for the month and recalculates from scratch
+   * This ensures data consistency by removing bad records and recalculating everything
+   */
+  async correctMonthlyDeductions(negocioId: number, requestedBy: number) {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    const monthEnd = now;
+
+    this.logger.log(
+      `Iniciando corrección robusta de deducciones mensuales. negocio=${negocioId}, periodo=${DateUtils.formatDate(monthStart)} a ${DateUtils.formatDate(monthEnd)}`,
+    );
+
+    const negocio = await this.prisma.negocio.findUnique({
+      where: { id: negocioId },
+      select: { configuracion: true },
+    });
+    const threshold = (negocio?.configuracion as any)?.dailyHourThreshold || 8;
+    const thresholdMinutes = Math.round(threshold * 60);
+
+    // Step 1: Get all debts that exist in the system (including fully paid ones)
+    const allDebts = await this.prisma.hourDebt.findMany({
+      where: {
+        negocioId,
+        deletedAt: null,
+        createdAt: { lte: monthEnd },
+      },
+      select: {
+        id: true,
+        usuarioId: true,
+        date: true,
+        minutesOwed: true,
+        remainingMinutes: true,
+        status: true,
+        createdAt: true,
+      },
+      orderBy: [{ date: 'asc' }, { id: 'asc' }],
+    });
+
+    // Step 2: Identify which debts had deductions in this period
+    const deductionsInPeriod = await this.prisma.debtDeduction.findMany({
+      where: {
+        deletedAt: null,
+        debt: { negocioId },
+        registroHoras: {
+          fecha: {
+            gte: monthStart,
+            lte: monthEnd,
+          },
+        },
+      },
+      select: {
+        id: true,
+        debtId: true,
+        minutesDeducted: true,
+        registroHoras: {
+          select: {
+            fecha: true,
+            usuarioId: true,
+          },
+        },
+      },
+    });
+
+    const debtsToReset = new Set<number>();
+    const deletedDeductionIds: number[] = [];
+    let totalDeletedMinutes = 0;
+
+    for (const deduction of deductionsInPeriod) {
+      debtsToReset.add(deduction.debtId);
+      deletedDeductionIds.push(deduction.id);
+      totalDeletedMinutes += deduction.minutesDeducted;
+    }
+
+    this.logger.log(
+      `Eliminando ${deductionsInPeriod.length} deducciones (${totalDeletedMinutes} min) y reseteando ${debtsToReset.size} deudas`,
+    );
+
+    // Step 3: Delete all deductions and reset debts within a transaction
+    const resetResults = await this.prisma.$transaction(async (tx) => {
+      // Delete all deductions for the period
+      if (deletedDeductionIds.length > 0) {
+        await tx.debtDeduction.deleteMany({
+          where: {
+            id: { in: deletedDeductionIds },
+          },
+        });
+      }
+
+      // Reset all affected debts to their original state
+      const resetOps = [];
+      for (const debtId of debtsToReset) {
+        const debt = allDebts.find((d) => d.id === debtId);
+        if (debt) {
+          resetOps.push(
+            tx.hourDebt.update({
+              where: { id: debtId },
+              data: {
+                remainingMinutes: debt.minutesOwed,
+                status: DebtStatus.ACTIVE,
+              },
+            }),
+          );
+        }
+      }
+      await Promise.all(resetOps);
+
+      return { debtsReset: debtsToReset.size, deductionsDeleted: deletedDeductionIds.length };
+    });
+
+    this.logger.log(
+      `Limpieza completada: ${resetResults.deductionsDeleted} deducciones eliminadas, ${resetResults.debtsReset} deudas reseteadas`,
+    );
+
+    // Step 4: Get all approved registros for the period
+    const approvedRecords = await this.prisma.registroHoras.findMany({
+      where: {
+        negocioId,
+        aprobado: true,
+        deletedAt: null,
+        fecha: {
+          gte: monthStart,
+          lte: monthEnd,
+        },
+      },
+      select: {
+        id: true,
+        usuarioId: true,
+        fecha: true,
+        horas: true,
+      },
+      orderBy: [{ fecha: 'asc' }, { id: 'asc' }],
+    });
+
+    // Step 5: Build first debt day map (only deduct from debt creation date onward)
+    const firstDebtDayByUser = new Map<number, string>();
+    for (const debt of allDebts) {
+      const createdDay = DateUtils.formatDate(debt.createdAt);
+      const existing = firstDebtDayByUser.get(debt.usuarioId);
+      if (!existing || createdDay < existing) {
+        firstDebtDayByUser.set(debt.usuarioId, createdDay);
+      }
+    }
+
+    // Step 6: Aggregate approved hours by user-day
+    type UserDayAggregate = {
+      usuarioId: number;
+      day: string;
+      totalApprovedMinutes: number;
+      recordIds: number[];
+    };
+    const approvedByUserDay = new Map<string, UserDayAggregate>();
+
+    for (const record of approvedRecords) {
+      const firstDebtDay = firstDebtDayByUser.get(record.usuarioId);
+      if (!firstDebtDay) continue;
+
+      const day = DateUtils.formatDate(record.fecha);
+      if (day < firstDebtDay) continue;
+
+      const key = `${record.usuarioId}:${day}`;
+      const minutes = Math.round((record.horas || 0) * 60);
+      const current = approvedByUserDay.get(key);
+      if (current) {
+        current.totalApprovedMinutes += minutes;
+        current.recordIds.push(record.id);
+      } else {
+        approvedByUserDay.set(key, {
+          usuarioId: record.usuarioId,
+          day,
+          totalApprovedMinutes: minutes,
+          recordIds: [record.id],
+        });
+      }
+    }
+
+    // Step 7: Sort user-day entries chronologically
+    const userDayEntries = Array.from(approvedByUserDay.values()).sort((a, b) => {
+      const dayCompare = a.day.localeCompare(b.day);
+      if (dayCompare !== 0) return dayCompare;
+      return a.usuarioId - b.usuarioId;
+    });
+
+    // Step 8: Build active debts map (FIFO order)
+    const debtsByUser = new Map<
+      number,
+      Array<{
+        id: number;
+        createdDay: string;
+        remainingMinutes: number;
+      }>
+    >();
+    for (const debt of allDebts) {
+      const userDebts = debtsByUser.get(debt.usuarioId) || [];
+      userDebts.push({
+        id: debt.id,
+        createdDay: DateUtils.formatDate(debt.createdAt),
+        remainingMinutes: debt.minutesOwed, // Reset to original
+      });
+      debtsByUser.set(debt.usuarioId, userDebts);
+    }
+
+    // Step 9: Apply deductions in chronological order (FIFO)
+    let newDeductionsCreated = 0;
+    let totalMinutesDeducted = 0;
+    const touchedUsers = new Set<number>();
+    const touchedDebts = new Set<number>();
+    const userDaysPaid = new Set<string>();
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const entry of userDayEntries) {
+        const dailyExcess = Math.max(0, entry.totalApprovedMinutes - thresholdMinutes);
+        if (dailyExcess <= 0) continue;
+
+        const userDebts = debtsByUser.get(entry.usuarioId) || [];
+        if (userDebts.length === 0) continue;
+
+        const anchorRecordId = entry.recordIds[entry.recordIds.length - 1];
+        let remainingExcess = dailyExcess;
+
+        for (const debt of userDebts) {
+          if (remainingExcess <= 0) break;
+          if (debt.remainingMinutes <= 0) continue;
+          if (entry.day < debt.createdDay) continue;
+
+          const deductAmount = Math.min(remainingExcess, debt.remainingMinutes);
+          if (deductAmount <= 0) continue;
+
+          // Create new deduction
+          await tx.debtDeduction.create({
+            data: {
+              debtId: debt.id,
+              registroHorasId: anchorRecordId,
+              minutesDeducted: deductAmount,
+              excessMinutes: deductAmount,
+            },
+          });
+
+          debt.remainingMinutes -= deductAmount;
+          remainingExcess -= deductAmount;
+          totalMinutesDeducted += deductAmount;
+          newDeductionsCreated += 1;
+          touchedUsers.add(entry.usuarioId);
+          touchedDebts.add(debt.id);
+        }
+
+        if (remainingExcess < dailyExcess) {
+          userDaysPaid.add(`${entry.usuarioId}:${entry.day}`);
+        }
+      }
+
+      // Step 10: Update all affected debts with correct remainingMinutes and status
+      if (touchedDebts.size > 0) {
+        const debtUpdates = Array.from(debtsByUser.values())
+          .flat()
+          .filter((debt) => touchedDebts.has(debt.id));
+
+        for (const debt of debtUpdates) {
+          await tx.hourDebt.update({
+            where: { id: debt.id },
+            data: {
+              remainingMinutes: debt.remainingMinutes,
+              status:
+                debt.remainingMinutes === 0
+                  ? DebtStatus.FULLY_PAID
+                  : DebtStatus.ACTIVE,
+            },
+          });
+        }
+      }
+    });
+
+    // Step 11: Calculate final statistics
+    const finalDebts = await this.prisma.hourDebt.findMany({
+      where: {
+        negocioId,
+        id: { in: Array.from(touchedDebts) },
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        usuarioId: true,
+        minutesOwed: true,
+        remainingMinutes: true,
+        status: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    const userStats = new Map<number, {
+      usuarioId: number;
+      nombre: string;
+      email: string;
+      totalDebt: number;
+      paidMinutes: number;
+      remainingMinutes: number;
+      fullyPaidDebts: number;
+      activeDebts: number;
+    }>();
+
+    for (const debt of finalDebts) {
+      const userId = debt.usuarioId;
+      const existing = userStats.get(userId) || {
+        usuarioId: userId,
+        nombre: debt.usuario?.nombre || `Usuario #${userId}`,
+        email: debt.usuario?.email || '',
+        totalDebt: 0,
+        paidMinutes: 0,
+        remainingMinutes: 0,
+        fullyPaidDebts: 0,
+        activeDebts: 0,
+      };
+
+      existing.totalDebt += debt.minutesOwed;
+      existing.paidMinutes += (debt.minutesOwed - debt.remainingMinutes);
+      existing.remainingMinutes += debt.remainingMinutes;
+
+      if (debt.status === DebtStatus.FULLY_PAID) {
+        existing.fullyPaidDebts += 1;
+      } else if (debt.status === DebtStatus.ACTIVE) {
+        existing.activeDebts += 1;
+      }
+
+      userStats.set(userId, existing);
+    }
+
+    const users = Array.from(userStats.values()).sort(
+      (a, b) => b.paidMinutes - a.paidMinutes,
+    );
+
+    this.logger.log(
+      `Corrección completada. Deducciones nuevas: ${newDeductionsCreated}, Minutos aplicados: ${totalMinutesDeducted}, Usuarios afectados: ${touchedUsers.size}, Deudas actualizadas: ${touchedDebts.size}`,
+    );
+
+    return {
+      requestedAt: new Date().toISOString(),
+      requestedBy,
+      monthStart: monthStart.toISOString(),
+      monthEnd: monthEnd.toISOString(),
+      thresholdHours: threshold,
+      correction: {
+        deductionsDeleted: resetResults.deductionsDeleted,
+        minutesDeleted: totalDeletedMinutes,
+        debtsReset: resetResults.debtsReset,
+        deductionsCreated: newDeductionsCreated,
+        minutesApplied: totalMinutesDeducted,
+        debtsUpdated: touchedDebts.size,
+        usersAffected: touchedUsers.size,
+        userDaysPaid: userDaysPaid.size,
+      },
+      users,
+      message: 'Corrección mensual completada: deducciones eliminadas y recalculadas desde cero',
+    };
+  }
+
+  /**
    * Reapply missing debt deductions for a period.
    * Rule: only discount from debt creation day onward.
    */

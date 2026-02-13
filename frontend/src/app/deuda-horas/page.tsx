@@ -31,7 +31,7 @@ import {
   useMyBalance,
   useMyHistory,
   useUpdateDebt,
-  useRequestMonthlyDebtReview,
+  useCorrectMonthlyDeductions,
 } from '@/hooks/useHourDebt';
 import { useUsuarios } from '@/hooks/useUsuarios';
 import HourDebtService, { HourDebt, DebtStatus, CreateDebtDto, UpdateDebtDto } from '@/services/hourDebt.service';
@@ -67,7 +67,7 @@ export default function DeudaHorasPage() {
   const updateMutation = useUpdateDebt();
   const deleteMutation = useDeleteDebt();
   const cancelMutation = useCancelDebt();
-  const reviewMutation = useRequestMonthlyDebtReview();
+  const correctorMutation = useCorrectMonthlyDeductions();
 
   const [formData, setFormData] = useState<CreateDebtDto>({
     usuarioId: undefined,
@@ -202,18 +202,19 @@ export default function DeudaHorasPage() {
     setEditMinutesRemaining(debt.remainingMinutes % 60);
   };
 
-  const handleRequestMonthlyReview = async () => {
+  const handleCorrectMonthlyDeductions = async () => {
     const confirmed = await showConfirm({
-      title: 'Revisar y aplicar descuentos del mes',
+      title: 'Corrección robusta de deducciones mensuales',
       message:
-        'Se ejecutará una revisión mensual y se aplicarán descuentos faltantes desde la fecha de creación de cada deuda. ¿Deseas continuar?',
-      confirmText: 'Ejecutar revisión',
+        '⚠️ ADVERTENCIA: Esta operación eliminará TODAS las deducciones del mes actual y las recalculará desde cero. Esto asegura que solo queden registros correctos aplicando la lógica FIFO (primero en entrar, primero en salir). ¿Deseas continuar?',
+      confirmText: 'Ejecutar corrección',
     });
     if (!confirmed) return;
 
-    const result = await reviewMutation.mutateAsync();
+    const result = await correctorMutation.mutateAsync();
+    const { correction } = result;
     toast.info(
-      `Revisión mensual: ${HourDebtService.minutesToHoursString(result.autoAppliedMinutes)} aplicadas, diferencia pendiente ${HourDebtService.minutesToHoursString(result.remainingGapMinutes)} (${result.usersWithGaps} usuarios con diferencia)`,
+      `Corrección completada: ${correction.deductionsDeleted} deducciones eliminadas, ${correction.deductionsCreated} nuevas creadas. ${HourDebtService.minutesToHoursString(correction.minutesApplied)} aplicadas a ${correction.usersAffected} usuarios.`,
     );
   };
 
@@ -250,12 +251,12 @@ export default function DeudaHorasPage() {
             <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2">
               {canManageDebt && (
                 <button
-                  onClick={handleRequestMonthlyReview}
-                  disabled={reviewMutation.isPending}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-sm text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleCorrectMonthlyDeductions}
+                  disabled={correctorMutation.isPending}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors shadow-sm text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ClipboardCheck className="h-4 w-4" />
-                  {reviewMutation.isPending ? 'Revisando...' : 'Revisar descuento mensual'}
+                  {correctorMutation.isPending ? 'Corrigiendo...' : 'Corregir deducciones del mes'}
                 </button>
               )}
 

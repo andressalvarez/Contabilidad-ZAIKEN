@@ -213,3 +213,26 @@ export function useRequestMonthlyDebtReview() {
     },
   });
 }
+
+/**
+ * ROBUST CORRECTOR: Delete all deductions and recalculate from scratch (admin)
+ */
+export function useCorrectMonthlyDeductions() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => HourDebtService.correctMonthlyDeductions(),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['hour-debt'] });
+      const { correction } = data;
+      toast.success(
+        `Corrección completada: ${correction.deductionsDeleted} deducciones eliminadas, ${correction.deductionsCreated} nuevas creadas. ${HourDebtService.minutesToHoursString(correction.minutesApplied)} aplicadas a ${correction.usersAffected} usuarios`,
+      );
+    },
+    onError: (error: any) => {
+      const message =
+        error.response?.data?.message || 'Error al ejecutar corrección mensual';
+      toast.error(message);
+    },
+  });
+}

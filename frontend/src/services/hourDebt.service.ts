@@ -267,6 +267,20 @@ class HourDebtService {
   }
 
   /**
+   * ROBUST CORRECTOR: Delete all deductions for the month and recalculate from scratch (admin)
+   */
+  async correctMonthlyDeductions(): Promise<any> {
+    const response = await axios.post(
+      `${API_URL}/hour-debt/correct-monthly`,
+      {},
+      {
+        headers: this.getAuthHeaders(),
+      }
+    );
+    return response.data;
+  }
+
+  /**
    * Utility: Convert minutes to hours string
    */
   minutesToHoursString(minutes: number): string {

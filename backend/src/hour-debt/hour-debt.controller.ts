@@ -151,6 +151,25 @@ export class HourDebtController {
   }
 
   /**
+   * ROBUST CORRECTOR: Delete all deductions for the month and recalculate from scratch (admin only)
+   * POST /hour-debt/correct-monthly
+   */
+  @Post('correct-monthly')
+  @Permissions({ action: Action.Update, subject: 'HourDebt' })
+  async correctMonthlyDeductions(@Request() req, @NegocioId() negocioId: number) {
+    if (!this.hasPermissionCode(req, 'HOUR_DEBT.GLOBAL.MANAGE')) {
+      throw new ForbiddenException(
+        'Solo admins pueden ejecutar corrección mensual de deuda',
+      );
+    }
+
+    return this.hourDebtService.correctMonthlyDeductions(
+      negocioId,
+      req.user.userId,
+    );
+  }
+
+  /**
    * Get specific debt (admin or owner)
    * GET /hour-debt/:id
    */
